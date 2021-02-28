@@ -1,0 +1,95 @@
+name: vpinball
+on:
+  push:
+
+jobs:
+  directx:
+    runs-on: windows-latest
+    steps:
+      - id: cache
+        uses: actions/cache@v2
+        with:
+          path: DXSDK
+          key: cache-directx
+      - name: Cache DirectX
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L https://download.microsoft.com/download/a/e/7/ae743f1f-632b-4809-87a9-aa1bb3458e31/DXSDK_Jun10.exe -o DXSDK_Jun10.exe
+          7z x DXSDK_Jun10.exe DXSDK/Include -otmp
+          7z x DXSDK_Jun10.exe DXSDK/Lib -otmp
+          mv tmp/DXSDK DXSDK
+          rm -fR DXSDK_Jun10.exe tmp
+          ls -Ra DXSDK
+        shell: bash
+
+  build-win-x64:
+    runs-on: windows-latest
+    needs: [ directx ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: DXSDK
+          key: cache-directx
+      - name: Build
+        run: |
+          $env:DXSDK_DIR = "${env:GITHUB_WORKSPACE}\DXSDK"
+          copy cmake/CMakeLists_win-x64.txt CMakeLists.txt
+          cmake -G "Visual Studio 16 2019" -A x64 -B build
+          cmake --build build --config Release
+      - uses: svenstaro/upx-action@v2
+        with:
+          file: build/Release/VPinballX.exe
+          args: --best --lzma
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x64
+          path: build/Release/VPinballX.exe
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x64
+          path: dll/x64/Bass64.dll
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x64
+          path: dll/x64/FreeImage64.dll
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x64
+          path: dll/x64/SciLexerVP64.dll
+
+  build-win-x86:
+    runs-on: windows-latest
+    needs: [ directx ]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/cache@v2
+        with:
+          path: DXSDK
+          key: cache-directx
+      - name: Build
+        run: |
+          $env:DXSDK_DIR = "${env:GITHUB_WORKSPACE}\DXSDK"
+          copy cmake/CMakeLists_win-x86.txt CMakeLists.txt
+          cmake -G "Visual Studio 16 2019" -A Win32 -B build
+          cmake --build build --config Release
+      - uses: svenstaro/upx-action@v2
+        with:
+          file: build/Release/VPinballX.exe
+          args: --best --lzma
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x86
+          path: build/Release/VPinballX.exe
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x86
+          path: dll/Bass.dll
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x86
+          path: dll/FreeImage.dll
+      - uses: actions/upload-artifact@v2
+        with:
+          name: vpinballx-win-x86
+          path: dll/SciLexerVP.dll
