@@ -1491,10 +1491,10 @@ copy "$(TargetPath)" "%25VPIN_DIR%25"
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|Win32'">.\vpinball.tlb</TypeLibraryName>
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\vpinball.tlb</TypeLibraryName>
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|x64'">.\vpinball.tlb</TypeLibraryName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vpinball_i.h</HeaderFileName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|Win32'">vpinball_i.h</HeaderFileName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vpinball_i.h</HeaderFileName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|x64'">vpinball_i.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vpinball.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|Win32'">vpinball.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vpinball.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|x64'">vpinball.h</HeaderFileName>
       <InterfaceIdentifierFileName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">vpinball_i.c</InterfaceIdentifierFileName>
       <InterfaceIdentifierFileName Condition="'$(Configuration)|$(Platform)'=='DebugCoverage|Win32'">vpinball_i.c</InterfaceIdentifierFileName>
       <InterfaceIdentifierFileName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">vpinball_i.c</InterfaceIdentifierFileName>
@@ -1503,8 +1503,8 @@ copy "$(TargetPath)" "%25VPIN_DIR%25"
       <GenerateStublessProxies Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateStublessProxies>
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">.\vpinball.tlb</TypeLibraryName>
       <TypeLibraryName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">.\vpinball.tlb</TypeLibraryName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vpinball_i.h</HeaderFileName>
-      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vpinball_i.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vpinball.h</HeaderFileName>
+      <HeaderFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vpinball.h</HeaderFileName>
       <InterfaceIdentifierFileName Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">vpinball_i.c</InterfaceIdentifierFileName>
       <InterfaceIdentifierFileName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">vpinball_i.c</InterfaceIdentifierFileName>
     </Midl>
@@ -1915,8 +1915,8 @@ copy "$(TargetPath)" "%25VPIN_DIR%25"
     <ClInclude Include="variant.h" />
     <ClInclude Include="vector.h" />
     <ClInclude Include="vectorsort.h" />
+    <ClInclude Include="vpinball_h.h" />
     <ClInclude Include="vpinball.h" />
-    <ClInclude Include="vpinball_i.h" />
     <ClInclude Include="vpversion.h" />
     <ClInclude Include="wintimer.h" />
     <ClInclude Include="worker.h" />

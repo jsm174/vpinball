@@ -902,10 +902,10 @@
     <ClInclude Include="vectorsort.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="vpinball.h">
+    <ClInclude Include="vpinball_h.h">
       <Filter>headers</Filter>
     </ClInclude>
-    <ClInclude Include="vpinball_i.h">
+    <ClInclude Include="vpinball.h">
       <Filter>headers</Filter>
     </ClInclude>
     <ClInclude Include="vpversion.h">

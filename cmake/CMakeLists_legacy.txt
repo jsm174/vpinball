@@ -310,7 +310,7 @@ set(HEADERS
   variant.h
   vector.h
   vectorsort.h
-  vpinball.h
+  vpinball_h.h
   wintimer.h
   worker.h
   inc/gpuprofiler.h
@@ -354,13 +354,13 @@ set(RC_RESOURCE
 #  )
 
 # generate com interfaces with midl
-ADD_CUSTOM_COMMAND(OUTPUT "${CMAKE_BINARY_DIR}/vpinball_i.h"
+ADD_CUSTOM_COMMAND(OUTPUT "${CMAKE_BINARY_DIR}/vpinball.h"
   "${CMAKE_BINARY_DIR}/vpinball.tlb" "${CMAKE_BINARY_DIR}/vpinball_i.c"
-  COMMAND midl.exe /win32 "${CMAKE_SOURCE_DIR}/vpinball.idl" /h "${CMAKE_BINARY_DIR}/vpinball_i.h"
+  COMMAND midl.exe /win32 "${CMAKE_SOURCE_DIR}/vpinball.idl" /h "${CMAKE_BINARY_DIR}/vpinball.h"
   DEPENDS "${CMAKE_SOURCE_DIR}/vpinball.idl")
 
 #add_msvc_precompiled_header(stdafx.h stdafx.cpp SOURCES DIALOGS)
-list(APPEND HEADERS "${CMAKE_BINARY_DIR}/vpinball_i.h")
+list(APPEND HEADERS "${CMAKE_BINARY_DIR}/vpinball.h")
 
 include_directories(pin)
 include_directories(media)
