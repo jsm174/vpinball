@@ -19,12 +19,6 @@
 #include "vpinball_i.c"
 #endif
 
-#ifdef __STANDALONE__
-#ifdef __ANDROID__
-#include <regex>
-#endif
-#endif
-
 #include <locale>
 #include <codecvt>
 
@@ -232,15 +226,9 @@ static const string options[] = { // keep in sync with option_names & option_des
    "exit"s // (ab)used by frontend, not handled by us
 #ifdef __STANDALONE__
    ,
-#ifndef __ANDROID__   
    "PrefPath"s,
-#endif
    "listres"s,
    "listsnd"s
-#ifdef __ANDROID__   
-   ,
-   "fd"s
-#endif
 #endif
 }; // + c1..c9
 static const string option_descs[] =
@@ -269,15 +257,9 @@ static const string option_descs[] =
    string()
 #ifdef __STANDALONE__
    ,
-#ifndef __ANDROID__   
    "[path]  Use a custom preferences path instead of $HOME/.vpinball"s,
-#endif
    "List available fullscreen resolutions"s,
    "List available sound devices"s
-#ifdef __ANDROID__
-   ,
-   "[fd] Open file descriptor from the Storage Acccess Framework for the VPX directory"s
-#endif
 #endif   
 };
 enum option_names
@@ -306,15 +288,9 @@ enum option_names
    OPTION_FRONTEND_EXIT
 #ifdef __STANDALONE__
    ,
-#ifndef __ANDROID__   
    OPTION_PREFPATH,
-#endif
    OPTION_LISTRES,
    OPTION_LISTSND
-#ifdef __ANDROID__
-   ,
-   OPTION_PREFPATHFD
-#endif
 #endif
 };
 
@@ -541,14 +517,9 @@ public:
                             "\n\n-"+options[OPTION_TOURNAMENT]+           "  "+option_descs[OPTION_TOURNAMENT]+
                             "\n\n-"+options[OPTION_VERSION]+              "  "+option_descs[OPTION_VERSION]+
 #ifdef __STANDALONE__
-#ifndef __ANDROID__
                             "\n\n-"+options[OPTION_PREFPATH]+             "  "+option_descs[OPTION_PREFPATH]+
-#endif
                             "\n-"  +options[OPTION_LISTRES]+              "  "+option_descs[OPTION_LISTRES]+
                             "\n-"  +options[OPTION_LISTSND]+              "  "+option_descs[OPTION_LISTSND]+
-#ifdef __ANDROID__
-                            "\n\n-"+options[OPTION_PREFPATHFD]+           "  "+option_descs[OPTION_PREFPATHFD]+
-#endif
 #endif       
                             "\n\n-c1 [customparam] .. -c9 [customparam]  Custom user parameters that can be accessed in the script via GetCustomParam(X)";
             if (!valid_param)
@@ -683,56 +654,9 @@ public:
          const bool extractpov = compare_option(szArglist[i], OPTION_POV);
          const bool extractscript = compare_option(szArglist[i], OPTION_EXTRACTVBS);
 #ifdef __STANDALONE__
-#ifndef __ANDROID__
          const bool prefPath = compare_option(szArglist[i], OPTION_PREFPATH);
-#endif
          const bool listRes = compare_option(szArglist[i], OPTION_LISTRES);
          const bool listSnd = compare_option(szArglist[i], OPTION_LISTSND);
-#ifdef __ANDROID__
-         const bool fd = compare_option(szArglist[i], OPTION_PREFPATHFD);
-         if (fd) 
-         {
-            int prefPathFD = -1;
-            try 
-            {
-               PLOGD.printf("Parsing fd %s", szArglist[i + 1]);
-               prefPathFD = std::stoi(szArglist[i + 1]);
-            } 
-            catch (std::invalid_argument const& ex)
-            {
-                  PLOGE.printf("Invalid FD %s", ex.what());
-                  exit(1);
-            }
-
-            // Convert the fd passed from SAF to a directory path
-            // SAF is Android's Storage Access Framework
-            char buf[PATH_MAX];
-            auto fdFilename = "/proc/self/fd/" + std::to_string(prefPathFD);
-            auto nbytes = readlink(fdFilename.c_str(), buf, PATH_MAX);
-            m_szPrefPath = std::string(buf, nbytes);
-            PLOGD.printf("SAF directory %s", m_szPrefPath.c_str());
-
-            // If the SAF path was in the mounted /sdcard
-            // the path must use /sdcard instead of the physical path
-            // otherwise Android will deny access to all files
-            std::regex sdcardRegex("\\/mnt\\/user\\/\\d\\/emulated\\/\\d",
-                  std::regex_constants::ECMAScript | std::regex_constants::icase);
-
-            // This logic may be handling external sdcards
-            if (std::regex_search(m_szPrefPath, sdcardRegex))
-            {
-               PLOGD.printf("SAF pointing to a sdcard dir");
-               auto begin = std::sregex_iterator(m_szPrefPath.begin(), m_szPrefPath.end(), sdcardRegex);
-               std::smatch match = *begin;
-               auto match_str = match.str();
-               m_szPrefPath = "/sdcard" + m_szPrefPath.substr(match_str.size());
-            }
-
-            PLOGD.printf("VPX path is %s", m_szPrefPath.c_str());
-
-            m_vpinball.UpdateMyPath(m_szPrefPath);
-         }
-#endif
 #endif
          const bool ini = compare_option(szArglist[i], OPTION_INI);
          const bool tableIni = compare_option(szArglist[i], OPTION_TABLE_INI);
@@ -744,11 +668,7 @@ public:
 #ifndef __STANDALONE__
          if (ini || tableIni || editfile || playfile || povEdit || extractpov || extractscript || tournament)
 #else
-#ifndef __ANDROID__
          if (prefPath || ini || tableIni || editfile || playfile || launchfile || povEdit || extractpov || extractscript || tournament)
-#else
-         if (editfile || playfile || povEdit || extractpov || extractscript || tournament)
-#endif
 #endif
          {
             if (i + 1 >= nArgs)
@@ -764,12 +684,7 @@ public:
 #endif
                exit(1);
             }
-#ifndef __ANDROID__
             const string path = GetPathFromArg(szArglist[i + 1], false);
-#else
-            const string path = m_szPrefPath + "/tables/" + szArglist[i + 1];
-#endif
-#ifndef __ANDROID__
 #ifndef __STANDALONE__
             if (!FileExists(path) && !ini && !tableIni)
 #else
@@ -787,7 +702,6 @@ public:
 #endif
                exit(1);
             }
-#endif
 
             if (tournament && (i + 2 >= nArgs))
             {
@@ -806,7 +720,7 @@ public:
             }
             i++; // two params processed
 
-#if defined(__STANDALONE__) && ! defined(__ANDROID__)
+#ifdef __STANDALONE__
             if (prefPath)
                m_szPrefPath = path;
             else
@@ -870,7 +784,6 @@ public:
       if (!m_szPrefPath.ends_with(PATH_SEPARATOR_CHAR))
          m_szPrefPath += PATH_SEPARATOR_CHAR;
 
-#ifndef __ANDROID__
       if (!DirExists(m_szPrefPath)) {
          std::error_code ec;
          if (!std::filesystem::create_directory(m_szPrefPath, ec)) {
@@ -882,7 +795,6 @@ public:
             exit(1);
          }
       }
-#endif
       m_vpinball.m_szMyPrefPath = m_szPrefPath;
    }
 #endif
@@ -989,7 +901,7 @@ public:
       if (m_listRes || m_listSnd)
          exit(0);
 
-#if (defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV)))
+#if (defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__)
       const string launchTable = g_pvp->m_settings.LoadValueWithDefault(Settings::Standalone, "LaunchTable"s, "assets/exampleTable.vpx"s);
       m_szTableFileName = m_vpinball.m_szMyPrefPath + launchTable;
       m_file = true;
