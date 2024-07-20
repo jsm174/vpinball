@@ -5,6 +5,9 @@
 #include <SDL2/SDL_image.h>
 #endif
 
+#include "standalone/libvpinball.h"
+#include <SDL2/SDL_syswm.h>
+
 namespace VPX
 {
 
@@ -170,7 +173,12 @@ Window::Window(const string& title, const string& settingsId, const int display,
       #endif
 
       m_nwnd = SDL_CreateWindow(title.c_str(), wnd_x, wnd_y, m_width, m_height, wnd_flags);
-      
+
+      SDL_SysWMinfo wmInfo;
+      SDL_VERSION(&wmInfo.version);
+      SDL_GetWindowWMInfo(m_nwnd, &wmInfo);
+      VPinballSetState(VPINBALL_STATE_TABLE_WINDOW_CREATED, (void*)wmInfo.info.uikit.window);
+
       SDL_DisplayMode mode;
       if (m_fullscreen)
       {

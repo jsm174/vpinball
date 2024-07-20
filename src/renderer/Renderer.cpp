@@ -12,6 +12,10 @@
 #include "renderer/RenderDevice.h"
 #include "renderer/VRDevice.h"
 
+#ifdef __STANDALONE__
+#include "standalone/libvpinball.h"
+#endif
+
 ////////////////////////////////////////////////////////////////////////////////
 
 Renderer::Renderer(PinTable* const table, VPX::Window* wnd, VideoSyncMode& syncMode, const StereoMode stereo3D)
@@ -1329,7 +1333,11 @@ void Renderer::RenderStaticPrepass()
       span* tagSpan = new span(series, 1, _T("PreRender"));
       #endif
 
-      g_pplayer->m_progressDialog.SetProgress("Prerendering Static Parts..."s, 70 + (((30 * (n_iter + 1 - iter)) / (n_iter + 1))));
+      int progress = 70 + (((30 * (n_iter + 1 - iter)) / (n_iter + 1)));
+      g_pplayer->m_progressDialog.SetProgress("Prerendering Static Parts..."s, progress);
+#ifdef __STANDALONE__
+      VPinballSetState(VPINBALL_STATE_PRERENDERING_STATIC_PARTS, &progress);
+#endif
       m_renderDevice->m_curDrawnTriangles = 0;
 
       float u1 = xyLDBNbnot[iter*2  ];  //      (float)iter*(float)(1.0                                /STATIC_PRERENDER_ITERATIONS);

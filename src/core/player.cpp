@@ -13,6 +13,7 @@
 
 #ifdef __STANDALONE__
 #include "standalone/Standalone.h"
+#include "standalone/libvpinball.h"
 #endif
 
 #include <ctime>
@@ -768,14 +769,16 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
    m_progressDialog.SetProgress("Starting..."s, 100);
    m_ptable->FireVoidEvent(DISPID_GameEvents_UnPaused);
 
-#ifdef __STANDALONE__
-   if (g_pvp->m_settings.LoadValueWithDefault(Settings::Standalone, "WebServer"s, false))
-      g_pvp->m_webServer.Start();
-#endif
+//#ifdef __STANDALONE__
+//   if (g_pvp->m_settings.LoadValueWithDefault(Settings::Standalone, "WebServer"s, false))
+//      g_pvp->m_webServer.Start();
+//#endif
 
    PLOGI << "Startup done"; // For profiling
 
 #ifdef __STANDALONE__
+   VPinballSetState(VPINBALL_STATE_STARTUP_DONE, NULL);
+
    g_pStandalone->PostStartup();
 #endif
 
@@ -1607,6 +1610,8 @@ void Player::LockForegroundWindow(const bool enable)
 
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
+std::function<void()> g_gameLoop = nullptr;
+
 void Player::GameLoop(std::function<void()> ProcessOSMessages)
 {
    assert(m_renderer->m_stereo3D != STEREO_VR || (m_videoSyncMode == VideoSyncMode::VSM_NONE && m_maxFramerate > 1000)); // Stereo must be run unthrottled to let OpenVR set the frame pace according to the head set
@@ -1628,8 +1633,15 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
    };
 
    #ifdef ENABLE_BGFX
-   MultithreadedGameLoop(sync);
-   
+   bool firstRun = true;
+   g_gameLoop = [this, &firstRun, sync]() {
+       if (firstRun) {
+          // Flush any pending frame
+          m_renderer->m_renderDevice->m_frameReadySem.post();
+          firstRun = true;
+       }
+       MultithreadedGameLoop(sync);
+   };
    #else
    if (m_videoSyncMode == VideoSyncMode::VSM_FRAME_PACING)
       FramePacingGameLoop(sync);
@@ -1641,9 +1653,8 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
 void Player::MultithreadedGameLoop(std::function<void()> sync)
 {
 #ifdef ENABLE_BGFX
-   // Flush any pending frame
-   m_renderer->m_renderDevice->m_frameReadySem.post();
-   while (GetCloseState() == CS_PLAYING || GetCloseState() == CS_USER_INPUT)
+   //while (GetCloseState() == CS_PLAYING || GetCloseState() == CS_USER_INPUT)
+   if (GetCloseState() == CS_PLAYING || GetCloseState() == CS_USER_INPUT)
    {
       sync();
       if (!m_renderer->m_renderDevice->m_framePending && m_renderer->m_renderDevice->m_frameMutex.try_lock())

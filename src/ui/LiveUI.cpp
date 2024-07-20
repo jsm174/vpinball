@@ -3937,21 +3937,21 @@ void LiveUI::UpdateMainSplashModal()
          ImGui::GetIO().MousePos.y = 0;
       }
 #endif
-      bool webServerRunning = g_pvp->m_webServer.IsRunning();
-      if (ImGui::Button(webServerRunning ? "Disable Web Server" : "Enable Web Server", size))
-      {
-         g_pvp->m_settings.SaveValue(Settings::Standalone, "WebServer"s, !webServerRunning);
-
-         if (webServerRunning)
-            g_pvp->m_webServer.Stop();
-         else
-            g_pvp->m_webServer.Start();
-
-#if ((defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS)) || defined(__ANDROID__))
-         ImGui::GetIO().MousePos.x = 0;
-         ImGui::GetIO().MousePos.y = 0;
-#endif
-      }
+//      bool webServerRunning = g_pvp->m_webServer.IsRunning();
+//      if (ImGui::Button(webServerRunning ? "Disable Web Server" : "Enable Web Server", size))
+//      {
+//         g_pvp->m_settings.SaveValue(Settings::Standalone, "WebServer"s, !webServerRunning);
+//
+//         if (webServerRunning)
+//            g_pvp->m_webServer.Stop();
+//         else
+//            g_pvp->m_webServer.Start();
+//
+//#if ((defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS)) || defined(__ANDROID__))
+//         ImGui::GetIO().MousePos.x = 0;
+//         ImGui::GetIO().MousePos.y = 0;
+//#endif
+//      }
 
       if (ImGui::Button("Quit", size) || (enableKeyboardShortcuts && ImGui::IsKeyPressed(dikToImGuiKeys[m_player->m_rgKeys[eExitGame]])))
       {
@@ -3960,7 +3960,7 @@ void LiveUI::UpdateMainSplashModal()
          m_table->QuitPlayer(Player::CS_CLOSE_APP);
       }
 
-#if (defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__)
+#if (defined(__APPLE__) && ((defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__)
       ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
       ImGui::Separator();
       ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
@@ -3985,15 +3985,15 @@ void LiveUI::UpdateMainSplashModal()
       ImGui::PopItemWidth();
 #endif
 
-      string url = g_pvp->m_webServer.GetUrl();
-      if (!url.empty())
-      {
-         ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
-         ImGui::Separator();
-         ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
-         ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(url.c_str()).x) * 0.5f));
-         ImGui::Text("%s", url.c_str());
-      }
+      //string url = g_pvp->m_webServer.GetUrl();
+      //if (!url.empty())
+      //{
+      //   ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
+      //   ImGui::Separator();
+      //   ImGui::Dummy(ImVec2(0.f, m_dpi * 4.f));
+      //   ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ((ImGui::GetContentRegionAvail().x - ImGui::CalcTextSize(url.c_str()).x) * 0.5f));
+      //   ImGui::Text("%s", url.c_str());
+      //}
 
 #endif
       const ImVec2 pos = ImGui::GetWindowPos();

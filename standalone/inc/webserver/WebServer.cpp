@@ -5,6 +5,8 @@
 
 #include <ifaddrs.h>
 
+#include "standalone/libvpinball.h"
+
 void WebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data, void *fn_data)
 {
    WebServer* webServer = (WebServer*)fn_data;
@@ -354,6 +356,8 @@ void WebServer::Start()
       else
          m_url.clear();
 
+      VPinballSetState(VPINBALL_STATE_WEBSERVER_STARTED, (void*)m_url.c_str());
+
       m_pThread = new std::thread([this]() {
          while (m_run)
             mg_mgr_poll(&m_mgr, 1000);
@@ -362,10 +366,14 @@ void WebServer::Start()
          m_url.clear();
 
          PLOGI.printf("Web server closed");
+
+         VPinballSetState(VPINBALL_STATE_WEBSERVER_STOPPED, NULL);
       });
    }
    else {
       PLOGE.printf("Unable to start web server");
+
+      VPinballSetState(VPINBALL_STATE_WEBSERVER_STOPPED, NULL);
    }
 }
 

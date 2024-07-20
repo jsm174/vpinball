@@ -266,7 +266,7 @@ public:
    HBITMAP m_hbmInPlayMode;
 
 #ifdef __STANDALONE__
-   WebServer m_webServer;
+   //WebServer m_webServer;
 #endif
 
 protected:

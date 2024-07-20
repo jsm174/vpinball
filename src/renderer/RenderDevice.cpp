@@ -45,6 +45,10 @@
 #include "parts/Material.h"
 #endif
 
+#ifdef __STANDALONE__
+#include <standalone/libvpinball.h>
+#endif
+
 #if defined(ENABLE_BGFX)
 struct tBGFXCallback : public bgfx::CallbackI
 {
@@ -448,7 +452,7 @@ RenderDevice::RenderDevice(VPX::Window* const wnd, const bool isVR, const int nE
    #elif BX_PLATFORM_OSX
    init.platformData.nwh = SDL_RenderGetMetalLayer(SDL_CreateRenderer(m_outputWnd[0]->GetCore(), -1, SDL_RENDERER_PRESENTVSYNC));
    #elif BX_PLATFORM_IOS
-   init.platformData.nwh = SDL_RenderGetMetalLayer(SDL_CreateRenderer(m_outputWnd[0]->GetCore(), -1, SDL_RENDERER_PRESENTVSYNC));
+   init.platformData.nwh = g_pMetalLayer;
    #elif BX_PLATFORM_ANDROID
    init.platformData.nwh = wmInfo.info.android.window;
    #elif BX_PLATFORM_WINDOWS
@@ -633,6 +637,11 @@ RenderDevice::RenderDevice(VPX::Window* const wnd, const bool isVR, const int nE
    }
 
    SetRenderState(RenderState::ZFUNC, RenderState::Z_LESSEQUAL);
+
+   SDL_SysWMinfo wmInfo;
+   SDL_VERSION(&wmInfo.version);
+   SDL_GetWindowWMInfo(m_outputWnd[0]->GetCore(), &wmInfo);
+   VPinballSetState(VPINBALL_STATE_TABLE_WINDOW_CREATED, (void*)wmInfo.info.uikit.window);
 
 #elif defined(ENABLE_DX9)
     ///////////////////////////////////

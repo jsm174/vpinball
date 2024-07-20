@@ -28,6 +28,7 @@ static serial Serial;
 #ifdef __STANDALONE__
 #include "standalone/Standalone.h"
 #include "mINI/ini.h"
+#include "standalone/libvpinball.h"
 #endif
 
 #define HASHLENGTH 16
@@ -2626,6 +2627,8 @@ void PinTable::Play(const int playMode)
       auto processWindowMessages = []() {};
       #endif
       g_pplayer->GameLoop(processWindowMessages);
+      return;
+
       delete g_pplayer;
       g_pplayer = nullptr;
       if (initError)
@@ -3952,6 +3955,9 @@ HRESULT PinTable::LoadGameFromFilename(const string& szFileName)
                cloadeditems++;
 #ifndef __STANDALONE__
                ::SendMessage(hwndProgressBar, PBM_SETPOS, cloadeditems, 0);
+#else
+               int progress = (cloadeditems * 100) / ctotalitems;
+               VPinballSetState(VPINBALL_STATE_LOADING_ITEMS, &progress);
 #endif
             }
 
@@ -3972,6 +3978,9 @@ HRESULT PinTable::LoadGameFromFilename(const string& szFileName)
                cloadeditems++;
 #ifndef __STANDALONE__
                ::SendMessage(hwndProgressBar, PBM_SETPOS, cloadeditems, 0);
+#else
+               int progress = (cloadeditems * 100) / ctotalitems;
+               VPinballSetState(VPINBALL_STATE_LOADING_SOUNDS, &progress);
 #endif
             }
 
@@ -4001,6 +4010,10 @@ HRESULT PinTable::LoadGameFromFilename(const string& szFileName)
                      return hr;
                   });
                   cloadeditems++;
+#ifdef __STANDALONE__
+                  int progress = (cloadeditems * 100) / ctotalitems;
+                  VPinballSetState(VPINBALL_STATE_LOADING_IMAGES, &progress);
+#endif
                }
                pool.wait_until_nothing_in_flight();
             }
@@ -4081,6 +4094,9 @@ HRESULT PinTable::LoadGameFromFilename(const string& szFileName)
                cloadeditems++;
 #ifndef __STANDALONE__
                ::SendMessage(hwndProgressBar, PBM_SETPOS, cloadeditems, 0);
+#else
+               int progress = (cloadeditems * 100) / ctotalitems;
+               VPinballSetState(VPINBALL_STATE_LOADING_FONTS, &progress);
 #endif
             }
 
@@ -4106,6 +4122,9 @@ HRESULT PinTable::LoadGameFromFilename(const string& szFileName)
                cloadeditems++;
 #ifndef __STANDALONE__
                ::SendMessage(hwndProgressBar, PBM_SETPOS, cloadeditems, 0);
+#else
+               int progress = (cloadeditems * 100) / ctotalitems;
+               VPinballSetState(VPINBALL_STATE_LOADING_COLLECTIONS, &progress);
 #endif
             }
 
