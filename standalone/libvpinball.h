@@ -77,3 +77,5 @@ VPINBALLAPI VPINBALL_STATUS VPinballExtract(const char* pSource);
 VPINBALLAPI VPINBALL_STATUS VPinballCompress(const char* pSource, const char* pDestination);
 VPINBALLAPI VPINBALL_STATUS VPinballPlay(const char* pTablePath);
 VPINBALLAPI VPINBALL_STATUS VPinballStop();
+VPINBALLAPI void VPinballSetPov1(float pov);
+

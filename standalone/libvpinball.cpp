@@ -67,6 +67,14 @@ VPINBALLAPI void VPinballInit()
    VPinballResetWebServer();
 }
 
+VPINBALLAPI void VPinballSetPov1(float pov)
+{
+   ViewSetupID vsId = g_pplayer->m_ptable->m_BG_current_set;
+   ViewSetup &viewSetup = g_pplayer->m_ptable->mViewSetups[vsId];
+
+   viewSetup.mViewVOfs = pov;
+}
+
 VPINBALLAPI void VPinballResetWebServer()
 {
    delete g_pWebServer;
