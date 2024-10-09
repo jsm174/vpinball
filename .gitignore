@@ -18,6 +18,7 @@ local.properties
 standalone/idl/parser/bin
 standalone/macos-arm64/external
 standalone/macos-x64/external
+standalone/ios/VPinball/frameworks
 standalone/ios-arm64/external
 standalone/ios-arm64/frameworks
 standalone/ios-arm64/ios-project/assets
