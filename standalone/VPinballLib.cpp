@@ -5,13 +5,31 @@
 #include "VPinballLib.h"
 #include "standalone/inc/webserver/WebServer.h"
 
-#include <SDL3/SDL.h>
-#include <SDL3/SDL_main.h>
-#include <SDL3/SDL_system.h>
-
 #include "miniz/miniz.h"
 
 #include <filesystem>
+
+#ifdef __ANDROID__
+
+#define SDL_MAIN_USE_CALLBACKS
+#include <SDL3/SDL_main.h>
+
+SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv) {
+   return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate) {
+   return SDL_APP_CONTINUE;
+
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
+   return SDL_APP_CONTINUE;
+}
+
+void SDL_AppQuit(void *appstate, SDL_AppResult result) {
+}
+#endif
 
 namespace VPinballLib {
 
@@ -39,10 +57,14 @@ VPinball::VPinball()
    EditableRegistry::RegisterEditable<HitTarget>();
 }
 
+
 void VPinball::Init(std::function<void*(Event, void*)> callback)
 {
    SDL_SetMainReady();
+
+#ifdef __APPLE__
    SDL_SetiOSEventPump(true);
+#endif
 
    SDL_InitSubSystem(SDL_INIT_VIDEO);
    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
@@ -299,7 +321,10 @@ VPinballStatus VPinball::Play()
       return VPinballStatus::Failure;
    }
 
+#ifdef __APPLE__
    SDL_SetiOSAnimationCallback(g_pplayer->m_playfieldWnd->GetCore(), 1, &VPinball::GameLoop, nullptr);
+#endif
+
    return VPinballStatus::Success;
 }
 

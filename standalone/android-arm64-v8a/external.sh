@@ -3,7 +3,7 @@
 set -e
 
 FREEIMAGE_VERSION=3.18.0
-SDL_VERSION=3.1.3
+SDL_SHA=679dd4b18127cdde882c0c7967ca18cb25df0366
 SDL_IMAGE_SHA=a010117fee88255a32492ae9a43e93a213d608ec
 SDL_TTF_SHA=b61b50ea756576382cc1ccf12491f7ebeab6eed1
 PINMAME_SHA=65cdbf58bc7be6ef414ea273d1bb8d4cb42471c8
@@ -24,7 +24,7 @@ fi
 
 echo "Building external libraries..."
 echo "  FREEIMAGE_VERSION: ${FREEIMAGE_VERSION}"
-echo "  SDL_VERSION: ${SDL_VERSION}"
+echo "  SDL_SHA: ${SDL_SHA}"
 echo "  SDL_IMAGE_SHA: ${SDL_IMAGE_SHA}"
 echo "  SDL_TTF_SHA: ${SDL_TTF_SHA}"
 echo "  PINMAME_SHA: ${PINMAME_SHA}"
@@ -102,12 +102,12 @@ cp -a ../${CACHE_DIR}/${CACHE_NAME}/lib/*.so ../external/lib
 # build SDL3, SDL_image, SDL_ttf and copy to external
 #
 
-CACHE_NAME="SDL-${SDL_VERSION}-${SDL_IMAGE_SHA}-${SDL_TTF_SHA}_002"
+CACHE_NAME="SDL-${SDL_SHA}-${SDL_IMAGE_SHA}-${SDL_TTF_SHA}_002"
 
 if [ ! -f "../${CACHE_DIR}/${CACHE_NAME}.cache" ]; then
-   curl -sL https://github.com/libsdl-org/SDL/releases/download/preview-${SDL_VERSION}/SDL3-${SDL_VERSION}.tar.xz -o SDL3-${SDL_VERSION}.tar.xz
-   tar -xf SDL3-3.1.3.tar.xz
-   cd SDL3-3.1.3
+   curl -sL https://github.com/libsdl-org/SDL/archive/${SDL_SHA}.zip -o SDL-${SDL_SHA}.zip
+   unzip SDL-${SDL_SHA}.zip
+   cd SDL-${SDL_SHA}
    cmake \
       -DSDL_SHARED=ON \
       -DSDL_STATIC=OFF \
@@ -139,7 +139,7 @@ if [ ! -f "../${CACHE_DIR}/${CACHE_NAME}.cache" ]; then
       -DSDLIMAGE_VENDORED=ON \
       -DSDLIMAGE_AVIF=OFF \
       -DSDLIMAGE_WEBP=OFF \
-      -DSDL3_DIR=../SDL3-${SDL_VERSION}/build \
+      -DSDL3_DIR=../SDL-${SDL_SHA}/build \
       -DCMAKE_SYSTEM_NAME=Android \
       -DCMAKE_SYSTEM_VERSION=30 \
       -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
@@ -161,7 +161,7 @@ if [ ! -f "../${CACHE_DIR}/${CACHE_NAME}.cache" ]; then
       -DSDLTTF_SAMPLES=OFF \
       -DSDLTTF_VENDORED=ON \
       -DSDLTTF_HARFBUZZ=ON \
-      -DSDL3_DIR=../SDL3-${SDL_VERSION}/build \
+      -DSDL3_DIR=../SDL-${SDL_SHA}/build \
       -DCMAKE_SYSTEM_NAME=Android \
       -DCMAKE_SYSTEM_VERSION=30 \
       -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \

@@ -3,7 +3,6 @@
 #include "core/stdafx.h"
 
 #ifdef ENABLE_SDL_VIDEO
-  #include <SDL3/SDL_main.h>
   #include "imgui/imgui_impl_sdl3.h"
 #else
   #include "imgui/imgui_impl_win32.h"
@@ -1795,14 +1794,17 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
    #ifdef ENABLE_BGFX
    // Flush any pending frame
    m_renderer->m_renderDevice->m_frameReadySem.post();
-
-#ifndef __LIBVPINBALL__
-   MultithreadedGameLoop(sync);
-#else
-   auto gameLoop = [this, sync]() {
+#ifdef __LIBVPINBALL__
+   #ifdef __ANDROID__
       MultithreadedGameLoop(sync);
-   };
-   VPinballLib::VPinball::GetInstance().SetGameLoop(gameLoop);
+   #else
+      auto gameLoop = [this, sync]() {
+         MultithreadedGameLoop(sync);
+      };
+      VPinballLib::VPinball::GetInstance().SetGameLoop(gameLoop);
+   #endif
+#else
+   MultithreadedGameLoop(sync);
 #endif
    #else
    if (m_videoSyncMode == VideoSyncMode::VSM_FRAME_PACING)
@@ -1835,7 +1837,9 @@ void Player::MultithreadedGameLoop(std::function<void()> sync)
       // usleep(100);
       YieldProcessor();
 #ifdef __LIBVPINBALL__
+#ifndef __ANDROID__
       break;
+#endif
 #endif
    }
 #endif
