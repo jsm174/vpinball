@@ -42,7 +42,10 @@ VPinball::VPinball()
 void VPinball::Init(std::function<void*(Event, void*)> callback)
 {
    SDL_SetMainReady();
+
+#ifdef __APPLE__
    SDL_SetiOSEventPump(true);
+#endif
 
    SDL_InitSubSystem(SDL_INIT_VIDEO);
    SDL_InitSubSystem(SDL_INIT_JOYSTICK);
@@ -299,7 +302,10 @@ VPinballStatus VPinball::Play()
       return VPinballStatus::Failure;
    }
 
+#ifdef __APPLE__
    SDL_SetiOSAnimationCallback(g_pplayer->m_playfieldWnd->GetCore(), 1, &VPinball::GameLoop, nullptr);
+#endif
+
    return VPinballStatus::Success;
 }
 
