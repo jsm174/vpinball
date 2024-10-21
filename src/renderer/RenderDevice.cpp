@@ -317,6 +317,11 @@ void RenderDevice::RenderThread(RenderDevice* rd, const bgfx::Init& init)
    const bool useVSync = init.resolution.reset & BGFX_RESET_VSYNC;
    bool vsync = useVSync;
    rd->m_frameReadySem.post();
+
+#ifdef __STANDALONE__
+   std::this_thread::sleep_for(std::chrono::milliseconds(500));
+#endif
+
    while (rd->m_renderDeviceAlive)
    {
       // wait for a frame to be prepared by the logic thread
@@ -452,6 +457,7 @@ RenderDevice::RenderDevice(VPX::Window* const wnd, const bool isVR, const int nE
    //init.type = bgfx::RendererType::Direct3D11; // Present with VSYNC & outputs on multiple displays will sequentially sync on each display causing massive framerate drop
    //init.type = bgfx::RendererType::Direct3D12; // Flasher & Ball rendering fails on a call to CreateGraphicsPipelineState, rendering artefacts
 
+   init.type = bgfx::RendererType::OpenGLES;
    init.callback = &bgfxCallback;
 
    SDL_SysWMinfo wmInfo;
