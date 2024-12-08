@@ -59,10 +59,7 @@ jobs:
             platform: ios-simulator
             arch: arm64
             config: Release
-          - os: ubuntu-24.04
-            platform: android
-            arch: arm64-v8a
-            config: Release
+
     steps:
       - if: (matrix.os == 'macos-15')
         name: Add autoconf and automake (mac runner)
@@ -168,4 +165,69 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: VPinballX_${{ matrix.type }}-${{ needs.version.outputs.tag }}-${{ matrix.config }}-ios-${{ matrix.arch }}
+          path: tmp
+
+  build-android:
+    name: Build VPinballX_${{ matrix.type }}-android-${{ matrix.arch }}-${{ matrix.config }}
+    runs-on: ubuntu-24.04
+    needs: [ version ]
+    strategy:
+      fail-fast: false
+      matrix:
+        type: [ BGFX ]
+        config: [ Release ]  
+        arch: [ arm64-v8a ]
+    steps:
+      - run: |
+          sudo apt install bison
+      - uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+      - uses: actions/checkout@v4
+      - name: Calculate timestamp
+        run: |
+          echo "TIMESTAMP=$(date +%s)" >> $GITHUB_ENV
+      - uses: actions/cache/restore@v4
+        with:
+          path: standalone/android-${{ matrix.arch }}/external/cache
+          key: ${{ matrix.type }}-android-${{ matrix.arch }}-${{ matrix.config }}-external-${{ env.TIMESTAMP }}
+          restore-keys: |
+             ${{ matrix.type }}-android-${{ matrix.arch }}-${{ matrix.config }}-external-
+      - name: Build Deps
+        run: |
+          cd standalone/android-${{ matrix.arch }}
+          BUILD_TYPE=${{ matrix.config }} ./external.sh
+      - uses: actions/cache/save@v4
+        if: ${{ !cancelled() }}
+        with:
+          path: standalone/android-${{ matrix.arch }}/external/cache
+          key: ${{ matrix.type }}-android-${{ matrix.arch }}-${{ matrix.config }}-external-${{ env.TIMESTAMP }}
+      - name: Build VPinball
+        run: |
+          perl -i -pe"s/9999/${{ needs.version.outputs.revision }}/g" src/core/git_version.h
+          perl -i -pe"s/unknown/${{ needs.version.outputs.sha7 }}/g" src/core/git_version.h
+          NUM_PROCS=$(nproc)
+          cp standalone/cmake/CMakeLists_bgfx_lib.txt CMakeLists.txt
+          cmake \
+                -DPLATFORM=android \
+                -DARCH=${{ matrix.arch }} \
+                -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
+                -B build/android
+          cmake --build build/android -- -j${NUM_PROCS}
+      - name: Build Android App
+        env:
+          ANDROID_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          cd standalone/android
+          echo "${{ secrets.ANDROID_KEYSTORE }}" | base64 --decode > app/vpinball.jks
+          ./gradlew assembleRelease -PversionName="${{ needs.version.outputs.version_full }}"
+      - run: |
+          mkdir tmp
+          cp standalone/android/app/build/outputs/apk/release/*.apk tmp
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VPinballX_${{ matrix.type }}-${{ needs.version.outputs.tag }}-${{ matrix.config }}-android-${{ matrix.arch }}
           path: tmp
