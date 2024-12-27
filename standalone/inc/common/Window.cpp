@@ -25,7 +25,29 @@ Window::Window(const string& szTitle, int x, int y, int w, int h, int z, int rot
 
 bool Window::Init()
 {
-   UINT32 flags = SDL_WINDOW_UTILITY | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN | SDL_WINDOW_UTILITY | SDL_WINDOW_ALWAYS_ON_TOP;
+   m_pRenderOutput = new VPX::RenderOutput(m_szTitle, g_pplayer->m_ptable->m_settings, Settings::Standalone, m_szTitle);
+
+   if (m_pRenderOutput) {    
+      if (m_pRenderOutput->GetMode() == VPX::RenderOutput::OM_WINDOW)
+         g_pplayer->m_renderer->m_renderDevice->AddWindow(m_pRenderOutput->GetWindow());
+
+      m_pRenderer = SDL_GetRenderer(g_pplayer->m_playfieldWnd->GetCore());
+
+      const char* pRendererName = SDL_GetRendererName(m_pRenderer);
+
+      m_init = true;
+
+      PLOGE.printf("Window initialized: title=%s, renderer=%s", m_szTitle.c_str(), pRendererName);
+
+      return true;
+   }
+
+   PLOGE.printf("Failed to initialize window: title=%s", m_szTitle.c_str());
+
+   return false;
+
+
+   /*UINT32 flags = SDL_WINDOW_UTILITY | SDL_WINDOW_BORDERLESS | SDL_WINDOW_HIDDEN | SDL_WINDOW_UTILITY | SDL_WINDOW_ALWAYS_ON_TOP;
 
    if (g_pplayer->m_ptable->m_settings.LoadValueWithDefault(Settings::Standalone, "HighDPI"s, true))
       flags |= SDL_WINDOW_HIGH_PIXEL_DENSITY;
@@ -71,7 +93,7 @@ bool Window::Init()
 
    PLOGE.printf("Failed to initialize window: title=%s", m_szTitle.c_str());
 
-   return false;
+   return false;*/
 }
 
 Window::~Window()

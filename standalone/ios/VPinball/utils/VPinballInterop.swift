@@ -472,6 +472,7 @@ struct VPinballProgressData {
 
 struct VPinballWindowCreatedData {
     var window: Unmanaged<UIWindow>?
+    var metalLayer: Unmanaged<CAMetalLayer>?
 }
 
 struct VPinballScriptErrorData {

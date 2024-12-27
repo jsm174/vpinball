@@ -61,9 +61,9 @@ class VPinballManager {
 
                 if let window = windowCreatedData.window?.takeUnretainedValue() {
                     if let viewController = window.rootViewController {
-                        let metalLayer = CAMetalLayer()
-                        metalLayer.frame = viewController.view.layer.frame
-                        viewController.view.layer.addSublayer(metalLayer)
+                        //let metalLayer = CAMetalLayer()
+                        //metalLayer.frame = viewController.view.layer.frame
+                        //viewController.view.layer.addSublayer(metalLayer)
 
                         let overlayView = OverlayView()
                             .environmentObject(vpinballViewModel)
@@ -78,7 +78,7 @@ class VPinballManager {
 
                         vpinballManager.sdlUIWindow = window
                         vpinballManager.sdlViewController = viewController
-                        vpinballManager.metalLayer = metalLayer
+                        vpinballManager.metalLayer = windowCreatedData.metalLayer?.takeUnretainedValue()
                     }
 
                     window.isHidden = true

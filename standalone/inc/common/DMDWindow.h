@@ -18,12 +18,10 @@ public:
    void Render() override;
 
 private:
-   SDL_FRect m_destRect;
-   int m_angle;
    DMDUtil::DMD* m_pDMD;
    DMDUtil::RGB24DMD* m_pRGB24DMD;
-   int m_pitch;
-   SDL_Texture* m_pTexture;
+   int m_size;
+   BaseTexture* m_pTexture;
    bool m_attached;
 };
 

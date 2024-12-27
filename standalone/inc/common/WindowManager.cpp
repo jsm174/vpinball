@@ -5,7 +5,7 @@
 
 namespace VP {
 
-static SDL_HitTestResult WindowHitTest(SDL_Window* pWindow, const SDL_Point* pArea, void* pData)
+/*static SDL_HitTestResult WindowHitTest(SDL_Window* pWindow, const SDL_Point* pArea, void* pData)
 {
    int width, height;
    SDL_GetWindowSize(pWindow, &width, &height);
@@ -14,7 +14,7 @@ static SDL_HitTestResult WindowHitTest(SDL_Window* pWindow, const SDL_Point* pAr
       return SDL_HITTEST_DRAGGABLE;
 
    return SDL_HITTEST_NORMAL;
-}
+}*/
 
 WindowManager* WindowManager::m_pInstance = NULL;
 
@@ -73,8 +73,8 @@ void WindowManager::RegisterWindow(Window* pWindow)
 
    if (m_startup) {
       if (pWindow->Init()) {
-         SDL_Window* pSDLWindow = SDL_GetWindowFromID(pWindow->GetId());
-         SDL_SetWindowHitTest(pSDLWindow, WindowHitTest, NULL);
+         //SDL_Window* pSDLWindow = SDL_GetWindowFromID(pWindow->GetId());
+         //SDL_SetWindowHitTest(pSDLWindow, WindowHitTest, NULL);
       }
 
 #ifdef ENABLE_OPENGL
@@ -108,8 +108,8 @@ void WindowManager::Start()
       std::lock_guard<std::mutex> guard(m_mutex);
       for (Window* pWindow : m_windows) {
          if (pWindow->Init()) {
-            SDL_Window* pSDLWindow = SDL_GetWindowFromID(pWindow->GetId());
-            SDL_SetWindowHitTest(pSDLWindow, WindowHitTest, NULL);
+            //SDL_Window* pSDLWindow = SDL_GetWindowFromID(pWindow->GetId());
+            //SDL_SetWindowHitTest(pSDLWindow, WindowHitTest, NULL);
          }
       }
    }
@@ -192,7 +192,12 @@ void WindowManager::Render()
    if (!m_startup || !g_pplayer)
       return;
 
-   Uint64 startTime = SDL_GetTicks();
+   std::lock_guard<std::mutex> guard(m_mutex);
+      for (Window* pWindow: m_windows)
+         pWindow->OnRender();
+
+
+/*   Uint64 startTime = SDL_GetTicks();
 
    if (startTime - m_lastRenderTime < (1000 / 60))
       return;
@@ -203,11 +208,13 @@ void WindowManager::Render()
          pWindow->OnRender();
    }
 
+*/
+
 #ifdef ENABLE_OPENGL
    SDL_GL_MakeCurrent(g_pplayer->m_playfieldWnd->GetCore(), g_pplayer->m_renderer->m_renderDevice->m_sdl_context);
 #endif
 
-   m_lastRenderTime = startTime;
+   //m_lastRenderTime = startTime;
 }
 
 }

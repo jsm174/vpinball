@@ -10,6 +10,7 @@ FormWindow::FormWindow(Form* pForm, const string& szTitle, int x, int y, int w, 
    m_angle = 0;
    m_pForm = pForm;
    m_pGraphics = nullptr;
+   m_pSDLTexture = nullptr;
    m_pTexture = nullptr;
 }
 
@@ -17,21 +18,6 @@ bool FormWindow::Init()
 {
    if (!VP::Window::Init())
       return false;
-
-   int rotation = GetRotation();
-
-   if (rotation == 0 || rotation == 2) {
-      SDL_SetRenderLogicalPresentation(m_pRenderer, GetWidth(), GetHeight(), SDL_LOGICAL_PRESENTATION_STRETCH);
-      m_angle = (rotation == 0) ? 0 : 180;
-   }
-   else if (rotation == 1 || rotation == 3) {
-      SDL_SetRenderLogicalPresentation(m_pRenderer, GetHeight(), GetWidth(), SDL_LOGICAL_PRESENTATION_STRETCH);
-      m_angle = (rotation == 1) ? 90 : 270;
-      float xRotated = GetHeight() - m_destRect.y - (m_destRect.w + m_destRect.h) / 2.0f;
-      float yRotated = m_destRect.x + (m_destRect.w - m_destRect.h) / 2.0f;
-      m_destRect.x = xRotated;
-      m_destRect.y = yRotated;
-   }
 
    m_pGraphics = new VP::RendererGraphics(m_pRenderer);
    m_pForm->SetGraphics(m_pGraphics);
@@ -43,26 +29,53 @@ FormWindow::~FormWindow()
 {
    delete m_pGraphics;
 
+   if (m_pSDLTexture)
+      SDL_DestroyTexture(m_pSDLTexture);
+
    if (m_pTexture)
-      SDL_DestroyTexture(m_pTexture);
+      delete m_pTexture;
 }
 
 void FormWindow::Render()
 {
+   if (!m_pSDLTexture) {
+      m_pSDLTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_TARGET, GetWidth(), GetHeight());
+      if (!m_pSDLTexture)
+         return;
+   }
+
    if (!m_pTexture) {
-      m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, GetWidth(), GetHeight());
+      m_pTexture = new BaseTexture(GetWidth(), GetHeight(), BaseTexture::RGBA);
       if (!m_pTexture)
          return;
    }
 
-   SDL_SetRenderTarget(m_pRenderer, m_pTexture);
+   SDL_SetRenderTarget(m_pRenderer, m_pSDLTexture);
+
    bool update = m_pForm->Render();
+   if (update) {
+      SDL_Surface* pSurface = SDL_RenderReadPixels(m_pRenderer, nullptr);
+      if (pSurface) {
+         memcpy(m_pTexture->data(), pSurface->pixels, pSurface->pitch * pSurface->h);
+         g_pplayer->m_renderer->m_renderDevice->m_texMan.SetDirty(m_pTexture);
+         SDL_DestroySurface(pSurface);
+      }
+   }
+
    SDL_SetRenderTarget(m_pRenderer, NULL);
 
-   if (update) {
-      SDL_SetRenderDrawColor(m_pRenderer, 0, 0, 0, 255);
-      SDL_RenderClear(m_pRenderer);
-      SDL_RenderTextureRotated(m_pRenderer, m_pTexture, NULL, &m_destRect, m_angle, NULL, SDL_FLIP_NONE);
-      SDL_RenderPresent(m_pRenderer);
+   if (m_pRenderOutput->GetMode() == VPX::RenderOutput::OM_WINDOW) {
+      RenderTarget *scenePass = g_pplayer->m_renderer->m_renderDevice->GetCurrentRenderTarget();
+      m_pRenderOutput->GetWindow()->Show();
+      g_pplayer->m_renderer->RenderSprite(m_pTexture, m_pRenderOutput->GetWindow()->GetBackBuffer(),
+         0, 0, m_pRenderOutput->GetWindow()->GetBackBuffer()->GetWidth(), m_pRenderOutput->GetWindow()->GetBackBuffer()->GetHeight());
+      g_pplayer->m_renderer->m_renderDevice->AddRenderTargetDependency(scenePass, false);
+   }
+   else if (m_pRenderOutput->GetMode() == VPX::RenderOutput::OM_EMBEDDED) {
+      int x, y;
+      m_pRenderOutput->GetEmbeddedWindow()->GetPos(x, y);
+      g_pplayer->m_renderer->RenderSprite(m_pTexture, g_pplayer->m_playfieldWnd->GetBackBuffer(),
+         x, g_pplayer->m_playfieldWnd->GetBackBuffer()->GetHeight() - y - m_pRenderOutput->GetEmbeddedWindow()->GetHeight(),
+         m_pRenderOutput->GetEmbeddedWindow()->GetWidth(), m_pRenderOutput->GetEmbeddedWindow()->GetHeight());
    }
 }

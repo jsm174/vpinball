@@ -68,6 +68,7 @@ struct ProgressData {
 
 struct WindowCreatedData {
    void* pWindow;
+   void* pMetalLayer;
    const char* pTitle;
 };
 

@@ -13,6 +13,8 @@ public:
    Window(const string& szTitle, int x, int y, int w, int h, int z, int rotation);
    ~Window();
 
+   VPX::RenderOutput* m_pRenderOutput;
+
    virtual bool Init();
    const string& GetTitle() { return m_szTitle; }
    Uint32 GetId() { return m_id; }

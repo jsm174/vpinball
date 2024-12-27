@@ -17,4 +17,6 @@ public:
 
 private:
    PUPScreen* m_pScreen;
+   SDL_Texture* m_pSDLTexture;
+   BaseTexture* m_pTexture;
 };

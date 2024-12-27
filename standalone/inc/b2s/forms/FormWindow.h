@@ -19,5 +19,6 @@ private:
    int m_angle;
    Form* m_pForm;
    VP::RendererGraphics* m_pGraphics;
-   SDL_Texture* m_pTexture;
+   SDL_Texture* m_pSDLTexture;
+   BaseTexture* m_pTexture;
 };
