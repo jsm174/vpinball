@@ -71,7 +71,7 @@ android {
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "org.vpinball.vpinball_bgfx"
+        applicationId = "com.jsm174.vpinball_bgfx"
         minSdk = 30
         targetSdk = 35
         versionCode = versionCodeValue

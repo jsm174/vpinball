@@ -6,7 +6,7 @@ class PUPScreen;
 
 struct PUPMediaManagerPlayer
 {
-   PUPMediaPlayer player;
+   PUPMediaPlayer* pPlayer;
    string szPath;
    float volume;
    int priority;
@@ -26,14 +26,13 @@ private:
 
 public:
    PUPMediaManager(PUPScreen* pScreen);
-   ~PUPMediaManager() {};
+   ~PUPMediaManager();
 
-   void SetRenderer(SDL_Renderer* pRenderer);
    void Play(PUPPlaylist* pPlaylist, const std::string& szPlayFile, float volume, int priority, bool skipSamePriority);
    void SetBG(bool isBackground);
    void SetLoop(bool isLoop);
    void Stop();
    void Stop(int priority);
    void Stop(PUPPlaylist* pPlaylist, const string& szPlayFile);
-   void Render(const SDL_Rect& destRect);
+   void Render(SDL_Renderer* pRenderer, const SDL_Rect& destRect);
 };

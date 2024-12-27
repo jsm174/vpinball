@@ -153,5 +153,14 @@ fun TableListItemDropdownMenu(
                 onDelete()
             },
         )
+
+        HorizontalDivider()
+
+        Text(
+            text = table.uuid,
+            style = MaterialTheme.typography.labelSmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(vertical = 4.dp).padding(horizontal = 12.dp),
+        )
     }
 }

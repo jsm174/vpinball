@@ -4,15 +4,13 @@
 
 namespace VP {
 
-DMDWindow::DMDWindow(const string& szTitle, int x, int y, int w, int h, int z, int rotation)
-    : VP::Window(szTitle, x, y, w, h, z, rotation)
+DMDWindow::DMDWindow(const string& szTitle, int z, int x, int y, int w, int h)
+    : VP::Window(szTitle, z, x, y, w, h)
 {
-   m_destRect = { 0.0f, 0.0f, (float)w, (float)h };
-   m_angle = 0;
    m_pDMD = nullptr;
    m_pRGB24DMD = nullptr;
-   m_pitch = 0;
-   m_pTexture = NULL;
+   m_size = 0;
+   m_pTexture = nullptr;
    m_attached = false;
 }
 
@@ -27,21 +25,6 @@ bool DMDWindow::Init()
 {
    if (!VP::Window::Init())
       return false;
-
-   int rotation = GetRotation();
-
-   if (rotation == 0 || rotation == 2) {
-      SDL_SetRenderLogicalPresentation(m_pRenderer, GetWidth(), GetHeight(), SDL_LOGICAL_PRESENTATION_STRETCH);
-      m_angle = (rotation == 0) ? 0 : 180;
-   }
-   else if (rotation == 1 || rotation == 3) {
-      SDL_SetRenderLogicalPresentation(m_pRenderer, GetHeight(), GetWidth(), SDL_LOGICAL_PRESENTATION_STRETCH);
-      m_angle = (rotation == 1) ? 90 : 270;
-      float xRotated = GetHeight() - m_destRect.y - (m_destRect.w + m_destRect.h) / 2.0f;
-      float yRotated = m_destRect.x + (m_destRect.w - m_destRect.h) / 2.0f;
-      m_destRect.x = xRotated;
-      m_destRect.y = yRotated;
-   }
 
    return true;
 }
@@ -63,7 +46,7 @@ void DMDWindow::AttachDMD(DMDUtil::DMD* pDMD, int width, int height)
    m_pRGB24DMD = pDMD->CreateRGB24DMD(width, height);
 
    if (m_pRGB24DMD) {
-      m_pitch = m_pRGB24DMD->GetPitch();
+      m_size = m_pRGB24DMD->GetWidth() * m_pRGB24DMD->GetHeight();
       m_pDMD = pDMD;
       m_attached = true;
    }
@@ -88,8 +71,8 @@ void DMDWindow::DetachDMD()
    }
 
    if (m_pTexture) {
-      SDL_DestroyTexture(m_pTexture);
-      m_pTexture = NULL;
+      delete m_pTexture;
+      m_pTexture = nullptr;
    }
 
    m_pDMD = nullptr;
@@ -100,20 +83,37 @@ void DMDWindow::Render()
    if (!m_attached)
       return;
 
-   const UINT8* pRGB24Data = m_pRGB24DMD->GetData();
-   if (pRGB24Data) {
-      if (!m_pTexture) {
-         m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_RGB24, SDL_TEXTUREACCESS_STREAMING, m_pRGB24DMD->GetWidth(), m_pRGB24DMD->GetHeight());
-         if (!m_pTexture)
-            return;
-         SDL_SetTextureScaleMode(m_pTexture, SDL_SCALEMODE_NEAREST);
-      }
-      if (!SDL_UpdateTexture(m_pTexture, NULL, pRGB24Data, m_pitch))
+   if (!m_pTexture) {
+      if (m_pRGB24DMD)
+         m_pTexture = new BaseTexture(m_pRGB24DMD->GetWidth(), m_pRGB24DMD->GetHeight(), BaseTexture::RGBA);
+         memset(m_pTexture->data(), 0, m_pRGB24DMD->GetWidth() * m_pRGB24DMD->GetHeight() * 4);
+      if (!m_pTexture)
          return;
-      SDL_SetRenderDrawColor(m_pRenderer, 0, 0, 0, 255);
-      SDL_RenderClear(m_pRenderer);
-      SDL_RenderTextureRotated(m_pRenderer, m_pTexture, NULL, &m_destRect, m_angle, NULL, SDL_FLIP_NONE);
-      SDL_RenderPresent(m_pRenderer);
+   } 
+
+   const UINT8* pRGB24Data = m_pRGB24DMD->GetData();   
+   if (pRGB24Data) {
+      DWORD *const data = (DWORD *)m_pTexture->data();
+      for (int ofs = 0; ofs < m_size; ofs++)
+            data[ofs] = 0xFF000000 | (pRGB24Data[ofs * 3 + 2] << 16) | (pRGB24Data[ofs * 3 + 1] << 8) | pRGB24Data[ofs * 3];
+      g_pplayer->m_renderer->m_renderDevice->m_texMan.SetDirty(m_pTexture);
+   }
+
+   vec4 dmdTint = vec4(1.f, 1.f, 1.f, 1.f);
+   const int dmdProfile = g_pplayer->m_ptable->m_settings.LoadValueInt(Settings::DMD, "DefaultProfile"s);
+
+   if (m_pRenderOutput->GetMode() == VPX::RenderOutput::OM_WINDOW) {
+      RenderTarget *scenePass = g_pplayer->m_renderer->m_renderDevice->GetCurrentRenderTarget();
+      g_pplayer->m_renderer->RenderDMD(dmdProfile, dmdTint, m_pTexture, m_pWindow->GetBackBuffer(),
+         0, 0, m_pWindow->GetBackBuffer()->GetWidth(), m_pWindow->GetBackBuffer()->GetHeight());
+      g_pplayer->m_renderer->m_renderDevice->AddRenderTargetDependency(scenePass, false);
+   }
+   else if (m_pRenderOutput->GetMode() == VPX::RenderOutput::OM_EMBEDDED) {
+      int x, y;
+      m_pRenderOutput->GetEmbeddedWindow()->GetPos(x, y);
+      g_pplayer->m_renderer->RenderDMD(dmdProfile, dmdTint, m_pTexture, g_pplayer->m_playfieldWnd->GetBackBuffer(),
+         x, g_pplayer->m_playfieldWnd->GetBackBuffer()->GetHeight() - y - m_pRenderOutput->GetEmbeddedWindow()->GetHeight(),
+         m_pRenderOutput->GetEmbeddedWindow()->GetWidth(), m_pRenderOutput->GetEmbeddedWindow()->GetHeight());
    }
 }
 

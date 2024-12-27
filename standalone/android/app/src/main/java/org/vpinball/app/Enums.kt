@@ -8,7 +8,7 @@ import java.io.File
 enum class Link(val url: String) {
     DOCS("https://github.com/vpinball/vpinball/blob/10.8.1/standalone/docs/ios/README.md"),
     TROUBLESHOOTING("https://github.com/vpinball/vpinball/blob/10.8.1/standalone/docs/ios/README.md#troubleshooting"),
-    DISCORD("https://discord.com/channels/652274650524418078/1076655472846831667"),
+    DISCORD("https://discord.com/channels/652274650524418078/1323445406524248090"),
     LICENSES("https://github.com/vpinball/vpinball/blob/10.8.1/LICENSE"),
     ZEDMDOS("https://github.com/PPUC/zedmdos"),
     VPINBALL("https://github.com/vpinball/vpinball/tree/10.8.1"),

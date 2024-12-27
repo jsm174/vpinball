@@ -49,7 +49,6 @@ enum class Event {
    LoadingCollections,
    PlayerStarting,
    WindowCreated,
-   MetalLayerIOS,
    Prerendering,
    PlayerStarted, 
    Rumble,
@@ -68,6 +67,7 @@ struct ProgressData {
 
 struct WindowCreatedData {
    void* pWindow;
+   void* pData;
    const char* pTitle;
 };
 

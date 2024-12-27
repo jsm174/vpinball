@@ -92,18 +92,7 @@ void Standalone::PostStartup()
    m_pWindowManager->Start();
 }
 
-void Standalone::ProcessEvent(const SDL_Event* pEvent)
-{
-   m_pWindowManager->ProcessEvent(pEvent);
-}
-
-void Standalone::ProcessUpdates()
-{
-   m_pWindowManager->ProcessUpdates();
-}
-
 void Standalone::Render()
 {
-   if (m_pWindowManager->m_renderMode == VP::WindowManager::RenderMode::Default)
-      m_pWindowManager->Render();
+   m_pWindowManager->Render();
 }

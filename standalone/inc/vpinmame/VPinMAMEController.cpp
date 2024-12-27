@@ -214,20 +214,11 @@ VPinMAMEController::VPinMAMEController()
 
    m_pActiveDisplay = nullptr;
 
-   m_pDMDWindow = nullptr;
-
-   if (pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindow"s, true)) {
-      m_pDMDWindow = new VP::DMDWindow("PinMAME",
-         pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindowX"s, PINMAME_SETTINGS_WINDOW_X),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindowY"s, PINMAME_SETTINGS_WINDOW_Y),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindowWidth"s, PINMAME_SETTINGS_WINDOW_WIDTH),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindowHeight"s, PINMAME_SETTINGS_WINDOW_HEIGHT),
-         PINMAME_ZORDER,
-         pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWindowRotation"s, 0));
-   }
-   else {
-      PLOGI.printf("PinMAME window disabled");
-   }
+   m_pDMDWindow = new VP::DMDWindow("PinMAME", PINMAME_ZORDER,
+     pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWndX"s, PINMAME_SETTINGS_WINDOW_X),
+     pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWndY"s, PINMAME_SETTINGS_WINDOW_Y),
+     pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEWidth"s, PINMAME_SETTINGS_WINDOW_WIDTH),
+     pSettings->LoadValueWithDefault(Settings::Standalone, "PinMAMEHeight"s, PINMAME_SETTINGS_WINDOW_HEIGHT));
 
    m_pAudioPlayer = nullptr;
 

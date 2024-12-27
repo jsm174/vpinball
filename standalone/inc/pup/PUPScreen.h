@@ -102,7 +102,9 @@ public:
    vector<PUPTrigger*>* GetTriggers(const string& szTrigger);
    void SendToFront();
    void SetSize(int w, int h);
-   void Init(SDL_Renderer* pRenderer);
+   void Init(PUPWindow* pWindow);
+   SDL_Renderer* GetRenderer();
+   bool CanRender() { return GetRenderer() != NULL; }
    void Start();
    bool IsLabelInit() const { return m_labelInit; }
    void SetLabelInit() { m_labelInit = true; }
@@ -151,11 +153,11 @@ private:
    float m_volume;
    PUPCustomPos* m_pCustomPos;
    SDL_Rect m_rect;
+   PUPWindow* m_pWindow;
    vector<PUPLabel*> m_labels;
    std::map<string, PUPLabel*> m_labelMap;
    std::map<string, PUPPlaylist*> m_playlistMap;
    std::map<string, vector<PUPTrigger*>> m_triggerMap;
-   SDL_Renderer* m_pRenderer;
    PUPScreenRenderable m_background;
    PUPScreenRenderable m_overlay;
    PUPMediaManager* m_pMediaPlayerManager;

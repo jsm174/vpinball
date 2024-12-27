@@ -2622,10 +2622,6 @@ void PinTable::Play(const int playMode)
             if (isPFWnd)
                ImGui_ImplSDL3_ProcessEvent(&e);
 
-            #ifdef __STANDALONE__
-            g_pStandalone->ProcessEvent(&e);
-            #endif
-
             #ifdef ENABLE_SDL_INPUT
             if (g_pplayer->m_pininput.GetInputAPI() == PinInput::PI_SDL)
                g_pplayer->m_pininput.HandleSDLEvent(e);
@@ -2635,10 +2631,6 @@ void PinTable::Play(const int playMode)
             if ((usec() - startTick) > 1000ull)
                break;
          }
-
-         #ifdef __STANDALONE__
-         g_pStandalone->ProcessUpdates();
-         #endif
       };
 
       #elif !defined(__STANDALONE__)

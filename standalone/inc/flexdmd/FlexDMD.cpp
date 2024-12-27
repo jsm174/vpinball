@@ -43,18 +43,11 @@ FlexDMD::FlexDMD()
 
    Settings* const pSettings = &g_pplayer->m_ptable->m_settings;
 
-   if (pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindow"s, true)) {
-      m_pDMDWindow = new VP::DMDWindow("FlexDMD",
-         pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindowX"s, FLEXDMD_SETTINGS_WINDOW_X),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindowY"s, FLEXDMD_SETTINGS_WINDOW_Y),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindowWidth"s, FLEXDMD_SETTINGS_WINDOW_WIDTH),
-         pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindowHeight"s, FLEXDMD_SETTINGS_WINDOW_HEIGHT),
-         FLEXDMD_ZORDER,
-         pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWindowRotation"s, 0));
-   }
-   else {
-      PLOGI.printf("FlexDMD window disabled");
-   }
+   m_pDMDWindow = new VP::DMDWindow("FlexDMD", FLEXDMD_ZORDER,
+      pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWndX"s, FLEXDMD_SETTINGS_WINDOW_X),
+      pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWndY"s, FLEXDMD_SETTINGS_WINDOW_Y),
+      pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDWidth"s, FLEXDMD_SETTINGS_WINDOW_WIDTH),
+      pSettings->LoadValueWithDefault(Settings::Standalone, "FlexDMDHeight"s, FLEXDMD_SETTINGS_WINDOW_HEIGHT));
 
    m_show = true;
 

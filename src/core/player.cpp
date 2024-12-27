@@ -488,6 +488,17 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
       throw hr;
    }
 
+#ifdef __LIBVPINBALL__
+   VPinballLib::WindowCreatedData windowCreatedData = {};
+#if (defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS))
+   SDL_PropertiesID props = SDL_GetWindowProperties(m_playfieldWnd->GetCore());
+   windowCreatedData.pWindow = (void*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER, NULL);
+   windowCreatedData.pData = (void*)SDL_GetRenderMetalLayer(SDL_GetRenderer(m_playfieldWnd->GetCore()));
+#endif
+   windowCreatedData.pTitle = SDL_GetWindowTitle(m_playfieldWnd->GetCore());
+   VPinballLib::VPinball::SendEvent(VPinballLib::Event::WindowCreated, &windowCreatedData);
+#endif
+
    #if defined(ENABLE_BGFX)
    if (m_dmdOutput.GetMode() == VPX::RenderOutput::OM_WINDOW)
       m_renderer->m_renderDevice->AddWindow(m_dmdOutput.GetWindow());
@@ -2201,6 +2212,10 @@ void Player::PrepareFrame(std::function<void()> sync)
       }
    }
 
+   #ifdef __STANDALONE__
+      g_pStandalone->Render();
+   #endif
+
    m_logicProfiler.ExitProfileSection();
    #ifdef MSVC_CONCURRENCY_VIEWER
    delete tagSpan;
@@ -2295,10 +2310,6 @@ void Player::FinishFrame()
 #endif
       }
    }
-
-#ifdef __STANDALONE__
-   g_pStandalone->Render();
-#endif
 
    // Brute force stop: blast into space
    if (m_closing == CS_FORCE_STOP)

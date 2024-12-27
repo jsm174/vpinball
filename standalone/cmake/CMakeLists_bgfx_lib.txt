@@ -736,6 +736,13 @@ target_link_libraries(vpinball PUBLIC
    pupdmd
    sockpp
    dof
+   avcodec
+   avdevice
+   avfilter
+   avformat
+   avutil
+   swresample
+   swscale
 )
 
 if(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator")
@@ -743,13 +750,6 @@ if(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator")
       freetype
       harfbuzz
       freeimage
-      avcodec
-      avdevice
-      avfilter
-      avformat
-      avutil
-      swresample
-      swscale
       bz2
       iconv
       "-framework OpenGLES"
