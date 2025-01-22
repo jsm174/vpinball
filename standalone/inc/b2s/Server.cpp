@@ -16,6 +16,8 @@
 Server::Server()
 {
    m_pB2SSettings = B2SSettings::GetInstance();
+   m_pB2SSettings->Init();
+
    m_pB2SData = B2SData::GetInstance();
 
    m_pFormBackglass = NULL;
@@ -40,6 +42,8 @@ Server::Server()
    m_pTimer = new VP::Timer();
    m_pTimer->SetInterval(37);
    m_pTimer->SetElapsedListener(std::bind(&Server::TimerElapsed, this, std::placeholders::_1));
+
+   m_pB2SSettings->Init();
 
    srand(time(0));
 }
@@ -2079,8 +2083,6 @@ void Server::CheckLEDs(SAFEARRAY* psa)
 
 void Server::MyB2SSetData(int id, int value)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    // illumination stuff
    if ((m_pFormBackglass->GetTopRomIDType() == eRomIDType_Lamp && m_pFormBackglass->GetTopRomID() == id) || (m_pFormBackglass->GetSecondRomIDType() == eRomIDType_Lamp && m_pFormBackglass->GetSecondRomID() == id)) {
@@ -2170,8 +2172,6 @@ void Server::MyB2SSetData(int id, int value)
 
 void Server::MyB2SSetData(const string& groupname, int value)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    // only do the lightning stuff if the group has a name
    if (!groupname.empty() && m_pB2SData->GetIlluminationGroups()->contains(groupname)) {
@@ -2189,8 +2189,6 @@ void Server::MyB2SSetData(const string& groupname, int value)
 
 void Server::MyB2SSetLED(int digit, int value)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    bool useLEDs = m_pB2SData->GetLEDs()->contains(string("LEDBox" + std::to_string(digit)).c_str()) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Rendered;
    bool useLEDDisplays = m_pB2SData->GetLEDDisplayDigits()->contains(digit - 1) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Dream7;
@@ -2212,8 +2210,6 @@ void Server::MyB2SSetLED(int digit, int value)
 
 void Server::MyB2SSetLED(int digit, const string& value)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    bool useLEDs = m_pB2SData->GetLEDs()->contains(string("LEDBox" + std::to_string(digit)).c_str()) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Rendered;
    bool useLEDDisplays = m_pB2SData->GetLEDDisplayDigits()->contains(digit - 1) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Dream7;
@@ -2232,8 +2228,6 @@ void Server::MyB2SSetLED(int digit, const string& value)
 
 void Server::MyB2SSetLEDDisplay(int display, const string& szText)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    int digit = GetFirstDigitOfDisplay(display);
 
@@ -2273,8 +2267,6 @@ int Server::GetFirstDigitOfDisplay(int display)
 
 void Server::MyB2SSetScore(int digit, int value, bool animateReelChange, bool useLEDs, bool useLEDDisplays, bool useReels, int reeltype, eLEDType ledtype)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    if (digit > 0) {
       useLEDs = (m_pB2SData->GetLEDs()->contains(string("LEDBox" + std::to_string(digit)).c_str()) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Rendered);
@@ -2304,8 +2296,6 @@ void Server::MyB2SSetScore(int digit, int value, bool animateReelChange, bool us
 
 void Server::MyB2SSetScore(int digit, int score)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    if (digit > 0) {
       bool useLEDs = (m_pB2SData->GetLEDs()->contains(string("LEDBox" + std::to_string(digit)).c_str()) && m_pB2SSettings->GetUsedLEDType() == eLEDTypes_Rendered);
@@ -2353,8 +2343,6 @@ void Server::MyB2SSetScore(int digit, int score)
 
 void Server::MyB2SSetScorePlayer(int playerno, int score)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    if (playerno > 0) {
       if (m_pB2SData->GetPlayers()->contains(playerno))
@@ -2367,56 +2355,41 @@ void Server::MyB2SSetScorePlayer(int playerno, int score)
 
 void Server::MyB2SStartAnimation(const string& animationname, bool playreverse)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StartAnimation(animationname, playreverse);
 }
 
 void Server::MyB2SStopAnimation(const string& animationname)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StopAnimation(animationname);
 }
 
 void Server::MyB2SStopAllAnimations()
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StopAllAnimations();
 }
 
 bool Server::MyB2SIsAnimationRunning(const string& animationname)
 {
-   if (!m_pB2SData->IsValid())
-      return false;
-
    return m_pFormBackglass->IsAnimationRunning(animationname);
 }
 
 void Server::MyB2SStartRotation()
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StartRotation();
 }
 
 void Server::MyB2SStopRotation()
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StopRotation();
 }
 
 void Server::MyB2SShowOrHideScoreDisplays(bool visible)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    if (visible)
       m_pFormBackglass->ShowScoreDisplays();
@@ -2426,16 +2399,12 @@ void Server::MyB2SShowOrHideScoreDisplays(bool visible)
 
 void Server::MyB2SPlaySound(const string& soundname)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->PlaySound(soundname);
 }
 
 void Server::MyB2SStopSound(const string& soundname)
 {
-   if (!m_pB2SData->IsValid())
-      return;
 
    m_pFormBackglass->StopSound(soundname);
 }

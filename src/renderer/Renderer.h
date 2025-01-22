@@ -39,6 +39,7 @@ public:
 
    void RenderFrame();
    void RenderDMD(int profile, const vec4& tint, BaseTexture* dmd, RenderTarget* rt, int x, int y, int w, int h);
+   void RenderSprite(BaseTexture* sprite, RenderTarget* rt, int x, int y, int w, int h);
 
    void SetupDMDRender(int profile, const bool isBackdrop, const vec4& color, BaseTexture* dmd, const float alpha, const bool sRGB, 
       Texture* const glass, const COLORREF glassAmbient, const float glassRougness, const float padLeft, const float padRight, const float padTop, const float padBottom);

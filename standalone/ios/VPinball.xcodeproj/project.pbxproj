@@ -574,7 +574,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 100801.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.vpinball.vpinball-bgfx";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jsm174.vpinball-bgfx";
 				PRODUCT_NAME = "Visual Pinball";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -583,7 +583,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -619,7 +619,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 100801.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.vpinball.vpinball-bgfx";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jsm174.vpinball-bgfx";
 				PRODUCT_NAME = "Visual Pinball";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -628,7 +628,7 @@
 				SUPPORTS_XR_DESIGNED_FOR_IPHONE_IPAD = NO;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = 1;
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};

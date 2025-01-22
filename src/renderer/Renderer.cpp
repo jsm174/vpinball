@@ -1345,6 +1345,37 @@ void Renderer::SetupDMDRender(int profile, const bool isBackdrop, const vec4& co
    }
 }
 
+void Renderer::RenderSprite(BaseTexture* sprite, RenderTarget* rt, int x, int y, int w, int h)
+{
+   m_renderDevice->ResetRenderState();
+   m_renderDevice->SetRenderState(RenderState::ALPHABLENDENABLE, RenderState::RS_FALSE);
+   m_renderDevice->SetRenderState(RenderState::CULLMODE, RenderState::CULL_NONE);
+   m_renderDevice->SetRenderState(RenderState::ZWRITEENABLE, RenderState::RS_FALSE);
+   m_renderDevice->SetRenderState(RenderState::ZENABLE, RenderState::RS_FALSE);
+   m_renderDevice->SetRenderTarget("SpriteView", rt, true, true);
+
+   m_renderDevice->m_DMDShader->SetFloat(SHADER_alphaTestValue, 1.0f);
+   m_renderDevice->m_DMDShader->SetTechnique(SHADER_TECHNIQUE_basic_noDMD);
+
+   const vec4 c = convertColor(0xFFFFFFFF, 1.f);
+   m_renderDevice->m_DMDShader->SetVector(SHADER_vColor_Intensity, &c);
+   m_renderDevice->m_DMDShader->SetTexture(SHADER_tex_sprite, sprite, SF_TRILINEAR, SA_CLAMP, SA_CLAMP, true);
+
+   const float rtAR = static_cast<float>(w) / static_cast<float>(h);
+   const float spriteAR = static_cast<float>(sprite->width()) / static_cast<float>(sprite->height());
+   const float pw = 2.f * (rtAR > spriteAR ? spriteAR / rtAR : 1.f) * static_cast<float>(w) / static_cast<float>(rt->GetWidth());
+   const float ph = 2.f * (rtAR < spriteAR ? rtAR / spriteAR : 1.f) * static_cast<float>(h) / static_cast<float>(rt->GetHeight());
+   const float px = static_cast<float>(x + w/2) / static_cast<float>(rt->GetWidth()) * 2.f - 1.f - pw * 0.5f;
+   const float py = static_cast<float>(y + h/2) / static_cast<float>(rt->GetHeight()) * 2.f - 1.f - ph * 0.5f;
+   const Vertex3D_NoTex2 vertices[4] = {
+      { px+pw, py,    0.f, 0.f, 0.f, 1.f, 1.f, 1.f },
+      { px,    py,    0.f, 0.f, 0.f, 1.f, 0.f, 1.f },
+      { px+pw, py+ph, 0.f, 0.f, 0.f, 1.f, 1.f, 0.f },
+      { px,    py+ph, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f }
+   };
+   m_renderDevice->DrawTexturedQuad(m_renderDevice->m_DMDShader, vertices);
+}
+
 void Renderer::DrawBulbLightBuffer()
 {
    RenderPass* const initial_rt = m_renderDevice->GetCurrentPass();

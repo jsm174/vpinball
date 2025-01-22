@@ -76,7 +76,7 @@ public:
 private:
    PUPManager();
 
-   void AddWindow(const string& szWindowName, int defaultScreen, int defaultX, int defaultY, int defaultWidth, int defaultHeight, int zOrder);
+   void AddWindow(const string& szWindowName, int screen, int z, int x, int y, int width, int height);
    void ProcessQueue();
 
    static PUPManager* m_pInstance;
