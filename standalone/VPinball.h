@@ -52,7 +52,6 @@ typedef enum {
    VPINBALL_EVENT_LOADING_COLLECTIONS,
    VPINBALL_EVENT_PLAYER_STARTING,
    VPINBALL_EVENT_WINDOW_CREATED,
-   VPINBALL_EVENT_METAL_LAYER_IOS,
    VPINBALL_EVENT_PRERENDERING,
    VPINBALL_EVENT_PLAYER_STARTED,
    VPINBALL_EVENT_RUMBLE,
@@ -71,6 +70,7 @@ typedef struct {
 
 typedef struct {
    void* pWindow;
+   void* pData;
    const char* pTitle;
 } VPinballWindowCreatedData;
 

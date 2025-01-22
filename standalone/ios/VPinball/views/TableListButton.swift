@@ -33,7 +33,7 @@ struct TableListButton: View {
                 }
             }
             .contextMenu {
-                Section(table.name) {
+                Section {
                     Button(action: {
                         handleShowRename()
                     }) {
@@ -86,6 +86,12 @@ struct TableListButton: View {
                         Label("Delete",
                               systemImage: "trash")
                     }
+                }
+                header: {
+                    Text(table.name)
+                }
+                footer: {
+                    Text(table.tableId.uuidString)
                 }
             }
             preview: {

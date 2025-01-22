@@ -39,6 +39,8 @@ public:
    void RenderStaticPrepass();
 
    void RenderFrame();
+   void RenderDMD(int profile, const vec4& tint, BaseTexture* dmd, RenderTarget* rt, int x, int y, int w, int h);
+   void RenderSprite(BaseTexture* sprite, RenderTarget* rt, int x, int y, int w, int h);
 
    enum ColorSpace
    {

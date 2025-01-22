@@ -22,7 +22,7 @@ enum Link {
         case .troubleshooting:
             return URL(string: "https://github.com/vpinball/vpinball/blob/master/standalone/docs/ios/README.md#troubleshooting")!
         case .discord:
-            return URL(string: "https://discord.com/channels/652274650524418078/1076655472846831667")!
+            return URL(string: "https://discord.com/channels/652274650524418078/1323445406524248090")!
         case .licenses:
             return URL(string: "https://github.com/vpinball/vpinball/blob/master/LICENSE")!
         case .zedmdos:

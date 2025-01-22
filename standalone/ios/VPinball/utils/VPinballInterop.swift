@@ -320,7 +320,6 @@ enum VPinballEvent: CInt {
     case loadingCollections
     case playerStarting
     case windowCreated
-    case metalLayerIOS
     case prerendering
     case playerStarted
     case rumble
@@ -472,6 +471,8 @@ struct VPinballProgressData {
 
 struct VPinballWindowCreatedData {
     var window: Unmanaged<UIWindow>?
+    var data: Unmanaged<CAMetalLayer>?
+    var title: UnsafePointer<CChar>?
 }
 
 struct VPinballScriptErrorData {

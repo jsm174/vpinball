@@ -61,10 +61,6 @@ class VPinballManager {
 
                 if let window = windowCreatedData.window?.takeUnretainedValue() {
                     if let viewController = window.rootViewController {
-                        let metalLayer = CAMetalLayer()
-                        metalLayer.frame = viewController.view.layer.frame
-                        viewController.view.layer.addSublayer(metalLayer)
-
                         let overlayView = OverlayView()
                             .environmentObject(vpinballViewModel)
 
@@ -78,15 +74,11 @@ class VPinballManager {
 
                         vpinballManager.sdlUIWindow = window
                         vpinballManager.sdlViewController = viewController
-                        vpinballManager.metalLayer = metalLayer
+                        vpinballManager.metalLayer = windowCreatedData.data?.takeUnretainedValue()
                     }
 
                     window.isHidden = true
                     window.windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene
-                }
-            case .metalLayerIOS:
-                if let metalLayer = vpinballManager.metalLayer {
-                    return UnsafeRawPointer(Unmanaged.passUnretained(metalLayer).toOpaque())
                 }
             case .playerStarted:
                 vpinballManager.sdlUIWindow?.isHidden = false
@@ -566,7 +558,7 @@ class VPinballManager {
 
     func setIniDefaults() {
         saveValue(.standalone, "RenderingModeOverride", loadValue(.standalone, "RenderingModeOverride", 2))
-        saveValue(.player, "MaxTexDimension", loadValue(.player, "MaxTexDimension", 768))
+        saveValue(.player, "MaxTexDimension", loadValue(.player, "MaxTexDimension", 1024))
         saveValue(.player, "ScreenWidth", loadValue(.player, "ScreenWidth", 15.4))
         saveValue(.player, "ScreenHeight", loadValue(.player, "ScreenHeight", 7.1))
     }

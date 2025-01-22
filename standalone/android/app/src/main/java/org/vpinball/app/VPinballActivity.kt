@@ -72,6 +72,14 @@ class VPinballActivity : SDLActivity() {
             "dmdutil",
             "dof",
             "pupdmd",
+            "sockpp",
+            "avcodec",
+            "avdevice",
+            "avfilter",
+            "avformat",
+            "avutil",
+            "swresample",
+            "swscale",
             "vpinball",
         )
 }

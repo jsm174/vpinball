@@ -132,8 +132,6 @@ public:
    bool IsUseLEDs() const;
    bool IsUseLEDDisplays() const;
    bool IsUseReels() const;
-   bool IsValid() const { return m_valid; }
-   void SetValid(bool valid) { m_valid = valid; }
 
 private:
    B2SData();
@@ -208,6 +206,5 @@ private:
 
    B2SSettings* m_pB2SSettings;
 
-   bool m_valid;
    static B2SData* m_pInstance;
 };
