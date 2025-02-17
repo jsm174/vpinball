@@ -624,7 +624,7 @@ target_link_directories(vpinball PUBLIC
 
 target_link_libraries(vpinball
    comctl32.lib
-   FreeImage.lib
+   freeimage64.lib
    dxguid.lib
    dsound.lib 
    bass.lib
@@ -636,7 +636,7 @@ target_link_libraries(vpinball
    setupapi.lib
 
    openvr_api.lib
-   SDL3.lib
+   SDL364.lib
    dinput8.lib
 
    glad

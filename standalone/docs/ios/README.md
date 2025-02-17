@@ -334,7 +334,7 @@ Tap *Discord (Virtual Pinball Chat)* to go to the `#standalone` channel in the *
 
 ## Third Party Libraries
 
-Third Party libraries for *Visual Pinball for iOS* can be found [here](../../../third-party/README.md).
+Third Party libraries for *Visual Pinball for iOS* can be found [here](../../../../third-party/README.md).
 
 ## License
 
