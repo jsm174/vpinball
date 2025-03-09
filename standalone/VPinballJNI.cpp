@@ -12,6 +12,7 @@ static jclass gJNIProgressDataClass = nullptr;
 static jclass gJNIScriptErrorDataClass = nullptr;
 static jclass gJNIRumbleDataClass = nullptr;
 static jclass gJNIWebServerDataClass = nullptr;
+static jclass gJNICaptureScreenshotDataClass = nullptr;
 static jclass gJNITableOptionsClass = nullptr;
 static jclass gJNICustomTableOptionClass = nullptr;
 static jclass gJNIViewSetupClass = nullptr;
@@ -70,7 +71,7 @@ void* VPinballJNI_OnEventCallback(VPINBALL_EVENT event, void* data)
       }
       case VPINBALL_EVENT_RUMBLE:
       {
-          if (gJNIRumbleDataClass) {
+         if (gJNIRumbleDataClass) {
             jmethodID constructorMethod = env->GetMethodID(gJNIRumbleDataClass, "<init>", "(III)V");
             if (constructorMethod) {
                VPinballRumbleData* pData = (VPinballRumbleData*)(data);
@@ -86,7 +87,7 @@ void* VPinballJNI_OnEventCallback(VPINBALL_EVENT event, void* data)
       }
       case VPINBALL_EVENT_WEB_SERVER:
       {
-          if (gJNIWebServerDataClass) {
+         if (gJNIWebServerDataClass) {
             jmethodID constructorMethod = env->GetMethodID(gJNIWebServerDataClass, "<init>", "(Ljava/lang/String;)V");
             if (constructorMethod) {
                VPinballWebServerData* pData = (VPinballWebServerData*)(data);
@@ -95,6 +96,19 @@ void* VPinballJNI_OnEventCallback(VPINBALL_EVENT event, void* data)
                   eventDataObject = env->NewObject(gJNIWebServerDataClass, constructorMethod, urlString);
                   env->DeleteLocalRef(urlString);
                }
+            }
+         }
+         break;
+      }
+      case VPINBALL_EVENT_CAPTURE_SCREENSHOT:
+      {
+         if (gJNICaptureScreenshotDataClass) {
+            jmethodID constructorMethod = env->GetMethodID(gJNICaptureScreenshotDataClass, "<init>", "(Z)V");
+            if (constructorMethod) {
+                VPinballCaptureScreenshotData* pData = (VPinballCaptureScreenshotData*)(data);
+                if (pData) {
+                    eventDataObject = env->NewObject(gJNICaptureScreenshotDataClass, constructorMethod, pData->success);
+                }
             }
          }
          break;
@@ -142,6 +156,7 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballInit(JNIEnv
    gJNIScriptErrorDataClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballScriptErrorData"));
    gJNIRumbleDataClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballRumbleData"));
    gJNIWebServerDataClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballWebServerData"));
+   gJNICaptureScreenshotDataClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballCaptureScreenshotData"));
    gJNITableOptionsClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballTableOptions"));
    gJNICustomTableOptionClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballCustomTableOption"));
    gJNIViewSetupClass = (jclass)env->NewGlobalRef(env->FindClass("org/vpinball/app/jni/VPinballViewSetup"));
@@ -504,6 +519,13 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballResetViewSe
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSaveViewSetup(JNIEnv* env, jobject obj)
 {
    VPinballSaveViewSetup();
+}
+
+JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballCaptureScreenshot(JNIEnv* env, jobject obj, jstring filename)
+{
+   const char* pFilename = env->GetStringUTFChars(filename, nullptr);
+   VPinballCaptureScreenshot(pFilename);
+   env->ReleaseStringUTFChars(filename, pFilename);
 }
 
 }
