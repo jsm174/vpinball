@@ -1859,9 +1859,9 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
       // Flush any pending frame
       m_renderer->m_renderDevice->m_frameReadySem.post();
 
-      #ifdef __ANDROID__
+      //#ifdef __ANDROID__
          MultithreadedGameLoop(sync);
-      #else
+      //#else
          #ifdef __LIBVPINBALL__
             auto gameLoop = [this, sync]() {
                MultithreadedGameLoop(sync);
@@ -1870,7 +1870,7 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
          #else
             MultithreadedGameLoop(sync);
          #endif
-      #endif
+      //#endif
    #else
       delete m_renderProfiler;
       m_renderProfiler = &m_logicProfiler;
@@ -1883,10 +1883,15 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
 
 void Player::MultithreadedGameLoop(const std::function<void()>& sync)
 {
+   m_ready = true;
+   
 #ifdef ENABLE_BGFX
    m_logicProfiler.SetThreadLock();
    while (GetCloseState() == CS_PLAYING || GetCloseState() == CS_USER_INPUT)
    {
+      if (!g_pplayer->m_playing)
+         continue;
+         
       // Continuously process input, synchronize with emulation and step physics to keep latency low
       sync();
 

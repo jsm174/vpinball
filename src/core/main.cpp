@@ -1377,11 +1377,11 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, 
 
 #ifdef __STANDALONE__
 #ifdef __ANDROID__
-int main(int argc, char** argv) {
+/*int main(int argc, char** argv) {
    while(true)
       std::this_thread::sleep_for(std::chrono::milliseconds(1000));
    return 0;
-}
+}*/
 #elif ((defined(__APPLE__) && defined(TARGET_OS_TV) && TARGET_OS_TV) || defined(__linux__))
 int main(int argc, char** argv) {
    g_argc = argc;

@@ -175,10 +175,10 @@ public:
    void ResetViewSetup();
    void SaveViewSetup();
    void CaptureScreenshot(const string& filename);
-
+   static void GameLoop(void* pUserData);
 private:
    VPinball();
-   static void GameLoop(void* pUserData);
+
    void ProcessSetTableOptions(const TableOptions& tableOptions);
    void ProcessSetDefaultTableOptions();
    void ProcessResetTableOptions();
