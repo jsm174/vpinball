@@ -104,6 +104,7 @@ public:
    void SetClipboard(vector<IStream*> * const pvstm);
 
    void DoPlay(const int playMode);
+   void ProcessEvent(SDL_Event* event);
 
    void SetPosCur(float x, float y);
    void SetObjectPosCur(float x, float y);

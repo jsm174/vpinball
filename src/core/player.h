@@ -163,7 +163,9 @@ public:
 #ifdef __LIBVPINBALL__
    bool m_liveUIOverride = false;
 #endif
-
+   
+   bool m_ready = false;
+   
 private:
    bool m_playing = true;
    bool m_focused = false;

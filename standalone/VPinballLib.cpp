@@ -6,6 +6,7 @@
 #include "VPXProgress.h"
 #include "standalone/inc/webserver/WebServer.h"
 
+#define SDL_MAIN_USE_CALLBACKS
 #include <SDL3/SDL_main.h>
 #include <SDL3_ttf/SDL_ttf.h>
 
@@ -842,3 +843,66 @@ void VPinball::Cleanup()
 VPinball VPinball::s_instance;
 
 } // namespace VPinballLib
+
+SDL_AppResult SDL_AppInit(void** appstate, int argc, char* argv[])
+{
+   return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event* event) {
+   if (g_pplayer != nullptr && g_pplayer->m_ready)
+      g_pvp->ProcessEvent(event);
+
+   /*auto* app = (AppContext*)appstate;
+
+   if (event->type == SDL_EVENT_QUIT) {
+       app->app_quit = SDL_APP_SUCCESS;
+   }*/
+
+   return SDL_APP_CONTINUE;
+}
+
+SDL_AppResult SDL_AppIterate(void *appstate) {
+   VPinballLib::VPinball::GameLoop(nullptr);
+   /*auto* app = (AppContext*)appstate;
+
+   // draw a color
+   auto time = SDL_GetTicks() / 1000.f;
+   auto red = (std::sin(time) + 1) / 2.0 * 255;
+   auto green = (std::sin(time / 2) + 1) / 2.0 * 255;
+   auto blue = (std::sin(time) * 2 + 1) / 2.0 * 255;
+   
+   SDL_SetRenderDrawColor(app->renderer, red, green, blue, SDL_ALPHA_OPAQUE);
+   SDL_RenderClear(app->renderer);
+
+   // Renderer uses the painter's algorithm to make the text appear above the image, we must render the image first.
+   SDL_RenderTexture(app->renderer, app->imageTex, NULL, NULL);
+   SDL_RenderTexture(app->renderer, app->messageTex, NULL, &app->messageDest);
+
+   SDL_RenderPresent(app->renderer);
+
+   return app->app_quit;*/
+   return SDL_APP_CONTINUE;
+}
+
+void SDL_AppQuit(void* appstate, SDL_AppResult result) {
+   /*auto* app = (AppContext*)appstate;
+   if (app) {
+       SDL_DestroyRenderer(app->renderer);
+       SDL_DestroyWindow(app->window);
+
+       Mix_FadeOutMusic(1000);  // prevent the music from abruptly ending.
+       Mix_FreeMusic(app->music); // this call blocks until the music has finished fading
+       Mix_CloseAudio();
+       SDL_CloseAudioDevice(app->audioDevice);
+
+       delete app;
+   }
+   TTF_Quit();
+   Mix_Quit();
+
+   SDL_Log("Application quit successfully!");
+   SDL_Quit();*/
+}
+
+
