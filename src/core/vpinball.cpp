@@ -1093,106 +1093,15 @@ void VPinball::DoPlay(const int playMode)
       #ifdef ENABLE_SDL_VIDEO
       auto processWindowMessages = [&initError]()
       {
-         unsigned long long startTick = usec();
+         #ifndef __LIBVPINBALL__
          SDL_Event e;
-         bool isPFWnd = true;
-         static Vertex2D dragStart;
-         static int dragging = 0;
-         while (SDL_PollEvent(&e) != 0)
-         {
-            switch (e.type)
-            {
-            case SDL_EVENT_QUIT:
-               g_pplayer->SetCloseState(Player::CloseState::CS_STOP_PLAY);
-               break;
-            case SDL_EVENT_WINDOW_FOCUS_GAINED:
-               isPFWnd = SDL_GetWindowFromID(e.window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               g_pplayer->OnFocusChanged(true);
-               break;
-            case SDL_EVENT_WINDOW_FOCUS_LOST:
-               isPFWnd = SDL_GetWindowFromID(e.window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               g_pplayer->OnFocusChanged(false);
-               break;
-            case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-               isPFWnd = SDL_GetWindowFromID(e.window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               g_pvp->QuitPlayer(Player::CloseState::CS_STOP_PLAY);
-               break;
-            case SDL_EVENT_KEY_UP:
-            case SDL_EVENT_KEY_DOWN:
-               isPFWnd = SDL_GetWindowFromID(e.key.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               g_pplayer->ShowMouseCursor(false);
-               break;
-            case SDL_EVENT_TEXT_INPUT:
-               isPFWnd = SDL_GetWindowFromID(e.text.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               break;
-            case SDL_EVENT_MOUSE_WHEEL:
-               isPFWnd = SDL_GetWindowFromID(e.wheel.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               break;
-            case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            case SDL_EVENT_MOUSE_BUTTON_UP:
-               isPFWnd = SDL_GetWindowFromID(e.button.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               if (!isPFWnd)
-               {
-                  if (e.type == SDL_EVENT_MOUSE_BUTTON_UP)
-                     dragging = 0;
-                  else if (e.type == SDL_EVENT_MOUSE_BUTTON_DOWN && dragging == 0)
-                     dragging = 1;
-               }
-               break;
-            case SDL_EVENT_MOUSE_MOTION:
-               isPFWnd = SDL_GetWindowFromID(e.motion.windowID) == g_pplayer->m_playfieldWnd->GetCore();
-               if (isPFWnd) {
-                  // We scale motion data since SDL expects DPI scaled points coordinates on Apple device, while it uses pixel coordinates on other devices (see SDL_WINDOWS_DPI_SCALING)
-                  // For the time being, VPX always uses pixel coordinates, using setup obtained at window creation time.
-                  e.motion.x *= g_pplayer->m_playfieldWnd->GetHiDPIScale();
-                  e.motion.y *= g_pplayer->m_playfieldWnd->GetHiDPIScale();
-                  static float m_lastcursorx = FLT_MAX, m_lastcursory = FLT_MAX;
-                  if (m_lastcursorx != e.motion.x || m_lastcursory != e.motion.y)
-                  {
-                     m_lastcursorx = e.motion.x;
-                     m_lastcursory = e.motion.y;
-                     g_pplayer->ShowMouseCursor(true);
-                  }
-               }
-               else if (dragging)
-               {
-                  // Handle dragging of auxiliary windows
-                  SDL_Window *sdlWnd = SDL_GetWindowFromID(e.motion.windowID);
-                  VPX::Window *windows[] = { g_pplayer->m_scoreviewOutput.GetWindow(), g_pplayer->m_backglassOutput.GetWindow() };
-                  for (size_t i = 0; i < sizeof(windows) / sizeof(VPX::Window *); i++)
-                  {
-                     if (windows[i] && sdlWnd == windows[i]->GetCore())
-                     {
-                        int x, y;
-                        windows[i]->GetPos(x, y);
-                        Vertex2D click(x + e.motion.x, y + e.motion.y);
-                        if (dragging > 1)
-                           windows[i]->SetPos(static_cast<int>(x + click.x - dragStart.x), static_cast<int>(y + click.y - dragStart.y));
-                        dragStart = click;
-                        dragging = 2;
-                        break;
-                     }
-                  }
-               }
-               break;
-            }
-
-            if (isPFWnd)
-               ImGui_ImplSDL3_ProcessEvent(&e);
-
-            #ifdef __STANDALONE__
-            g_pStandalone->ProcessEvent(&e);
-            #endif
-
-            #ifdef ENABLE_SDL_INPUT
-            if (g_pplayer->m_pininput.GetInputAPI() == PinInput::PI_SDL)
-               g_pplayer->m_pininput.HandleSDLEvent(e);
-            #endif
-
-            // Limit to 1ms of OS message processing per call
+         unsigned long long startTick = usec();
+         while (SDL_PollEvent(&e) != 0) {
+            g_pvp->ProcessEvent(&e);
             if ((usec() - startTick) > 1000ull)
                break;
          }
+         #endif
 
          #ifdef __STANDALONE__
          g_pStandalone->ProcessUpdates();
@@ -1232,7 +1141,7 @@ void VPinball::DoPlay(const int playMode)
             if ((usec() - startTick) > 1000ull)
                break;
          }
-      };
+      };{
       #else
       auto processWindowMessages = []() {};
       #endif
@@ -1258,6 +1167,101 @@ void VPinball::DoPlay(const int playMode)
 
    #ifdef __LIBVPINBALL__
       VPinballLib::VPinball::SendEvent(VPinballLib::Event::Stopped, nullptr);
+   #endif
+}
+
+void VPinball::ProcessEvent(SDL_Event* e)
+{      
+   bool isPFWnd = true;
+   static Vertex2D dragStart;
+   static int dragging = 0;
+
+   switch (e->type) {
+      case SDL_EVENT_WILL_ENTER_BACKGROUND:
+         g_pplayer->SetCloseState(Player::CloseState::CS_STOP_PLAY);
+         break;
+      case SDL_EVENT_WINDOW_FOCUS_GAINED:
+         isPFWnd = SDL_GetWindowFromID(e->window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         g_pplayer->OnFocusChanged(true);
+         break;
+      case SDL_EVENT_WINDOW_FOCUS_LOST:
+         isPFWnd = SDL_GetWindowFromID(e->window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         g_pplayer->OnFocusChanged(false);
+         break;
+      case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+         isPFWnd = SDL_GetWindowFromID(e->window.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         g_pvp->QuitPlayer(Player::CloseState::CS_STOP_PLAY);
+         break;
+      case SDL_EVENT_KEY_UP:
+      case SDL_EVENT_KEY_DOWN:
+         isPFWnd = SDL_GetWindowFromID(e->key.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         g_pplayer->ShowMouseCursor(false);
+         break;
+      case SDL_EVENT_TEXT_INPUT:
+         isPFWnd = SDL_GetWindowFromID(e->text.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         break;
+      case SDL_EVENT_MOUSE_WHEEL:
+         isPFWnd = SDL_GetWindowFromID(e->wheel.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         break;
+      case SDL_EVENT_MOUSE_BUTTON_DOWN:
+      case SDL_EVENT_MOUSE_BUTTON_UP:
+         isPFWnd = SDL_GetWindowFromID(e->button.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         if (!isPFWnd)
+         {
+            if (e->type == SDL_EVENT_MOUSE_BUTTON_UP)
+               dragging = 0;
+            else if (e->type == SDL_EVENT_MOUSE_BUTTON_DOWN && dragging == 0)
+               dragging = 1;
+         }
+         break;
+      case SDL_EVENT_MOUSE_MOTION:
+         isPFWnd = SDL_GetWindowFromID(e->motion.windowID) == g_pplayer->m_playfieldWnd->GetCore();
+         if (isPFWnd) {
+            // We scale motion data since SDL expects DPI scaled points coordinates on Apple device, while it uses pixel coordinates on other devices (see SDL_WINDOWS_DPI_SCALING)
+            // For the time being, VPX always uses pixel coordinates, using setup obtained at window creation time.
+            e->motion.x *= g_pplayer->m_playfieldWnd->GetHiDPIScale();
+            e->motion.y *= g_pplayer->m_playfieldWnd->GetHiDPIScale();
+            static float m_lastcursorx = FLT_MAX, m_lastcursory = FLT_MAX;
+            if (m_lastcursorx != e->motion.x || m_lastcursory != e->motion.y)
+            {
+               m_lastcursorx = e->motion.x;
+               m_lastcursory = e->motion.y;
+               g_pplayer->ShowMouseCursor(true);
+            }
+         }
+         else if (dragging)
+         {
+            // Handle dragging of auxiliary windows
+            SDL_Window *sdlWnd = SDL_GetWindowFromID(e->motion.windowID);
+            VPX::Window *windows[] = { g_pplayer->m_scoreviewOutput.GetWindow(), g_pplayer->m_backglassOutput.GetWindow() };
+            for (size_t i = 0; i < sizeof(windows) / sizeof(VPX::Window *); i++)
+            {
+               if (windows[i] && sdlWnd == windows[i]->GetCore())
+               {
+                  int x, y;
+                  windows[i]->GetPos(x, y);
+                  Vertex2D click(x + e->motion.x, y + e->motion.y);
+                  if (dragging > 1)
+                     windows[i]->SetPos(static_cast<int>(x + click.x - dragStart.x), static_cast<int>(y + click.y - dragStart.y));
+                  dragStart = click;
+                  dragging = 2;
+                  break;
+               }
+            }
+         }
+         break;
+   }
+
+   if (isPFWnd)
+      ImGui_ImplSDL3_ProcessEvent(e);
+
+   #ifdef __STANDALONE__
+   g_pStandalone->ProcessEvent(e);
+   #endif
+
+   #ifdef ENABLE_SDL_INPUT
+   if (g_pplayer->m_pininput.GetInputAPI() == PinInput::PI_SDL)
+      g_pplayer->m_pininput.HandleSDLEvent(*e);
    #endif
 }
 

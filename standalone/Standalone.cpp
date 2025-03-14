@@ -91,7 +91,9 @@ void Standalone::PostStartup()
 
 void Standalone::ProcessEvent(const SDL_Event* pEvent)
 {
-   m_pWindowManager->ProcessEvent(pEvent);
+    if (m_pWindowManager) {
+        m_pWindowManager->ProcessEvent(pEvent);
+    }
 }
 
 void Standalone::ProcessUpdates()
