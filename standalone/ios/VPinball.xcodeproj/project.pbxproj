@@ -578,7 +578,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 100801.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.vpinball.vpinball-bgfx";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jsm174.vpinball-bgfx";
 				PRODUCT_NAME = "Visual Pinball";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
@@ -627,7 +627,7 @@
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 100801.0.1;
-				PRODUCT_BUNDLE_IDENTIFIER = "org.vpinball.vpinball-bgfx";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.jsm174.vpinball-bgfx";
 				PRODUCT_NAME = "Visual Pinball";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";

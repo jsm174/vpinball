@@ -82,7 +82,7 @@ MsgPluginManager::~MsgPluginManager()
 unsigned int MsgPluginManager::GetMsgID(const char* name_space, const char* name)
 {
    MsgPluginManager& pm = GetInstance();
-#ifndef __LIBVPINBALL__
+#ifndef __STANDALONE__
    assert(std::this_thread::get_id() == pm.m_apiThread);
 #endif
    MsgEntry* freeMsg = nullptr;
@@ -110,7 +110,7 @@ unsigned int MsgPluginManager::GetMsgID(const char* name_space, const char* name
 void MsgPluginManager::SubscribeMsg(const unsigned int endpointId, const unsigned int msgId, const msgpi_msg_callback callback, void* userData)
 {
    MsgPluginManager& pm = GetInstance();
-#ifndef __LIBVPINBALL__
+#ifndef __STANDALONE__
    assert(std::this_thread::get_id() == pm.m_apiThread);
 #endif
    assert(callback != nullptr);
@@ -128,7 +128,7 @@ void MsgPluginManager::SubscribeMsg(const unsigned int endpointId, const unsigne
 void MsgPluginManager::UnsubscribeMsg(const unsigned int msgId, const msgpi_msg_callback callback)
 {
    MsgPluginManager& pm = GetInstance();
-#ifndef __LIBVPINBALL__
+#ifndef __STANDALONE__
    assert(std::this_thread::get_id() == pm.m_apiThread);
 #endif
    assert(callback != nullptr);
@@ -149,7 +149,7 @@ void MsgPluginManager::UnsubscribeMsg(const unsigned int msgId, const msgpi_msg_
 void MsgPluginManager::BroadcastMsg(const unsigned int endpointId, const unsigned int msgId, void* data)
 {
    MsgPluginManager& pm = GetInstance();
-#ifndef __LIBVPINBALL__
+#ifndef __STANDALONE__
    assert(std::this_thread::get_id() == pm.m_apiThread);
 #endif
    assert(msgId < pm.m_msgs.size());
@@ -163,7 +163,7 @@ void MsgPluginManager::BroadcastMsg(const unsigned int endpointId, const unsigne
 void MsgPluginManager::ReleaseMsgID(const unsigned int msgId)
 {
    MsgPluginManager& pm = GetInstance();
-#ifndef __LIBVPINBALL__
+#ifndef __STANDALONE__
    assert(std::this_thread::get_id() == pm.m_apiThread);
 #endif
    assert(msgId < pm.m_msgs.size());

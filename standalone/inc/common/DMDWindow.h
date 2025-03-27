@@ -5,26 +5,38 @@
 
 namespace VP {
 
-class DMDWindow : public VP::Window
+class DMDWindow
 {
 public:
-   DMDWindow(const string& szTitle, int x, int y, int w, int h, int rotation, int z);
+   DMDWindow(const string& szTitle);
    ~DMDWindow();
 
-   bool Init() override;
    void AttachDMD(DMDUtil::DMD* pDMD, int width, int height);
    void DetachDMD();
    bool IsDMDAttached() const { return m_attached; }
-   void Render() override;
+   void Show();
+   void Hide();
 
 private:
-   SDL_FRect m_destRect;
-   int m_angle;
+   static void onGetIdentifyDMD(const unsigned int eventId, void* userData, void* msgData);
+   static void onGetRenderDMDSrc(const unsigned int eventId, void* userData, void* msgData);
+   static void onGetRenderDMD(const unsigned int eventId, void* userData, void* msgData);
+
+   string m_szTitle;
    DMDUtil::DMD* m_pDMD;
    DMDUtil::RGB24DMD* m_pRGB24DMD;
-   int m_pitch;
-   SDL_Texture* m_pTexture;
    bool m_attached;
+
+   std::shared_ptr<MsgPlugin> m_plugin;
+   int m_getDmdSrcId;
+   int m_getRenderDmdId;
+   int m_getIdentifyDmdId;
+   int m_onDmdSrcChangedId;
+
+   CtlResId m_dmdId;
+   int m_frameId;
+
+   static int s_instanceId;
 };
 
 }
