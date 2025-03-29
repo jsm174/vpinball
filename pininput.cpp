@@ -244,6 +244,64 @@ void PinInput::LoadSettings(const Settings& settings)
    m_enable_nudge_filter = settings.LoadValueWithDefault(Settings::Player, "EnableNudgeFilter"s, m_enable_nudge_filter);
    m_deadz = settings.LoadValueWithDefault(Settings::Player, "DeadZone"s, 0);
    m_deadz = m_deadz*JOYRANGEMX / 100;
+
+   // print all these values out with PLOGI
+
+   //m_lr_axis = settings.LoadValueWithDefault(Settings::Player, "LRAxis"s, m_lr_axis);
+
+   PLOGI.printf("LRAxis: %d", m_lr_axis);
+   PLOGI.printf("UDAxis: %d", m_ud_axis);
+   PLOGI.printf("LRAxisFlip: %d", m_lr_axis_reverse);
+   PLOGI.printf("UDAxisFlip: %d", m_ud_axis_reverse);
+   PLOGI.printf("PlungerAxis: %d", m_plunger_axis);
+   PLOGI.printf("PlungerSpeedAxis: %d", m_plunger_speed_axis);
+   PLOGI.printf("ReversePlungerAxis: %d", m_plunger_reverse);
+   PLOGI.printf("PlungerRetract: %d", m_plunger_retract);
+   PLOGI.printf("PBWDefaultLayout: %d", m_override_default_buttons);
+   PLOGI.printf("DisableESC: %d", m_disable_esc);
+   PLOGI.printf("JoyLFlipKey: %d", m_joylflipkey);
+   PLOGI.printf("JoyRFlipKey: %d", m_joyrflipkey);
+   PLOGI.printf("JoyStagedLFlipKey: %d", m_joystagedlflipkey);
+   PLOGI.printf("JoyStagedRFlipKey: %d", m_joystagedrflipkey);
+   PLOGI.printf("JoyPlungerKey: %d", m_joyplungerkey);
+   PLOGI.printf("JoyAddCreditKey: %d", m_joyaddcreditkey);
+   PLOGI.printf("JoyAddCredit2Key: %d", m_joyaddcreditkey2);
+   PLOGI.printf("JoyLMagnaSave: %d", m_joylmagnasave);
+   PLOGI.printf("JoyRMagnaSave: %d", m_joyrmagnasave);
+   PLOGI.printf("JoyStartGameKey: %d", m_joystartgamekey);
+   PLOGI.printf("JoyFrameCount: %d", m_joyframecount);
+   PLOGI.printf("JoyExitGameKey: %d", m_joyexitgamekey);
+   PLOGI.printf("JoyVolumeUp: %d", m_joyvolumeup);
+   PLOGI.printf("JoyVolumeDown: %d", m_joyvolumedown);
+   PLOGI.printf("JoyLTiltKey: %d", m_joylefttilt);
+   PLOGI.printf("JoyCTiltKey: %d", m_joycentertilt);
+   PLOGI.printf("JoyRTiltKey: %d", m_joyrighttilt);
+   PLOGI.printf("JoyPMBuyIn: %d", m_joypmbuyin);
+   PLOGI.printf("JoyPMCoin3: %d", m_joypmcoin3);
+   PLOGI.printf("JoyPMCoin4: %d", m_joypmcoin4);
+   PLOGI.printf("JoyPMCoinDoor: %d", m_joypmcoindoor);
+   PLOGI.printf("JoyPMCancel: %d", m_joypmcancel);
+   PLOGI.printf("JoyPMDown: %d", m_joypmdown);
+   PLOGI.printf("JoyPMUp: %d", m_joypmup);
+   PLOGI.printf("JoyPMEnter: %d", m_joypmenter);
+   PLOGI.printf("JoyCustom1: %d", m_joycustom1);
+   PLOGI.printf("JoyCustom1Key: %d", m_joycustom1key);
+   PLOGI.printf("JoyCustom2: %d", m_joycustom2);
+   PLOGI.printf("JoyCustom2Key: %d", m_joycustom2key);
+   PLOGI.printf("JoyCustom3: %d", m_joycustom3);
+   PLOGI.printf("JoyCustom3Key: %d", m_joycustom3key);
+   PLOGI.printf("JoyCustom4: %d", m_joycustom4);
+   PLOGI.printf("JoyCustom4Key: %d", m_joycustom4key);
+   PLOGI.printf("JoyMechTiltKey: %d", m_joymechtilt);
+   PLOGI.printf("JoyDebugKey: %d", m_joydebugballs);
+   PLOGI.printf("JoyDebuggerKey: %d", m_joydebugger);
+   PLOGI.printf("JoyLockbarKey: %d", m_joylockbar);
+   PLOGI.printf("JoyPauseKey: %d", m_joypause);
+   PLOGI.printf("JoyTweakKey: %d", m_joytweak);
+   PLOGI.printf("JoyTableRecenterKey: %d", m_joytablerecenter);
+   PLOGI.printf("JoyTableUpKey: %d", m_joytableup);
+   PLOGI.printf("JoyTableDownKey: %d", m_joytabledown);
+
 }
 
 #ifdef ENABLE_SDL_INPUT
@@ -879,6 +937,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
       case SDL_CONTROLLERBUTTONDOWN:
       case SDL_CONTROLLERBUTTONUP:
          if (e.cbutton.button < 32) {
+            PLOGI.printf("Button %d %s", e.cbutton.button, e.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
             didod[j].dwOfs = DIJOFS_BUTTON0 + (DWORD)e.cbutton.button;
             didod[j].dwData = e.type == SDL_CONTROLLERBUTTONDOWN ? 0x80 : 0x00;
             PushQueue(&didod[j], APP_JOYSTICK(0));
