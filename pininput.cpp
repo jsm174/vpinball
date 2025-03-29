@@ -927,6 +927,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
          break;
       case SDL_CONTROLLERAXISMOTION:
          if (e.caxis.axis < 6) {
+              PLOGI.printf("GameController Axis %d", e.caxis.axis); 
               didod[j].dwOfs = axes[e.caxis.axis];
               const int value = e.caxis.value * axisMultiplier[e.caxis.axis];
               didod[j].dwData = (DWORD)(value);
@@ -937,7 +938,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
       case SDL_CONTROLLERBUTTONDOWN:
       case SDL_CONTROLLERBUTTONUP:
          if (e.cbutton.button < 32) {
-            PLOGI.printf("Button %d %s", e.cbutton.button, e.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
+            PLOGI.printf("GameController Button %d %s", e.cbutton.button, e.type == SDL_CONTROLLERBUTTONDOWN ? "pressed" : "released");
             didod[j].dwOfs = DIJOFS_BUTTON0 + (DWORD)e.cbutton.button;
             didod[j].dwData = e.type == SDL_CONTROLLERBUTTONDOWN ? 0x80 : 0x00;
             PushQueue(&didod[j], APP_JOYSTICK(0));
@@ -951,6 +952,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
          break;
       case SDL_JOYAXISMOTION:
          if (e.jaxis.axis < 6) {
+            PLOGI.printf("Joystick Axis %d", e.jaxis.axis); 
             didod[j].dwOfs = axes[e.jaxis.axis];
             const int value = e.jaxis.value * axisMultiplier[e.jaxis.axis];
             didod[j].dwData = (DWORD)(value);
@@ -961,6 +963,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
       case SDL_JOYBUTTONDOWN:
       case SDL_JOYBUTTONUP:
          if (e.jbutton.button < 32) {
+            PLOGI.printf("Joystick Button %d %s", e.jbutton.button, e.type == SDL_JOYBUTTONDOWN ? "pressed" : "released");
             didod[j].dwOfs = DIJOFS_BUTTON0 + (DWORD)e.jbutton.button;
             didod[j].dwData = e.type == SDL_JOYBUTTONDOWN ? 0x80 : 0x00;
             PushQueue(&didod[j], APP_JOYSTICK(0));
@@ -974,6 +977,7 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
          if (e.key.repeat == 0) {
             const unsigned int dik = get_dik_from_sdlk(e.key.keysym.sym);
             if (dik != ~0u) {
+               PLOGI.printf("Key %s %d", e.type == SDL_KEYDOWN ? "pressed" : "released", dik);
                didod[j].dwOfs = dik;
                didod[j].dwData = e.type == SDL_KEYDOWN ? 0x80 : 0;
                //didod[j].dwTimeStamp = curr_time_msec;
