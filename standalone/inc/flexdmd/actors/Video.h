@@ -1,26 +1,33 @@
 #pragma once
 
 #include "AnimatedActor.h"
+extern "C" {
+#include <libavformat/avformat.h>
+#include "libavcodec/avcodec.h"
+#include <libswscale/swscale.h>
+#include <libavutil/imgutils.h>
+}
 
 class Video final : public AnimatedActor 
 {
 public:
-   ~Video();
+    static Video* Create(FlexDMD* pFlexDMD, AssetManager* pAssetManager, const string& path, const string& name, bool loop = true);
+    ~Video();
 
-   static Video* Create(FlexDMD* pFlexDMD, const string& path, const string& name, bool loop);
-
-   STDMETHOD(Seek)(single posInSeconds);
-
-   void SetVisible(bool visible) { AnimatedActor::SetVisible(visible); OnStageStateChanged(); }
-
-   void Advance(float delta) override;
-   void Rewind() override;
-   void ReadNextFrame() override;
-   void Draw(VP::SurfaceGraphics* pGraphics) override;
-   void OnStageStateChanged() override;
+    void OnStageStateChanged() override;
+    void Rewind() override;
+    void ReadNextFrame() override;
+    void Draw(VP::SurfaceGraphics* pGraphics) override;
 
 private:
-   Video(FlexDMD* pFlexDMD, const string& name);
+    Video(FlexDMD* pFlexDMD, const string& name);
 
-   float m_seek;
+    std::vector<SDL_Surface*> m_frames;
+    SDL_Surface* m_pActiveFrameSurface = nullptr;
+    int m_pos = 0;
+    float m_frameDuration = 0.0f;
+    SwsContext* m_pVideoConversionContext = nullptr;
+    AVFormatContext* m_pFormatContext = nullptr;
+    AVCodecContext* m_pCodecContext = nullptr;
+    int m_videoStreamIndex = -1;
 };
