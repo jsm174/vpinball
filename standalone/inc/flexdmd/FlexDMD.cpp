@@ -618,7 +618,7 @@ AnimatedActor* FlexDMD::NewVideo(const string& szVideo, const string& szName)
       delete pAssetSrc;
 
       if (assetType == AssetType_Video)
-         return (AnimatedActor*)Video::Create(this, szVideo, szName, true);
+         return (AnimatedActor*)Video::Create(this, m_pAssetManager, szVideo, szName, true);
       else if (assetType == AssetType_GIF)
          return (AnimatedActor*)GIFImage::Create(this, m_pAssetManager, szVideo, szName);
       else if (assetType == AssetType_Image)
