@@ -231,7 +231,7 @@ Actor* UltraDMD::ResolveImage(const string& filename, bool useFrame)
    if (try_parse_int(filename, key) && m_preloads.find(key) != m_preloads.end()) {
       const VideoDef* const pVideoDef = dynamic_cast<const VideoDef*>(m_preloads[key]);
       if (pVideoDef) {
-         Video* const pActor = Video::Create(m_pFlexDMD, pVideoDef->GetVideoFilename(), string(), pVideoDef->GetLoop());
+         Video* const pActor = Video::Create(m_pFlexDMD, m_pFlexDMD->GetAssetManager(), pVideoDef->GetVideoFilename(), string(), pVideoDef->GetLoop());
          if (pActor) {
             pActor->SetLoop(pVideoDef->GetLoop());
             pActor->SetScaling(pVideoDef->GetScaling());
