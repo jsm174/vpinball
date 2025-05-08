@@ -25,8 +25,6 @@ public:
    void ProcessUpdates();
    void Render();
 
-   RenderMode m_renderMode;
-
 private:
    WindowManager();
 

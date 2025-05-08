@@ -29,9 +29,9 @@ WindowManager* WindowManager::GetInstance()
 WindowManager::WindowManager()
 {
 #ifdef __APPLE__
-   m_renderMode = (RenderMode)g_pplayer->m_ptable->m_settings.LoadValueWithDefault(Settings::Standalone, "WindowRenderMode"s, (int)RenderMode::Default);
+   //m_renderMode = (RenderMode)g_pplayer->m_ptable->m_settings.LoadValueWithDefault(Settings::Standalone, "WindowRenderMode"s, (int)RenderMode::Default);
 #else
-   m_renderMode = (RenderMode)g_pplayer->m_ptable->m_settings.LoadValueWithDefault(Settings::Standalone, "WindowRenderMode"s, (int)RenderMode::Threaded);
+   //m_renderMode = (RenderMode)g_pplayer->m_ptable->m_settings.LoadValueWithDefault(Settings::Standalone, "WindowRenderMode"s, (int)RenderMode::Threaded);
 #endif
 
    m_startup = false;
@@ -118,9 +118,6 @@ void WindowManager::Start()
    SDL_GL_MakeCurrent(g_pplayer->m_playfieldWnd->GetCore(), g_pplayer->m_renderer->m_renderDevice->m_sdl_context);
 #endif
 
-   if (m_renderMode == RenderMode::Threaded)
-      ThreadedRender();
-
    m_startup = true;
 }
 
@@ -152,41 +149,14 @@ void WindowManager::ProcessUpdates()
             for (Window* pWindow: m_windows)
                pWindow->OnUpdate();
 
+            VPX::Window* pWindow = g_pplayer->m_scoreviewOutput.GetWindow();
+            if (pWindow)
+               SDL_RaiseWindow(pWindow->GetCore());
+
             SDL_RaiseWindow(g_pplayer->m_playfieldWnd->GetCore());
          }
       }
    }
-}
-
-void WindowManager::ThreadedRender()
-{
-   if (m_running)
-      return;
-
-   m_running = true;
-
-   PLOGI.printf("Starting render thread");
-
-   m_pThread = new std::thread([this]() {
-      while (m_running) {
-         Uint64 startTime = SDL_GetTicks();
-
-         {
-            std::lock_guard<std::mutex> guard(m_mutex);
-            for (Window* pWindow: m_windows)
-               pWindow->OnRender();
-         }
-
-         double renderingDuration = SDL_GetTicks() - startTime;
-
-         int sleepMs = (1000 / 60) - (int)renderingDuration;
-
-         if (sleepMs > 1)
-            SDL_Delay(sleepMs);
-      }
-
-      PLOGI.printf("Render thread finished");
-   });
 }
 
 void WindowManager::Render()

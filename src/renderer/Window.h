@@ -33,12 +33,10 @@ private:
    int m_width, m_height;
 };
 
-// All coordinates are given in pixels, not logical units.
-// FIXME for MacOS/IOS HiDPI is applied (so giving 'logical' units with Retina scale factor but not user DPI)
 class Window final
 {
 public:
-   Window(const string &title, const Settings::Section section, const string &settingsPrefix); // OS Window
+   Window(const string &title, const Settings& settings, const Settings::Section section, const string &settingsPrefix); // OS Window
    Window(const int width, const int height); // VR Output
    ~Window();
 
@@ -144,7 +142,7 @@ public:
          m_embeddedWindow = new EmbeddedWindow(x, y, width, height);
       }
       else if (m_mode == OM_WINDOW)
-         m_window = new Window(title, section, settingsPrefix);
+         m_window = new Window(title, settings, section, settingsPrefix);
    }
 
    ~RenderOutput()

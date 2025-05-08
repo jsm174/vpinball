@@ -112,6 +112,5 @@ void Standalone::ProcessUpdates()
 
 void Standalone::Render()
 {
-   if (m_pWindowManager->m_renderMode == VP::WindowManager::RenderMode::Default)
-      m_pWindowManager->Render();
+   m_pWindowManager->Render();
 }
