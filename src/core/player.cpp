@@ -299,7 +299,8 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
          #endif
       #endif
       
-      m_playfieldWnd = new VPX::Window(WIN32_WND_TITLE, stereo3D == STEREO_VR ? Settings::PlayerVR : Settings::Player, stereo3D == STEREO_VR ? "Preview" : "Playfield");
+      const Settings* settings = &(g_pvp->m_settings); // Always use main application settings (not overridable per table)
+      m_playfieldWnd = new VPX::Window(WIN32_WND_TITLE, settings, stereo3D == STEREO_VR ? Settings::PlayerVR : Settings::Player, stereo3D == STEREO_VR ? "Preview" : "Playfield");
 
       float pfRefreshRate = m_playfieldWnd->GetRefreshRate(); 
       m_maxFramerate = m_ptable->m_settings.LoadValueFloat(Settings::Player, "MaxFramerate"s);
@@ -1842,6 +1843,10 @@ void Player::PrepareFrame(const std::function<void()>& sync)
    m_logicProfiler.NewFrame(m_time_msec);
    m_logicProfiler.EnterProfileSection(FrameProfiler::PROFILE_PREPARE_FRAME);
 
+   #ifdef __STANDALONE__
+   g_pStandalone->Render();
+   #endif
+
    m_resURIResolver.RequestVisualUpdate();
 
    m_overall_frames++; // This causes the next VPinMame <-> VPX sync to update light status which can be heavy since it needs to perform PWM integration of all lights
@@ -2051,10 +2056,6 @@ void Player::FinishFrame()
 #endif
       }
    }
-
-#ifdef __STANDALONE__
-   g_pStandalone->Render();
-#endif
 
    // Brute force stop: blast into space
    if (m_closing == CS_FORCE_STOP)

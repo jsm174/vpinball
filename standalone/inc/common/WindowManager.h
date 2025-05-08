@@ -26,8 +26,6 @@ public:
    void Render();
    void Stop();
 
-   RenderMode m_renderMode;
-
 private:
    WindowManager();
 
