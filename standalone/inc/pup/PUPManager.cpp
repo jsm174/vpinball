@@ -5,8 +5,6 @@
 #include "PUPCustomPos.h"
 #include "PUPWindow.h"
 
-#include <filesystem>
-
 PUPManager::PUPManager()
 {
    m_init = false;
@@ -248,7 +246,7 @@ TTF_Font* PUPManager::GetFont(const string& szFont)
    return nullptr;
 }
 
-void PUPManager::QueueTriggerData(const PUPTriggerData& data)
+void PUPManager::QueueTriggerData(PUPTriggerData data)
 {
    const string triggerId = data.type + std::to_string(data.number);
 

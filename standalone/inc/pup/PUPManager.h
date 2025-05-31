@@ -60,7 +60,6 @@ public:
    ~PUPManager();
 
    const string& GetRootPath() const { return m_szRootPath; }
-
    bool IsInit() const { return m_init; }
    void LoadConfig(const string& szRomName);
    void Unload();
@@ -71,7 +70,7 @@ public:
    PUPScreen* GetScreen(int screenNum) const;
    bool AddFont(TTF_Font* pFont, const string& szFilename);
    TTF_Font* GetFont(const string& szFamily);
-   void QueueTriggerData(const PUPTriggerData& data);
+   void QueueTriggerData(PUPTriggerData data);
    int GetTriggerValue(const string& triggerId);
    void Start();
    void Stop();
