@@ -2,8 +2,6 @@
 
 #include "PUPPlaylist.h"
 
-#include <filesystem>
-
 /*
    playlists.pup: ScreenNum,Folder,Des,AlphaSort,RestSeconds,Volume,Priority
    PuP Pack Editor: Folder (Playlist),Description,Randomize,RestSeconds,Volume,Priority
@@ -23,8 +21,6 @@
      AlphaSort=0 is Randomize checked
 */
 
-static const string emptyString;
-
 const char* PUP_PLAYLIST_FUNCTION_STRINGS[] = {
    "PUP_PLAYLIST_FUNCTION_DEFAULT",
    "PUP_PLAYLIST_FUNCTION_OVERLAYS",
@@ -35,7 +31,7 @@ const char* PUP_PLAYLIST_FUNCTION_STRINGS[] = {
 
 const char* PUP_PLAYLIST_FUNCTION_TO_STRING(PUP_PLAYLIST_FUNCTION value)
 {
-   if ((int)value < 0 || (size_t)value >= std::size(PUP_PLAYLIST_FUNCTION_STRINGS))
+   if ((int)value < 0 || (size_t)value >= sizeof(PUP_PLAYLIST_FUNCTION_STRINGS) / sizeof(PUP_PLAYLIST_FUNCTION_STRINGS[0]))
       return "UNKNOWN";
    return PUP_PLAYLIST_FUNCTION_STRINGS[value];
 }
@@ -51,18 +47,18 @@ PUPPlaylist::PUPPlaylist(PUPManager* pManager, const string& szFolder, const str
    m_priority = priority;
    m_lastIndex = 0;
 
-   if (StrCompareNoCase(szFolder, "PUPOverlays"s))
+   if (StrCompareNoCase(szFolder, "PUPOverlays"))
       m_function = PUP_PLAYLIST_FUNCTION_OVERLAYS;
-   else if (StrCompareNoCase(szFolder, "PUPFrames"s))
+   else if (StrCompareNoCase(szFolder, "PUPFrames"))
       m_function = PUP_PLAYLIST_FUNCTION_FRAMES;
-   else if (StrCompareNoCase(szFolder, "PUPAlphas"s))
+   else if (StrCompareNoCase(szFolder, "PUPAlphas"))
       m_function = PUP_PLAYLIST_FUNCTION_ALPHAS;
-   else if (StrCompareNoCase(szFolder, "PuPShapes"s))
+   else if (StrCompareNoCase(szFolder, "PuPShapes"))
       m_function = PUP_PLAYLIST_FUNCTION_SHAPES;
    else
       m_function = PUP_PLAYLIST_FUNCTION_DEFAULT;
 
-   m_szBasePath = find_case_insensitive_directory_path(m_pManager->GetPath() + szFolder);
+   m_szBasePath = find_case_insensitive_directory_path(pManager->GetPath() + szFolder);
    if (m_szBasePath.empty()) {
       PLOGE.printf("Playlist folder not found: %s", szFolder.c_str());
       return;
@@ -77,7 +73,7 @@ PUPPlaylist::PUPPlaylist(PUPManager* pManager, const string& szFolder, const str
          }
       }
    }
-   std::ranges::sort(m_files.begin(), m_files.end());
+   std::sort(m_files.begin(), m_files.end());
 }
 
 PUPPlaylist::~PUPPlaylist()
@@ -120,18 +116,20 @@ PUPPlaylist* PUPPlaylist::CreateFromCSV(PUPManager* pManager, const string& line
    PUPPlaylist* pPlaylist = new PUPPlaylist(
       pManager,
       szFolder,
-      parts[2], // Description
-      (string_to_int(parts[3], 0) == 1), // Randomize
-      string_to_int(parts[4], 0), // Rest seconds
-      static_cast<float>(string_to_int(parts[5], 0)), // Volume
-      string_to_int(parts[6], 0)); // Priority
+      parts[2],
+      (string_to_int(parts[3], 0) == 1),
+      string_to_int(parts[4], 0),
+      string_to_int(parts[5], 0),
+      string_to_int(parts[6], 0));
 
    return pPlaylist;
 }
 
 const string& PUPPlaylist::GetPlayFile(const string& szFilename)
 {
-   ankerl::unordered_dense::map<string, string>::const_iterator it = m_fileMap.find(lowerCase(szFilename));
+   static string emptyString = "";
+
+   std::map<string, string>::iterator it = m_fileMap.find(lowerCase(szFilename));
    return it != m_fileMap.end() ? it->second : emptyString;
 }
 
@@ -148,11 +146,13 @@ const string& PUPPlaylist::GetNextPlayFile()
 
 string PUPPlaylist::GetPlayFilePath(const string& szFilename)
 {
+   static string emptyString = "";
+
    if (m_files.empty())
       return emptyString;
 
    if (!szFilename.empty()) {
-      ankerl::unordered_dense::map<string, string>::const_iterator it = m_fileMap.find(lowerCase(szFilename));
+      std::map<string, string>::const_iterator it = m_fileMap.find(lowerCase(szFilename));
       if (it != m_fileMap.end())
          return m_szBasePath + it->second;
       else

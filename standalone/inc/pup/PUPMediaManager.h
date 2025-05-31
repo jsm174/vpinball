@@ -12,7 +12,7 @@ struct PUPMediaManagerPlayer
    int priority;
 };
 
-class PUPMediaManager final
+class PUPMediaManager
 {
 private:
    PUPMediaManagerPlayer m_player1;
@@ -23,14 +23,13 @@ private:
 
    PUPScreen* m_pScreen;
    bool m_pop;
-   SDL_Renderer* m_pRenderer;
 
 public:
    PUPMediaManager(PUPScreen* pScreen);
    ~PUPMediaManager() {};
 
    void SetRenderer(SDL_Renderer* pRenderer);
-   void Play(PUPPlaylist* pPlaylist, const string& szPlayFile, float volume, int priority, bool skipSamePriority, int length);
+   void Play(PUPPlaylist* pPlaylist, const std::string& szPlayFile, float volume, int priority, bool skipSamePriority);
    void SetBG(bool isBackground);
    void SetLoop(bool isLoop);
    void Stop();

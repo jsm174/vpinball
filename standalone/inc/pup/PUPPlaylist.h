@@ -13,9 +13,7 @@ typedef enum
 
 const char* PUP_PLAYLIST_FUNCTION_TO_STRING(PUP_PLAYLIST_FUNCTION value);
 
-class PUPManager;
-
-class PUPPlaylist final
+class PUPPlaylist
 {
 public:
    PUPPlaylist(PUPManager* pManager, const string& szFolder, const string& szDescription, bool randomize, int restSeconds, float volume, int priority);
@@ -45,6 +43,6 @@ private:
    PUP_PLAYLIST_FUNCTION m_function;
    int m_lastIndex;
    vector<string> m_files;
-   ankerl::unordered_dense::map<string, string> m_fileMap;
+   std::map<string, string> m_fileMap;
    string m_szBasePath;
 };

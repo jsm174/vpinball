@@ -24,10 +24,10 @@ typedef enum
    PUP_LABEL_TYPE_GIF
 } PUP_LABEL_TYPE;
 
-class PUPManager;
 class PUPScreen;
+class PUPManager;
 
-class PUPLabel final
+class PUPLabel
 {
 public:
    PUPLabel(PUPManager* pManager, const string& szName, const string& szFont, float size, LONG color, float angle, PUP_LABEL_XALIGN xAlign, PUP_LABEL_YALIGN yAlign, float xPos, float yPos, int pagenum, bool visible);
@@ -72,7 +72,6 @@ private:
    PUP_LABEL_TYPE m_type;
    IMG_Animation* m_pAnimation;
    string m_szPath;
-   int m_animationFrame;
-   Uint64 m_animationStart;
+   int m_frame;
    std::mutex m_mutex;
 };
