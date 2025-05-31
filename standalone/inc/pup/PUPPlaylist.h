@@ -13,9 +13,7 @@ typedef enum
 
 const char* PUP_PLAYLIST_FUNCTION_TO_STRING(PUP_PLAYLIST_FUNCTION value);
 
-class PUPManager;
-
-class PUPPlaylist final
+class PUPPlaylist
 {
 public:
    PUPPlaylist(PUPManager* pManager, const string& szFolder, const string& szDescription, bool randomize, int restSeconds, float volume, int priority);

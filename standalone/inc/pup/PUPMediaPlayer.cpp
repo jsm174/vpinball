@@ -6,6 +6,7 @@
  */
 
 #include "stdafx.h"
+
 #include "PUPMediaPlayer.h"
 
 #if defined(__clang__)
@@ -16,39 +17,103 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
+constexpr size_t MAX_BUFFERED_FRAMES = 60;
+
 PUPMediaPlayer::PUPMediaPlayer()
 {
-   m_pPinSound = new AudioPlayer();
-   m_pPinSound->StreamInit(44100, 2, 0.0f);
+   m_loop = false;
+   m_volume = 100.0f;
+   m_pRenderer = NULL;
+   m_pTexture = NULL;
+#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
+   m_pFormatContext = NULL;
+   m_videoStream = -1;
+   m_pVideoContext = NULL;
+   m_pVideoConversionContext = NULL;
+   m_videoFormat = (SDL_PixelFormatEnum)SDL_PIXELFORMAT_UNKNOWN;
+   m_videoWidth = 0;
+   m_videoHeight = 0;
+   m_audioStream = -1;
+   m_pAudioContext = NULL;
+   m_pAudioConversionContext = NULL;
+   m_audioFormat = AV_SAMPLE_FMT_NONE;
+#endif
+   m_pAudioPlayer = new AudioPlayer();
+   m_pAudioPlayer->StreamInit(44100, 2, 0.0f);
+   m_running = false;
+   m_paused = false;
 }
 
 PUPMediaPlayer::~PUPMediaPlayer()
 {
    Stop();
-   delete m_pPinSound;
+
+#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
+   if (m_pFormatContext)
+      avformat_close_input(&m_pFormatContext);
+
+   if (m_pVideoContext)
+      avcodec_free_context(&m_pVideoContext);
+
+   if (m_pVideoConversionContext)
+      sws_freeContext(m_pVideoConversionContext);
+
+   if (m_pAudioContext)
+      avcodec_free_context(&m_pAudioContext);
+
+   if (m_pAudioConversionContext)
+      swr_free(&m_pAudioConversionContext);
+#endif
+
+   delete m_pAudioPlayer;
+}
+
+void PUPMediaPlayer::SetRenderer(SDL_Renderer* pRenderer)
+{
+   std::lock_guard<std::mutex> lock(m_mutex);
+   m_pRenderer = pRenderer;
 }
 
 void PUPMediaPlayer::Play(const string& szFilename)
 {
-#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS 
-   PLOGD.printf("filename=%s", szFilename.c_str());
+   PLOGW.printf("filename=%s", szFilename.c_str());
 
    Stop();
 
    m_szFilename = szFilename;
    m_volume = 0.0f;
    m_loop = false;
-   m_startTimestamp = SDL_GetTicks();
+
+#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
+   if (m_pFormatContext)
+      avformat_close_input(&m_pFormatContext);
+
+   m_videoStream = -1;
+
+   if (m_pVideoContext)
+      avcodec_free_context(&m_pVideoContext);
+
+   m_videoFormat = (SDL_PixelFormatEnum)SDL_PIXELFORMAT_UNKNOWN;
+   m_videoWidth = 0;
+   m_videoHeight = 0;
+
+   m_audioStream = -1;
+
+   if (m_pAudioContext)
+      avcodec_free_context(&m_pAudioContext);
+
+   m_audioFormat = AV_SAMPLE_FMT_NONE;
 
    // Open file
+
    if (avformat_open_input(&m_pFormatContext, szFilename.c_str(), NULL, NULL) != 0) {
       PLOGE.printf("Unable to open: filename=%s", szFilename.c_str());
       return;
    }
 
    // Find video stream
-   for (unsigned int i = 0; i < m_pFormatContext->nb_streams; i++)
-   {
+
+   for (int i = 0; i < m_pFormatContext->nb_streams; i++) {
       if (m_pFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_VIDEO &&
          !(m_pFormatContext->streams[i]->disposition & AV_DISPOSITION_ATTACHED_PIC)) {
          m_videoStream = i;
@@ -57,6 +122,7 @@ void PUPMediaPlayer::Play(const string& szFilename)
    }
 
    // Open video stream
+
    if (m_videoStream >= 0) {
       AVStream* pStream = m_pFormatContext->streams[m_videoStream];
       AVCodecParameters* pCodecParameters = pStream->codecpar;
@@ -73,14 +139,15 @@ void PUPMediaPlayer::Play(const string& szFilename)
    }
 
    // Find audio stream
+
    if (m_videoStream >= 0) {
       m_audioStream = av_find_best_stream(m_pFormatContext, AVMEDIA_TYPE_AUDIO, -1, m_videoStream, NULL, 0);
       if (m_audioStream == AVERROR_DECODER_NOT_FOUND) {
-         PLOGE.printf("No audio stream found: filename=%s", szFilename.c_str());
+         PLOGW.printf("No audio stream found: filename=%s", szFilename.c_str());
       }
    }
    else {
-      for (unsigned int i = 0; i < m_pFormatContext->nb_streams; i++) {
+      for (int i = 0; i < m_pFormatContext->nb_streams; i++) {
          if (m_pFormatContext->streams[i]->codecpar->codec_type == AVMEDIA_TYPE_AUDIO) {
             m_audioStream = i;
             break;
@@ -89,6 +156,7 @@ void PUPMediaPlayer::Play(const string& szFilename)
    }
 
    // Open audio stream
+
    if (m_audioStream >= 0) {
       AVStream* pStream = m_pFormatContext->streams[m_audioStream];
       AVCodecParameters* pCodecParameters = pStream->codecpar;
@@ -103,12 +171,11 @@ void PUPMediaPlayer::Play(const string& szFilename)
 
    if (!m_pVideoContext && !m_pAudioContext) {
       PLOGE.printf("No video or audio stream found: filename=%s", szFilename.c_str());
-      Stop();
       return;
    }
 
-   PLOGD.printf("Playing: filename=%s", m_szFilename.c_str());
-   m_pPinSound->StreamVolume(0);
+   PLOGW.printf("Playing: filename=%s", m_szFilename.c_str());
+   m_pAudioPlayer->StreamVolume(0);
 
    m_running = true;
    m_thread = std::thread(&PUPMediaPlayer::Run, this);
@@ -123,113 +190,39 @@ bool PUPMediaPlayer::IsPlaying()
 
 void PUPMediaPlayer::Pause(bool pause)
 {
-   if (m_paused != pause)
-   {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      m_paused = pause;
-      if (m_paused)
-         m_pauseTimestamp = static_cast<double>(SDL_GetTicks() - m_startTimestamp) / 1000.0; // Freeze at the current playing time
-      else
-         m_startTimestamp = SDL_GetTicks() - static_cast<Uint64>(1000.0 * m_pauseTimestamp); // Adjust start time to restart from freeze point
-   }
+   std::lock_guard<std::mutex> lock(m_mutex);
+   m_paused = pause;
 }
 
 void PUPMediaPlayer::Stop()
 {
-#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS 
-   if (IsPlaying())
-   {
-      PLOGD.printf("Stop: %s", m_szFilename.c_str());
+   if (IsPlaying()) {
+      PLOGW.printf("Stop: %s", m_szFilename.c_str());
    }
 
-   // Stop decoder thread and flush queue
    {
       std::lock_guard<std::mutex> lock(m_mutex);
       m_running = false;
    }
+
    if (m_thread.joinable())
       m_thread.join();
 
-   if (m_pFormatContext)
-      avformat_close_input(&m_pFormatContext);
-   m_pFormatContext = nullptr;
-
-   if (m_pVideoContext)
-      avcodec_free_context(&m_pVideoContext);
-   m_pVideoContext = nullptr;
-   m_videoStream = -1;
-
-   if (m_rgbFrames)
+#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
    {
-      for (int i = 0; i < m_nRgbFrames; i++)
-         if (m_rgbFrames[i])
-            av_frame_free(&m_rgbFrames[i]);
-      delete[] m_rgbFrames;
-      m_rgbFrames = nullptr;
+      std::lock_guard<std::mutex> lock(m_mutex);
+      while (!m_queue.empty()) {
+         AVFrame* pFrame = m_queue.front();
+         av_frame_free(&pFrame);
+         m_queue.pop();
+      }
    }
-   if (m_rgbFrameBuffers)
-   {
-      for (int i = 0; i < m_nRgbFrames; i++)
-         if (m_rgbFrameBuffers[i])
-            av_freep(&m_rgbFrameBuffers[i]);
-      delete[] m_rgbFrameBuffers;
-      m_rgbFrameBuffers = nullptr;
-   }
-   m_nRgbFrames = 0;
-   m_activeRgbFrame = 0;
-
-   if (m_swsContext)
-      sws_freeContext(m_swsContext);
-   m_swsContext = nullptr;
-
-   if (m_videoTexture)
-      SDL_DestroyTexture(m_videoTexture);
-   m_videoTexture = nullptr;
-   m_videoTextureId = 0xFFFFFF;
-
-   if (m_pAudioContext)
-      avcodec_free_context(&m_pAudioContext);
-   m_pAudioContext = nullptr;
-   m_audioFormat = AV_SAMPLE_FMT_NONE;
-   m_audioStream = -1;
-
-   if (m_pAudioConversionContext)
-      swr_free(&m_pAudioConversionContext);
-   m_pAudioConversionContext = nullptr;
 #endif
 }
 
-void PUPMediaPlayer::SetLoop(bool loop)
-{
-   std::lock_guard<std::mutex> lock(m_mutex);
-   if (m_loop != loop) {
-      PLOGD.printf("setting loop: loop=%d", loop);
-      m_loop = loop;
-   }
-}
-
-void PUPMediaPlayer::SetVolume(float volume)
-{
-   std::lock_guard<std::mutex> lock(m_mutex);
-   if (m_volume != volume) {
-       PLOGD.printf("setting volume: volume=%.1f%%", volume);
-       m_volume = volume;
-   }
-}
-
-void PUPMediaPlayer::SetLength(int length)
-{
-   std::lock_guard<std::mutex> lock(m_mutex);
-   if (m_length != length)
-   {
-      PLOGD.printf("setting length: length=%d", length);
-      m_length = length;
-   }
-}
-
-#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
 void PUPMediaPlayer::Run()
 {
+#ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
    AVPacket* pPacket = av_packet_alloc();
    if (!pPacket) {
       PLOGE.printf("Unable to allocate packet");
@@ -243,106 +236,131 @@ void PUPMediaPlayer::Run()
       return;
    }
 
-   // Main loop which loops over read/decode/convert and handle video seeking/looping
-   while (true)
-   {
-      // Interact with main thread
-      bool loop;
+   bool flushing = false;
+
+   Uint64 videoStart = 0;
+   double videoFirstPTS = -1.0;
+   int count = 0;
+   SDL_Renderer* pRenderer = nullptr;
+
+   while (true) {
       {
          std::lock_guard<std::mutex> lock(m_mutex);
          if (!m_running)
             break;
-         if (m_paused)
-         {
+
+         if (!pRenderer)
+            pRenderer = m_pRenderer;
+
+         m_pAudioPlayer->StreamVolume(m_volume / 100.0f);
+      }
+
+      {
+         std::unique_lock<std::mutex> lock(m_mutex);
+         if (m_paused) {
+            lock.unlock();
             SDL_Delay(100);
             continue;
          }
-         if (m_length != 0 && (static_cast<double>(SDL_GetTicks() - m_startTimestamp) / 1000.0) >= m_length)
-            break;
-         loop = m_loop;
-         m_pPinSound->StreamVolume(m_volume / 100.0f);
       }
 
-      // Throttle when playing audio-only streams
-      if (!m_pVideoContext && m_pAudioContext) {
-         double elapsed = (SDL_GetTicks() - m_startTimestamp) / 1000.0;
-         double ahead = m_audioPts - elapsed;
-         if (ahead > 0) {
-            Uint32 delay_ms = static_cast<Uint32>(ahead * 1000.0);
-            delay_ms = std::min(delay_ms, 50U);
-            SDL_Delay(delay_ms);
-         }
-      }
-
-      // Read next frame from source
-      const int rfRet = av_read_frame(m_pFormatContext, pPacket);
-      if (rfRet == AVERROR_EOF)
-      {
-         // End of stream, loop or stop
-         if (!loop)
-            break;
-         if (m_pVideoContext)
-         {
-            if (av_seek_frame(m_pFormatContext, m_videoStream, 0, 0) < 0)
-            {
-               PLOGE.printf("Unable to seek video stream. Aborting loop");
-               break;
+      if (!flushing) {
+         if (av_read_frame(m_pFormatContext, pPacket) < 0) {
+            if (count == 0)  {
+               PLOGW.printf("End of stream, finishing decode: %s", m_szFilename.c_str());
             }
-            avcodec_flush_buffers(m_pVideoContext);
+
+            if (m_pAudioContext)
+               avcodec_flush_buffers(m_pAudioContext);
+
+            if (m_pVideoContext)
+               avcodec_flush_buffers(m_pVideoContext);
+
+            flushing = true;
          }
-         if (m_pAudioContext)
-         {
-            if (av_seek_frame(m_pFormatContext, m_audioStream, 0, 0) < 0)
-            {
-               PLOGE.printf("Unable to seek audio stream. Aborting loop");
+         else {
+            if (pPacket->stream_index == m_audioStream) {
+               if (avcodec_send_packet(m_pAudioContext, pPacket) != 0) {
+                  PLOGE.printf("Unable to send audio packet");
+               }
             }
-            avcodec_flush_buffers(m_pAudioContext);
+            else if (pPacket->stream_index == m_videoStream) {
+               if (avcodec_send_packet(m_pVideoContext, pPacket) != 0) {
+                  PLOGE.printf("Unable to send video packet");
+               }
+            }
+            av_packet_unref(pPacket);
          }
-         m_playIndex++;
-         m_startTimestamp = SDL_GetTicks();
-         continue;
-      }
-      else if (rfRet < 0)
-      {
-         // Error reading file, stop playing
-         PLOGE.printf("Error while reading video frame");
-         break;
       }
 
-      // Send to decoder
-      if (pPacket->stream_index == m_audioStream)
-      {
-         if (avcodec_send_packet(m_pAudioContext, pPacket) != 0)
-         {
-            PLOGE.printf("Unable to send audio packet");
-         }
-      }
-      else if (pPacket->stream_index == m_videoStream)
-      {
-         if (avcodec_send_packet(m_pVideoContext, pPacket) != 0)
-         {
-            PLOGE.printf("Unable to send video packet");
-         }
-      }
-      av_packet_unref(pPacket);
+      bool decoded = false;
 
-      // Process decoded frames
-      // TODO This should be done on anciliary threads to improve synchronization and better balance the load between CPU cores
-      // Here, the synchronization entirely rely on the fact that HandleVideoFrame will block, waiting for a free slot in the circular frame buffer
-      // This can cause audio overflow if there are no video (the stream is directly fully decoded) or audio glitches if the muxing is not great
-      // (video waiting for frame while audio buffer is exhausted, this one being unlikely).
-      if (m_pAudioContext)
-      {
-         while (avcodec_receive_frame(m_pAudioContext, pFrame) >= 0)
+      if (m_pAudioContext) {
+         while (avcodec_receive_frame(m_pAudioContext, pFrame) >= 0) {
             HandleAudioFrame(pFrame);
-      }
-      if (m_pVideoContext)
-      {
-         while (avcodec_receive_frame(m_pVideoContext, pFrame) >= 0)
-         {
-            pFrame->opaque = reinterpret_cast<void*>(static_cast<uintptr_t>(m_playIndex));
-            HandleVideoFrame(pFrame);
+            decoded = true;
          }
+         if (flushing)
+            SDL_Delay(100);
+      }
+
+      if (m_pVideoContext) {
+         while (avcodec_receive_frame(m_pVideoContext, pFrame) >= 0) {
+            double pts = ((double)pFrame->pts * m_pVideoContext->pkt_timebase.num) / m_pVideoContext->pkt_timebase.den;
+            if (videoFirstPTS < 0.0)
+               videoFirstPTS = pts;
+            pts -= videoFirstPTS;
+
+            if (pRenderer) {
+               AVFrame* pClonedFrame = av_frame_clone(pFrame);
+               if (pClonedFrame) {
+                  std::lock_guard<std::mutex> lock(m_mutex);
+                  if (m_queue.size() >= MAX_BUFFERED_FRAMES) {
+                     AVFrame* pOldFrame = m_queue.front();
+                     av_frame_free(&pOldFrame);
+                     m_queue.pop();
+                  }
+                  m_queue.push(pClonedFrame);
+               }
+            }
+
+            if (!videoStart)
+               videoStart = SDL_GetTicks();
+
+            double now = (double)(SDL_GetTicks() - videoStart) / 1000.0;
+            while (now < pts - 0.001) {
+               SDL_Delay(8);
+               now = (double)(SDL_GetTicks() - videoStart) / 1000.0;
+            }
+            decoded = true;
+         }
+      }
+
+      if (flushing && !decoded) {
+         SDL_Delay(100);
+
+         {
+            std::lock_guard<std::mutex> lock(m_mutex);
+            if (!m_loop)
+               break;
+         }
+
+         if (m_pVideoContext) {
+            if (av_seek_frame(m_pFormatContext, m_videoStream, 0, 0) < 0) {
+               PLOGE.printf("Unable to seek video stream");
+            }
+            videoFirstPTS = -1.0;
+            videoStart = 0;
+         }
+
+         if (m_pAudioContext) {
+            if (av_seek_frame(m_pFormatContext, m_audioStream, 0, 0) < 0) {
+               PLOGE.printf("Unable to seek audio stream");
+            }
+         }
+
+         count++;
+         flushing = false;
       }
    }
 
@@ -353,133 +371,98 @@ void PUPMediaPlayer::Run()
       std::lock_guard<std::mutex> lock(m_mutex);
       m_running = false;
    }
-}
-
-void PUPMediaPlayer::HandleVideoFrame(AVFrame* frame)
-{
-   // Unknown frame format, don't process frame (would crash in getContext)
-   if (frame->format < 0)
-      return;
-
-   // Create video frame conversion context and frame queue
-   if (m_nRgbFrames == 0)
-   {
-      const AVPixelFormat targetFormat = AV_PIX_FMT_RGBA;
-      const int targetWidth = m_pVideoContext->width; // TODO we could also apply downscaling to the expected render size
-      const int targetHeight = m_pVideoContext->height;
-      m_nRgbFrames = 3; // TODO shouldn't the queue size be adapted to the video characteristics ?
-      m_rgbFrames = new AVFrame*[m_nRgbFrames];
-      memset(m_rgbFrames, 0, sizeof(AVFrame*) * m_nRgbFrames);
-      m_rgbFrameBuffers = new uint8_t*[m_nRgbFrames];
-      memset(m_rgbFrameBuffers, 0, sizeof(uint8_t*) * m_nRgbFrames);
-      int rgbFrameSize = av_image_get_buffer_size(targetFormat, targetWidth, targetHeight, 1);
-      for (int i = 0; i < m_nRgbFrames; i++)
-      {
-         m_rgbFrames[i] = av_frame_alloc();
-         if (m_rgbFrames[i] == nullptr)
-         {
-            PLOGE.printf("Failed to create RGB buffer frame");
-            m_running = false;
-            return;
-         }
-         m_rgbFrameBuffers[i] = static_cast<uint8_t*>(av_malloc(rgbFrameSize * sizeof(uint8_t)));
-         if (m_rgbFrameBuffers[i] == nullptr)
-         {
-            PLOGE.printf("Failed to allocate RGB buffer");
-            m_running = false;
-            return;
-         }
-         m_rgbFrames[i]->width = targetWidth;
-         m_rgbFrames[i]->height = targetHeight;
-         m_rgbFrames[i]->format = targetFormat;
-         av_image_fill_arrays(m_rgbFrames[i]->data, m_rgbFrames[i]->linesize, m_rgbFrameBuffers[i], targetFormat, targetWidth, targetHeight, 1);
-      }
-   }
-
-   // m_activeRgbFrame points to the last frame (the one with the highest presentation timestamp)
-   int nextFrame = (m_activeRgbFrame + 1) % m_nRgbFrames;
-   AVFrame* rgbFrame = m_rgbFrames[nextFrame];
-
-   // Create/Update conversion context when source format is known (so after decoding at least one frame)
-   m_swsContext = sws_getCachedContext(m_swsContext, 
-      frame->width, frame->height, static_cast<AVPixelFormat>(frame->format),
-      rgbFrame->width, rgbFrame->height, static_cast<AVPixelFormat>(rgbFrame->format),
-      SWS_BILINEAR, NULL, NULL, NULL
-   );
-   if (m_swsContext == nullptr)
-      return;
-
-   // Wait for the buffer slot to be outdated (do not overwrite a frame that is waiting to be displayed), but only in the same play sequence (stored in the opaque field of the frame. if we looped or seek, skip)
-   if (rgbFrame->opaque == frame->opaque)
-   {
-      const double oldPts = (static_cast<double>(rgbFrame->pts) * m_pVideoContext->pkt_timebase.num) / m_pVideoContext->pkt_timebase.den;
-      while (m_running && (static_cast<double>(SDL_GetTicks() - m_startTimestamp) / 1000.0) < oldPts)
-         SDL_Delay(8);
-   }
-
-   // Convert to a renderable format (we do not lock as the consumer thread is not supposed to be accessing an outdated frame, and this operation can be a bit lengthy)
-   const bool resized = sws_scale(m_swsContext, frame->data, frame->linesize, 0, m_pVideoContext->height, rgbFrame->data, rgbFrame->linesize) == m_pVideoContext->height;
-
-   // Update frame PTS and pointer to latest frame under a lock as this modification impacts the consumer thread frame selection
-   {
-      std::lock_guard<std::mutex> lock(m_mutex);
-      av_frame_copy_props(rgbFrame, frame);
-      m_activeRgbFrame++;
-   }
-}
 #endif
+}
 
-void PUPMediaPlayer::Render(SDL_Renderer* pRenderer, const SDL_Rect& destRect)
+void PUPMediaPlayer::SetLoop(bool loop)
 {
-   if (!pRenderer)
-      return;
-
-   if (m_length != 0)
-   {
-      const int elapsed = static_cast<int>(SDL_GetTicks() - m_startTimestamp) / 1000;
-      if (elapsed >= m_length)
-         return;
+   std::lock_guard<std::mutex> lock(m_mutex);
+   if (m_loop != loop) {
+      PLOGW.printf("setting loop: loop=%d", loop);
+      m_loop = loop;
    }
-   else if (!m_running)
-   {
-      return;
-   }
+}
 
+void PUPMediaPlayer::SetVolume(float volume)
+{
+   std::lock_guard<std::mutex> lock(m_mutex);
+   if (m_volume != volume) {
+       PLOGW.printf("setting volume: volume=%.1f%%", volume);
+       m_volume = volume;
+   }
+}
+
+void PUPMediaPlayer::Render(const SDL_Rect& destRect)
+{
 #ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
-   // Search for the best frame to display and update the video texture accordingly (if needed)
-   const double playPts = m_paused ? m_pauseTimestamp : static_cast<double>(SDL_GetTicks() - m_startTimestamp) / 1000.0;
+   AVFrame* pFrame = NULL;
+
    {
       std::lock_guard<std::mutex> lock(m_mutex);
-      unsigned int m_renderFrameId = m_videoTextureId;
-      for (int i = 0; i < m_nRgbFrames; i++)
-      {
-         if (m_activeRgbFrame >= i)
-         {
-            const AVFrame* rgbFrame = m_rgbFrames[(m_activeRgbFrame + m_nRgbFrames - i) % m_nRgbFrames];
-            const double framePts = (static_cast<double>(rgbFrame->pts) * m_pVideoContext->pkt_timebase.num) / m_pVideoContext->pkt_timebase.den;
-            if (playPts <= framePts) // We select the first frame after (or at) the current play timestamp
-               m_renderFrameId = m_activeRgbFrame - i;
-         }
-      }
-      if (m_videoTextureId != m_renderFrameId)
-      {
-         m_videoTextureId = m_renderFrameId;
-         AVFrame* rgbFrame = m_rgbFrames[m_renderFrameId % m_nRgbFrames];
-         if (!m_videoTexture) {
-            m_videoTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STREAMING, rgbFrame->width, rgbFrame->height);
-            if (m_videoTexture)
-               SDL_SetTextureBlendMode(m_videoTexture, SDL_BLENDMODE_BLEND);
-         }
-         if (m_videoTexture)
-            SDL_UpdateTexture(m_videoTexture, NULL, rgbFrame->data[0], rgbFrame->linesize[0]);
-         //const double framePts = (static_cast<double>(rgbFrame->pts) * m_pVideoContext->pkt_timebase.num) / m_pVideoContext->pkt_timebase.den;
-         //PLOGD.printf("Video tex update: play time: %8.3fs / frame pts: %8.3fs / delta: %8.3fs  [%s]", playPts, framePts, framePts - playPts, m_szFilename.c_str());
+      if (!m_queue.empty()) {
+         pFrame = m_queue.front();
+         m_queue.pop();
       }
    }
 
-   // Render image
-   if (m_videoTexture)
-      SDL_RenderCopy(pRenderer, m_videoTexture, NULL, &destRect);
+   if (pFrame) {
+      SDL_PixelFormatEnum format = GetVideoFormat((enum AVPixelFormat)pFrame->format);
+      if (!m_pTexture || format != m_videoFormat || pFrame->width != m_videoWidth || pFrame->height != m_videoHeight) {
+         if (m_pTexture)
+             SDL_DestroyTexture(m_pTexture);
+
+         if (format == SDL_PIXELFORMAT_UNKNOWN)
+            m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, pFrame->width,pFrame->height);
+         else
+            m_pTexture = SDL_CreateTexture(m_pRenderer, format, SDL_TEXTUREACCESS_STREAMING, pFrame->width, pFrame->height);
+
+         m_videoFormat = format;
+         m_videoWidth = pFrame->width;
+         m_videoHeight = pFrame->height;
+      }
+
+      SDL_RendererFlip flip = SDL_FLIP_NONE;
+
+      switch (format) {
+         case SDL_PIXELFORMAT_UNKNOWN:
+            m_pVideoConversionContext = sws_getCachedContext(m_pVideoConversionContext,
+               pFrame->width, pFrame->height, (enum AVPixelFormat)pFrame->format, pFrame->width, pFrame->height,
+               AV_PIX_FMT_BGRA, SWS_POINT, NULL, NULL, NULL);
+            if (m_pVideoConversionContext != NULL) {
+               uint8_t* pPixels[4];
+               int pitch[4];
+               if (SDL_LockTexture(m_pTexture, NULL, (void **)pPixels, pitch) == 0) {
+                  sws_scale(m_pVideoConversionContext, (const uint8_t * const *)pFrame->data, pFrame->linesize, 0, pFrame->height, pPixels, pitch);
+                  SDL_UnlockTexture(m_pTexture);
+               }
+            }
+            break;
+         case SDL_PIXELFORMAT_IYUV:
+            if (pFrame->linesize[0] > 0 && pFrame->linesize[1] > 0 && pFrame->linesize[2] > 0) {
+               SDL_UpdateYUVTexture(m_pTexture, NULL, pFrame->data[0], pFrame->linesize[0],
+                  pFrame->data[1], pFrame->linesize[1], pFrame->data[2], pFrame->linesize[2]);
+            }
+            else if (pFrame->linesize[0] < 0 && pFrame->linesize[1] < 0 && pFrame->linesize[2] < 0) {
+               SDL_UpdateYUVTexture(m_pTexture, NULL, pFrame->data[0] + pFrame->linesize[0] * (pFrame->height - 1), -pFrame->linesize[0],
+                  pFrame->data[1] + pFrame->linesize[1] * (AV_CEIL_RSHIFT(pFrame->height, 1) - 1), -pFrame->linesize[1],
+                  pFrame->data[2] + pFrame->linesize[2] * (AV_CEIL_RSHIFT(pFrame->height, 1) - 1), -pFrame->linesize[2]);
+               flip = SDL_FLIP_VERTICAL;
+            }
+            SetYUVConversionMode(pFrame);
+            break;
+         default:
+            if (pFrame->linesize[0] < 0) {
+               SDL_UpdateTexture(m_pTexture, NULL, pFrame->data[0] + pFrame->linesize[0] * (pFrame->height - 1), -pFrame->linesize[0]);
+               flip = SDL_FLIP_VERTICAL;
+            }
+            else
+               SDL_UpdateTexture(m_pTexture, NULL, pFrame->data[0], pFrame->linesize[0]);
+      }
+      av_frame_free(&pFrame);
+   }
+
+   if (m_pTexture)
+      SDL_RenderCopy(m_pRenderer, m_pTexture, NULL, &destRect);
 #endif
 }
 
@@ -490,13 +473,7 @@ AVCodecContext* PUPMediaPlayer::OpenStream(AVFormatContext* pInputFormatContext,
    if (!pContext)
       return NULL;
 
-   // Request to decode frames on different threads, limiting to the platform core minus 3 (magic number corresponding of the average core used by VPX)
-   // TODO Disabled as this delay the frame queue by one frame, breaking single frame videos (and still images used as video)
-   //pContext->thread_count = std::max(1u, std::min(16u, std::thread::hardware_concurrency() - 3));
-   //pContext->thread_type = FF_THREAD_FRAME;
-
-   if (avcodec_parameters_to_context(pContext, pInputFormatContext->streams[stream]->codecpar) < 0)
-   {
+   if (avcodec_parameters_to_context(pContext, pInputFormatContext->streams[stream]->codecpar) < 0) {
       avcodec_free_context(&pContext);
       return NULL;
    }
@@ -580,11 +557,49 @@ void PUPMediaPlayer::HandleAudioFrame(AVFrame* pFrame)
       }
    }
    int resampledDataSize = len2 * destChLayout.nb_channels * av_get_bytes_per_sample(destFmt);
-   m_pPinSound->StreamUpdate(pBuffer, resampledDataSize);
-   av_free(pBuffer);
+   m_pAudioPlayer->StreamUpdate(pBuffer, resampledDataSize);
 
-   if (pFrame->pts != AV_NOPTS_VALUE)
-      m_audioPts = (double)pFrame->pts * m_pAudioContext->pkt_timebase.num / m_pAudioContext->pkt_timebase.den;
+   av_free(pBuffer);
+}
+
+SDL_PixelFormatEnum PUPMediaPlayer::GetVideoFormat(enum AVPixelFormat format)
+{
+   switch (format) {
+      case AV_PIX_FMT_RGB8: return SDL_PIXELFORMAT_RGB332;
+      case AV_PIX_FMT_RGB444: return SDL_PIXELFORMAT_RGB444;
+      case AV_PIX_FMT_RGB555: return SDL_PIXELFORMAT_RGB555;
+      case AV_PIX_FMT_BGR555: return SDL_PIXELFORMAT_BGR555;
+      case AV_PIX_FMT_RGB565: return SDL_PIXELFORMAT_RGB565;
+      case AV_PIX_FMT_BGR565: return SDL_PIXELFORMAT_BGR565;
+      case AV_PIX_FMT_RGB24: return SDL_PIXELFORMAT_RGB24;
+      case AV_PIX_FMT_BGR24: return SDL_PIXELFORMAT_BGR24;
+      case AV_PIX_FMT_0RGB32: return SDL_PIXELFORMAT_XRGB8888;
+      case AV_PIX_FMT_0BGR32: return SDL_PIXELFORMAT_XBGR8888;
+      case AV_PIX_FMT_NE(RGB0, 0BGR): return SDL_PIXELFORMAT_RGBX8888;
+      case AV_PIX_FMT_NE(BGR0, 0RGB): return SDL_PIXELFORMAT_BGRX8888;
+      case AV_PIX_FMT_RGB32: return SDL_PIXELFORMAT_ARGB8888;
+      case AV_PIX_FMT_RGB32_1: return SDL_PIXELFORMAT_RGBA8888;
+      case AV_PIX_FMT_BGR32: return SDL_PIXELFORMAT_ABGR8888;
+      case AV_PIX_FMT_BGR32_1: return SDL_PIXELFORMAT_BGRA8888;
+      case AV_PIX_FMT_YUV420P: return SDL_PIXELFORMAT_IYUV;
+      case AV_PIX_FMT_YUYV422: return SDL_PIXELFORMAT_YUY2;
+      case AV_PIX_FMT_UYVY422: return SDL_PIXELFORMAT_UYVY;
+      default: return SDL_PIXELFORMAT_UNKNOWN;
+   }
+}
+
+void PUPMediaPlayer::SetYUVConversionMode(AVFrame *frame)
+{
+   SDL_YUV_CONVERSION_MODE mode = SDL_YUV_CONVERSION_AUTOMATIC;
+   if (frame && (frame->format == AV_PIX_FMT_YUV420P || frame->format == AV_PIX_FMT_YUYV422 || frame->format == AV_PIX_FMT_UYVY422)) {
+      if (frame->color_range == AVCOL_RANGE_JPEG)
+         mode = SDL_YUV_CONVERSION_JPEG;
+      else if (frame->colorspace == AVCOL_SPC_BT709)
+         mode = SDL_YUV_CONVERSION_BT709;
+      else if (frame->colorspace == AVCOL_SPC_BT470BG || frame->colorspace == AVCOL_SPC_SMPTE170M)
+         mode = SDL_YUV_CONVERSION_BT601;
+   }
+   SDL_SetYUVConversionMode(mode);
 }
 #endif
 
