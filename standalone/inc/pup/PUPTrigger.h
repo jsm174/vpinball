@@ -4,7 +4,6 @@
 
 class PUPPlaylist;
 class PUPScreen;
-class PUPTriggerCondition;
 
 typedef enum
 {
@@ -22,14 +21,15 @@ typedef enum
 
 const char* PUP_TRIGGER_PLAY_ACTION_TO_STRING(PUP_TRIGGER_PLAY_ACTION value);
 
-class PUPTrigger final
+class PUPTrigger
 {
 public:
-   ~PUPTrigger();
+   ~PUPTrigger() {}
 
-   static PUPTrigger* CreateFromCSV(PUPScreen* pScreen, const string& line);
+   static PUPTrigger* CreateFromCSV(PUPScreen* pScreen, string line);
    bool IsActive() const { return m_active; }
    const string& GetDescription() const { return m_szDescript; }
+   const string& GetTrigger() const { return m_szTrigger; }
    PUPScreen* GetScreen() const { return m_pScreen; }
    PUPPlaylist* GetPlaylist() const { return m_pPlaylist; }
    const string& GetPlayFile() const { return m_szPlayFile; }
@@ -37,17 +37,17 @@ public:
    int GetPriority() const { return m_priority; }
    int GetLength() const { return m_length; }
    int GetCounter() const { return m_counter; }
-   int GetRestMs() const { return m_restMs; }
+   int GetRestSeconds() const { return m_restSeconds; }
    PUP_TRIGGER_PLAY_ACTION GetPlayAction() const { return m_playAction; }
-   bool Evaluate(PUPManager* pManager, const PUPTriggerData& data);
+   bool IsResting();
+   void SetTriggered();
    string ToString() const;
 
 private:
-   PUPTrigger(bool active, const string& szDescript, const vector<PUPTriggerCondition*>& conditions, PUPScreen* pScreen, PUPPlaylist* pPlaylist, const string& szPlayFile, float volume, int priority, int length, int counter, int restSeconds, PUP_TRIGGER_PLAY_ACTION playAction);
-   bool IsResting() const;
+   PUPTrigger(bool active, const string& szDescript, const string& szTrigger, PUPScreen* pScreen, PUPPlaylist* pPlaylist, const string& szPlayFile, float volume, int priority, int length, int counter, int restSeconds, PUP_TRIGGER_PLAY_ACTION playAction);
    bool m_active;
    string m_szDescript;
-   vector<PUPTriggerCondition*> m_conditions;
+   string m_szTrigger;
    PUPScreen* m_pScreen;
    PUPPlaylist* m_pPlaylist;
    string m_szPlayFile;
@@ -55,7 +55,7 @@ private:
    int m_priority;
    int m_length;
    int m_counter;
-   int m_restMs;
+   int m_restSeconds;
    PUP_TRIGGER_PLAY_ACTION m_playAction;
    Uint64 m_lastTriggered;
 };
