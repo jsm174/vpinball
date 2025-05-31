@@ -17,13 +17,12 @@
 #pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #endif
 
-constexpr size_t MAX_BUFFERED_FRAMES = 60;
+constexpr size_t MAX_BUFFERED_FRAMES = 30;
 
 PUPMediaPlayer::PUPMediaPlayer()
 {
    m_loop = false;
    m_volume = 100.0f;
-   m_pRenderer = NULL;
    m_pTexture = NULL;
 #ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
    m_pFormatContext = NULL;
@@ -77,6 +76,7 @@ void PUPMediaPlayer::Play(const string& szFilename)
    m_szFilename = szFilename;
    m_volume = 0.0f;
    m_loop = false;
+   m_currentPlayTime = 0;
 
 #ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
    if (m_pFormatContext)
@@ -235,16 +235,12 @@ void PUPMediaPlayer::Run()
    Uint64 videoStart = 0;
    double videoFirstPTS = -1.0;
    int count = 0;
-   SDL_Renderer* pRenderer = nullptr;
 
    while (true) {
       {
          std::lock_guard<std::mutex> lock(m_mutex);
          if (!m_running)
             break;
-
-         if (!pRenderer)
-            pRenderer = m_pRenderer;
 
          m_pAudioPlayer->StreamVolume(m_volume / 100.0f);
       }
@@ -304,18 +300,17 @@ void PUPMediaPlayer::Run()
             if (videoFirstPTS < 0.0)
                videoFirstPTS = pts;
             pts -= videoFirstPTS;
+            m_currentPlayTime = pts;
 
-            if (pRenderer) {
-               AVFrame* pClonedFrame = av_frame_clone(pFrame);
-               if (pClonedFrame) {
-                  std::lock_guard<std::mutex> lock(m_mutex);
-                  if (m_queue.size() >= MAX_BUFFERED_FRAMES) {
-                     AVFrame* pOldFrame = m_queue.front();
-                     av_frame_free(&pOldFrame);
-                     m_queue.pop();
-                  }
-                  m_queue.push(pClonedFrame);
+            AVFrame* pClonedFrame = av_frame_clone(pFrame);
+            if (pClonedFrame) {
+               std::lock_guard<std::mutex> lock(m_mutex);
+               if (m_queue.size() >= MAX_BUFFERED_FRAMES) {
+                  AVFrame* pOldFrame = m_queue.front();
+                  av_frame_free(&pOldFrame);
+                  m_queue.pop();
                }
+               m_queue.push(pClonedFrame);
             }
 
             if (!videoStart)
@@ -406,9 +401,9 @@ void PUPMediaPlayer::Render(SDL_Renderer* pRenderer, const SDL_Rect& destRect)
              SDL_DestroyTexture(m_pTexture);
 
          if (format == SDL_PIXELFORMAT_UNKNOWN)
-            m_pTexture = SDL_CreateTexture(m_pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, pFrame->width,pFrame->height);
+            m_pTexture = SDL_CreateTexture(pRenderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, pFrame->width,pFrame->height);
          else
-            m_pTexture = SDL_CreateTexture(m_pRenderer, format, SDL_TEXTUREACCESS_STREAMING, pFrame->width, pFrame->height);
+            m_pTexture = SDL_CreateTexture(pRenderer, format, SDL_TEXTUREACCESS_STREAMING, pFrame->width, pFrame->height);
 
          m_videoFormat = format;
          m_videoWidth = pFrame->width;
@@ -455,8 +450,8 @@ void PUPMediaPlayer::Render(SDL_Renderer* pRenderer, const SDL_Rect& destRect)
       av_frame_free(&pFrame);
    }
 
-   if (m_pTexture)
-      SDL_RenderCopy(m_pRenderer, m_pTexture, NULL, &destRect);
+   if (m_pTexture && (m_length == 0 || (m_length < m_currentPlayTime)))
+      SDL_RenderCopy(pRenderer, m_pTexture, nullptr, &destRect);
 #endif
 }
 

@@ -246,7 +246,7 @@ TTF_Font* PUPManager::GetFont(const string& szFont)
    return nullptr;
 }
 
-void PUPManager::QueueTriggerData(PUPTriggerData data)
+void PUPManager::QueueTriggerData(const PUPTriggerData& data)
 {
    const string triggerId = data.type + std::to_string(data.number);
 

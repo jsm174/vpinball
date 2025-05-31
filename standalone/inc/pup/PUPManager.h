@@ -70,7 +70,7 @@ public:
    PUPScreen* GetScreen(int screenNum) const;
    bool AddFont(TTF_Font* pFont, const string& szFilename);
    TTF_Font* GetFont(const string& szFamily);
-   void QueueTriggerData(PUPTriggerData data);
+   void QueueTriggerData(const PUPTriggerData& data);
    int GetTriggerValue(const string& triggerId);
    void Start();
    void Stop();

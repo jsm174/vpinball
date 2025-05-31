@@ -48,7 +48,6 @@ private:
    string m_szFilename;
    bool m_loop;
    float m_volume;
-   SDL_Renderer* m_pRenderer;
    SDL_Texture* m_pTexture;
 #ifdef VIDEO_WINDOW_HAS_FFMPEG_LIBS
    AVFormatContext* m_pFormatContext;
@@ -73,4 +72,5 @@ private:
    bool m_paused;
    int m_length = 0;
    int m_priority = -1;
+   double m_currentPlayTime;
 };
