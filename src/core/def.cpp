@@ -806,6 +806,17 @@ vector<string> add_line_numbers(const char* src)
    return result;
 }
 
+string format_file_size(uint64_t b)
+{
+   const char* S[] = {"B","KB","MB","GB","TB"};
+   int i = 0;
+   double d = static_cast<double>(b);
+   while (d >= 1024.0 && i < 4) { d /= 1024.0; ++i; }
+   char buf[32];
+   std::snprintf(buf, sizeof(buf), "%.2f %s", d, S[i]);
+   return string(buf);
+}
+
 #ifdef __STANDALONE__
 HRESULT external_open_storage(const OLECHAR* pwcsName, IStorage* pstgPriority, DWORD grfMode, SNB snbExclude, DWORD reserved, IStorage** ppstgOpen)
 {

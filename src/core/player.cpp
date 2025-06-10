@@ -59,6 +59,12 @@ using namespace Concurrency::diagnostic;
 extern marker_series series;
 #endif
 
+#ifdef __APPLE__
+#include <mach/mach.h>
+#include <unistd.h>
+#include <sys/sysctl.h>
+#endif
+
 //
 
 #define RECOMPUTEBUTTONCHECK (WM_USER+100)
@@ -665,6 +671,28 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
                      statex.dwLength = sizeof(statex);
                      GlobalMemoryStatusEx(&statex);
                      readyToLoad = statex.ullAvailPhys > neededMem;
+                  #elif defined(__APPLE__)
+                     const uint64_t cap = 2ULL * 1024ULL * 1024ULL * 1024ULL;
+
+                     task_vm_info_data_t vmInfo;
+                     mach_msg_type_number_t count = TASK_VM_INFO_COUNT;
+                     uint64_t footprint = 0;
+                     if (task_info(mach_task_self(),
+                                    TASK_VM_INFO,
+                                    reinterpret_cast<task_info_t>(&vmInfo),
+                                    &count) == KERN_SUCCESS) {
+                        footprint = vmInfo.phys_footprint;
+                     }
+
+                     uint64_t avail = cap > footprint ? (cap - footprint) : 0;
+                     readyToLoad = (avail > neededMem);
+
+                     PLOGI  << "Capped RAM: " << format_file_size(cap)
+                           << ", Footprint: " << format_file_size(footprint)
+                           << ", Available: " << format_file_size(avail)
+                           << ", Needed: "    << format_file_size(neededMem)
+                           << ", Ready: "     << (readyToLoad ? "yes" : "no")
+                           << ", " << image->m_name;
                   #else
                      // TODO implement for other platforms
                      // struct sysinfo memInfo;

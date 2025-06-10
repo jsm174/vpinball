@@ -766,6 +766,7 @@ vector<unsigned char> base64_decode(const string &encoded_string);
 const char* gl_to_string(GLuint value);
 #endif
 vector<string> add_line_numbers(const char* src);
+string format_file_size(uint64_t b);
 
 #ifndef MINIMAL_DEF_H
 bool try_parse_color(const string& str, OLE_COLOR& value);
