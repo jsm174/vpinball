@@ -499,6 +499,7 @@ cp libdmdutil/libdmdutil/third-party/include/serum-decode.h ../../../third-party
 cp libdmdutil/libdmdutil/third-party/runtime-libs/android/arm64-v8a/libpupdmd.so ../../../third-party/runtime-libs/android-arm64-v8a
 cp libdmdutil/libdmdutil/third-party/include/pupdmd.h ../../../third-party/include
 cp libdmdutil/libdmdutil/third-party/runtime-libs/android/arm64-v8a/libsockpp.so ../../../third-party/runtime-libs/android-arm64-v8a
+cp libdmdutil/libdmdutil/third-party/runtime-libs/android/arm64-v8a/libcargs.so ../../../third-party/runtime-libs/android-arm64-v8a
 
 cp libaltsound/libaltsound/build/libaltsound.so ../../../third-party/runtime-libs/android-arm64-v8a
 cp -r libaltsound/libaltsound/src/altsound.h ../../../third-party/include/
@@ -506,7 +507,6 @@ cp libaltsound/libaltsound/third-party/runtime-libs/android/arm64-v8a/libbass.so
 
 cp libdof/libdof/build/libdof.so ../../../third-party/runtime-libs/android-arm64-v8a
 cp -r libdof/libdof/include/DOF ../../../third-party/include/
-cp libdof/libdof/third-party/runtime-libs/android/arm64-v8a/libcargs.so ../../../third-party/runtime-libs/android-arm64-v8a
 
 for LIB in libavcodec libavdevice libavfilter libavformat libavutil libswresample libswscale; do
    cp ffmpeg/ffmpeg/${LIB}/${LIB}.so ../../../third-party/runtime-libs/android-arm64-v8a
