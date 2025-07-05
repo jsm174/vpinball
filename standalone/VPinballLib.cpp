@@ -170,6 +170,20 @@ void* VPinball::SendEvent(Event event, void* data)
             task();
             s_instance.m_liveUIQueue.pop();
          }
+         s_instance.m_hasQueuedOperations.store(false);
+      }
+      return nullptr;
+   }
+   else if (event == Event::MobileGameLoopSync) {
+      // Process all queued mobile operations during game loop sync
+      {
+         std::lock_guard<std::mutex> lock(s_instance.m_liveUIMutex);
+         while (!s_instance.m_liveUIQueue.empty()) {
+            auto task = s_instance.m_liveUIQueue.front();
+            task();
+            s_instance.m_liveUIQueue.pop();
+         }
+         s_instance.m_hasQueuedOperations.store(false);
       }
       return nullptr;
    }
@@ -430,6 +444,7 @@ void VPinball::SetTableOptions(const TableOptions& tableOptions)
    m_liveUIQueue.push([this, tableOptions]() {
       ProcessSetTableOptions(tableOptions);
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SetDefaultTableOptions()
@@ -439,6 +454,7 @@ void VPinball::SetDefaultTableOptions()
    m_liveUIQueue.push([this]() {
       ProcessSetDefaultTableOptions();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::ResetTableOptions()
@@ -448,6 +464,7 @@ void VPinball::ResetTableOptions()
    m_liveUIQueue.push([this]() {
       ProcessResetTableOptions();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SaveTableOptions()
@@ -505,6 +522,7 @@ void VPinball::SetCustomTableOption(const CustomTableOption& customTableOption)
    m_liveUIQueue.push([this, customTableOption]() {
       ProcessSetCustomTableOption(customTableOption);
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SetDefaultCustomTableOptions()
@@ -514,6 +532,7 @@ void VPinball::SetDefaultCustomTableOptions()
    m_liveUIQueue.push([this]() {
       ProcessSetDefaultCustomTableOptions();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::ResetCustomTableOptions()
@@ -523,6 +542,7 @@ void VPinball::ResetCustomTableOptions()
    m_liveUIQueue.push([this]() {
       ProcessResetCustomTableOptions();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SaveCustomTableOptions()
@@ -578,6 +598,7 @@ void VPinball::SetViewSetup(const ViewSetup& viewSetup)
    m_liveUIQueue.push([this, viewSetup]() {  
       ProcessSetViewSetup(viewSetup);
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SetDefaultViewSetup()
@@ -587,6 +608,7 @@ void VPinball::SetDefaultViewSetup()
    m_liveUIQueue.push([this]() {
       ProcessSetDefaultViewSetup();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::ResetViewSetup()
@@ -596,6 +618,7 @@ void VPinball::ResetViewSetup()
    m_liveUIQueue.push([this]() {
       ProcessResetViewSetup();
    });
+   m_hasQueuedOperations.store(true);
 }
 
 void VPinball::SaveViewSetup()
@@ -917,7 +940,54 @@ void VPinball::Cleanup()
       std::lock_guard<std::mutex> lock(m_liveUIMutex);
       while (!m_liveUIQueue.empty())
          m_liveUIQueue.pop();
+      m_hasQueuedOperations.store(false);
    }
+}
+
+// Mobile Thread-Safe Queue Operations
+void VPinball::QueueMobilePlayStateChange(int enable)
+{
+   std::lock_guard<std::mutex> lock(m_liveUIMutex);
+   m_liveUIQueue.push([this, enable]() {
+      SetPlayState(enable);
+   });
+   m_hasQueuedOperations.store(true);
+}
+
+void VPinball::QueueMobileFPSToggle()
+{
+   std::lock_guard<std::mutex> lock(m_liveUIMutex);
+   m_liveUIQueue.push([this]() {
+      ToggleFPS();
+   });
+   m_hasQueuedOperations.store(true);
+}
+
+void VPinball::QueueMobileTableOptionsUpdate(const TableOptions& options)
+{
+   std::lock_guard<std::mutex> lock(m_liveUIMutex);
+   m_liveUIQueue.push([this, options]() {
+      ProcessSetTableOptions(options);
+   });
+   m_hasQueuedOperations.store(true);
+}
+
+void VPinball::QueueMobileViewSetupUpdate(const ViewSetup& viewSetup)
+{
+   std::lock_guard<std::mutex> lock(m_liveUIMutex);
+   m_liveUIQueue.push([this, viewSetup]() {
+      ProcessSetViewSetup(viewSetup);
+   });
+   m_hasQueuedOperations.store(true);
+}
+
+void VPinball::QueueMobileCustomOptionUpdate(const CustomTableOption& option)
+{
+   std::lock_guard<std::mutex> lock(m_liveUIMutex);
+   m_liveUIQueue.push([this, option]() {
+      ProcessSetCustomTableOption(option);
+   });
+   m_hasQueuedOperations.store(true);
 }
 
 VPinball VPinball::s_instance;

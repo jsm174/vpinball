@@ -292,3 +292,70 @@ VPINBALLAPI void VPinballCaptureScreenshot(const char* pFilename)
    return s_vpinstance.CaptureScreenshot(pFilename);
 }
 
+// Mobile Thread-Safe Queue Operations
+VPINBALLAPI void VPinballQueueMobilePlayStateChange(int enable)
+{
+   s_vpinstance.QueueMobilePlayStateChange(enable);
+}
+
+VPINBALLAPI void VPinballQueueMobileFPSToggle()
+{
+   s_vpinstance.QueueMobileFPSToggle();
+}
+
+VPINBALLAPI void VPinballQueueMobileTableOptionsUpdate(VPinballTableOptions* pTableOptions)
+{
+   if (!pTableOptions)
+      return;
+
+   VPinballLib::TableOptions options;
+   options.globalEmissionScale = pTableOptions->globalEmissionScale;
+   options.globalDifficulty = pTableOptions->globalDifficulty;
+   options.exposure = pTableOptions->exposure;
+   options.toneMapper = pTableOptions->toneMapper;
+   options.musicVolume = pTableOptions->musicVolume;
+   options.soundVolume = pTableOptions->soundVolume;
+   s_vpinstance.QueueMobileTableOptionsUpdate(options);
+}
+
+VPINBALLAPI void VPinballQueueMobileViewSetupUpdate(VPinballViewSetup* pViewSetup)
+{
+   if (!pViewSetup)
+      return;
+
+   VPinballLib::ViewSetup viewSetup;
+   viewSetup.viewMode = pViewSetup->viewMode;
+   viewSetup.sceneScaleX = pViewSetup->sceneScaleX;
+   viewSetup.sceneScaleY = pViewSetup->sceneScaleY;
+   viewSetup.sceneScaleZ = pViewSetup->sceneScaleZ;
+   viewSetup.viewX = pViewSetup->viewX;
+   viewSetup.viewY = pViewSetup->viewY;
+   viewSetup.viewZ = pViewSetup->viewZ;
+   viewSetup.lookAt = pViewSetup->lookAt;
+   viewSetup.viewportRotation = pViewSetup->viewportRotation;
+   viewSetup.fov = pViewSetup->fov;
+   viewSetup.layback = pViewSetup->layback;
+   viewSetup.viewHOfs = pViewSetup->viewHOfs;
+   viewSetup.viewVOfs = pViewSetup->viewVOfs;
+   viewSetup.windowTopZOfs = pViewSetup->windowTopZOfs;
+   viewSetup.windowBottomZOfs = pViewSetup->windowBottomZOfs;
+   s_vpinstance.QueueMobileViewSetupUpdate(viewSetup);
+}
+
+VPINBALLAPI void VPinballQueueMobileCustomOptionUpdate(VPinballCustomTableOption* pCustomTableOption)
+{
+   if (!pCustomTableOption)
+      return;
+
+   VPinballLib::CustomTableOption customTableOption;
+   customTableOption.sectionName = pCustomTableOption->sectionName;
+   customTableOption.id = pCustomTableOption->id;
+   customTableOption.value = pCustomTableOption->value;
+   s_vpinstance.QueueMobileCustomOptionUpdate(customTableOption);
+}
+
+VPINBALLAPI int VPinballHasQueuedOperations()
+{
+   return s_vpinstance.HasQueuedOperations() ? 1 : 0;
+}
+

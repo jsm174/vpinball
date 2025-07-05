@@ -397,12 +397,12 @@ JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballStop(JNIEnv
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetPlayState(JNIEnv* env, jobject obj, jint enable)
 {
-   VPinballSetPlayState(enable);
+   VPinballQueueMobilePlayStateChange(enable);
 }
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballToggleFPS(JNIEnv* env, jobject obj)
 {
-   VPinballToggleFPS();
+   VPinballQueueMobileFPSToggle();
 }
 
 JNIEXPORT jobject JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetTableOptions(JNIEnv* env, jobject obj)
@@ -457,7 +457,7 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetTableOpt
    tableOptions.musicVolume = env->GetIntField(setup, env->GetFieldID(gJNITableOptionsClass, "musicVolume", "I"));
    tableOptions.soundVolume = env->GetIntField(setup, env->GetFieldID(gJNITableOptionsClass, "soundVolume", "I"));
 
-   VPinballSetTableOptions(&tableOptions);
+   VPinballQueueMobileTableOptionsUpdate(&tableOptions);
 }
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballResetTableOptions(JNIEnv* env, jobject obj)
@@ -528,7 +528,7 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetCustomTa
 
    customTableOption.value = env->GetFloatField(setup, env->GetFieldID(gJNICustomTableOptionClass, "value", "F"));
 
-   VPinballSetCustomTableOption(&customTableOption);
+   VPinballQueueMobileCustomOptionUpdate(&customTableOption);
 
    env->ReleaseStringUTFChars(id, pId);
    env->ReleaseStringUTFChars(sectionName, pSectionName);
@@ -611,7 +611,7 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetViewSetu
    viewSetup.windowTopZOfs = env->GetFloatField(setup, env->GetFieldID(gJNIViewSetupClass, "windowTopZOfs", "F"));
    viewSetup.windowBottomZOfs = env->GetFloatField(setup, env->GetFieldID(gJNIViewSetupClass, "windowBottomZOfs", "F"));
 
-   VPinballSetViewSetup(&viewSetup);
+   VPinballQueueMobileViewSetupUpdate(&viewSetup);
 }
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetDefaultViewSetup(JNIEnv* env, jobject obj)

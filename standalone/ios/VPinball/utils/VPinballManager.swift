@@ -493,7 +493,7 @@ class VPinballManager {
 
     func setTableOptions(_ tableOptions: VPinballTableOptions) {
         withUnsafePointer(to: tableOptions) { ptr in
-            VPinballSetTableOptions(ptr)
+            VPinballQueueMobileTableOptionsUpdate(ptr)
         }
     }
 
@@ -526,7 +526,7 @@ class VPinballManager {
 
     func setCustomTableOption(_ customTableOption: VPinballCustomTableOption) {
         withUnsafePointer(to: customTableOption) { ptr in
-            VPinballSetCustomTableOption(ptr)
+            VPinballQueueMobileCustomOptionUpdate(ptr)
         }
     }
 
@@ -552,7 +552,7 @@ class VPinballManager {
 
     func setViewSetup(_ viewSetup: VPinballViewSetup) {
         withUnsafePointer(to: viewSetup) { ptr in
-            VPinballSetViewSetup(ptr)
+            VPinballQueueMobileViewSetupUpdate(ptr)
         }
     }
 
@@ -580,11 +580,11 @@ class VPinballManager {
     }
 
     func toggleFPS() {
-        VPinballToggleFPS()
+        VPinballQueueMobileFPSToggle()
     }
 
     func setPlayState(enable: Bool) {
-        _ = VPinballSetPlayState(enable ? 1 : 0)
+        VPinballQueueMobilePlayStateChange(enable ? 1 : 0)
     }
 
     func stop() {

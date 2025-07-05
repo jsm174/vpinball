@@ -181,3 +181,13 @@ VPINBALLAPI void VPinballSetDefaultViewSetup();
 VPINBALLAPI void VPinballResetViewSetup();
 VPINBALLAPI void VPinballSaveViewSetup();
 VPINBALLAPI void VPinballCaptureScreenshot(const char* pFilename);
+
+// Mobile Thread-Safe Queue Operations
+VPINBALLAPI void VPinballQueueMobilePlayStateChange(int enable);
+VPINBALLAPI void VPinballQueueMobileFPSToggle();
+VPINBALLAPI void VPinballQueueMobileTableOptionsUpdate(VPinballTableOptions* pTableOptions);
+VPINBALLAPI void VPinballQueueMobileViewSetupUpdate(VPinballViewSetup* pViewSetup);
+VPINBALLAPI void VPinballQueueMobileCustomOptionUpdate(VPinballCustomTableOption* pCustomTableOption);
+
+// Queue Status
+VPINBALLAPI int VPinballHasQueuedOperations();

@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include <mutex>
+#include <atomic>
 
 class WebServer;
 
@@ -55,7 +56,14 @@ enum class Event {
    TableList,
    TableImport,
    TableRename,
-   TableDelete
+   TableDelete,
+   // Mobile UI Events - Thread-safe operations
+   MobilePlayStateChange,
+   MobileFPSToggle,
+   MobileTableOptionsUpdate,
+   MobileViewSetupUpdate,
+   MobileCustomOptionUpdate,
+   MobileGameLoopSync
 };
 
 struct ProgressData {
@@ -147,6 +155,23 @@ struct ViewSetup {
    float windowBottomZOfs;
 };
 
+// Mobile Event Data Structures
+struct MobilePlayStateData {
+   int enable;
+};
+
+struct MobileTableOptionsData {
+   TableOptions options;
+};
+
+struct MobileViewSetupData {
+   ViewSetup viewSetup;
+};
+
+struct MobileCustomOptionData {
+   CustomTableOption option;
+};
+
 class VPinball {
 public:
    void LoadPlugins();
@@ -193,6 +218,16 @@ public:
    void CaptureScreenshot(const string& filename);
    void SetWebServerUpdated();
 
+   // Mobile Thread-Safe Operations
+   void QueueMobilePlayStateChange(int enable);
+   void QueueMobileFPSToggle();
+   void QueueMobileTableOptionsUpdate(const TableOptions& options);
+   void QueueMobileViewSetupUpdate(const ViewSetup& viewSetup);
+   void QueueMobileCustomOptionUpdate(const CustomTableOption& option);
+   
+   // Queue Status
+   bool HasQueuedOperations() const { return m_hasQueuedOperations.load(); }
+
 private:
    VPinball();
    static void GameLoop(void* pUserData);
@@ -210,6 +245,7 @@ private:
    vector<std::shared_ptr<MsgPlugin>> m_plugins;
    std::queue<std::function<void()>> m_liveUIQueue;
    std::mutex m_liveUIMutex;
+   std::atomic<bool> m_hasQueuedOperations{false};
    std::function<void*(Event, void*)> m_eventCallback;
    std::function<void()> m_gameLoop;
    WebServer* m_pWebServer;

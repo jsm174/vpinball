@@ -1730,6 +1730,13 @@ void Player::MultithreadedGameLoop(const std::function<void()>& sync)
       // Continuously process input, synchronize with emulation and step physics to keep latency low
       sync();
 
+#if defined(__LIBVPINBALL__) && (defined(__ANDROID__) || (defined(__APPLE__) && defined(TARGET_OS_IOS) && TARGET_OS_IOS))
+      // Process queued mobile UI operations to prevent crashes from cross-thread access (conditional optimization)
+      if (VPinballLib::VPinball::GetInstance().HasQueuedOperations()) {
+         VPinballLib::VPinball::SendEvent(VPinballLib::Event::MobileGameLoopSync, nullptr);
+      }
+#endif
+
       // If rendering thread is ready, push a new frame as soon as possible
       if (!m_renderer->m_renderDevice->m_framePending && m_renderer->m_renderDevice->m_frameMutex.try_lock())
       {

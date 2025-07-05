@@ -689,3 +689,19 @@ func VPinballToggleFPS()
 
 @_silgen_name("VPinballCaptureScreenshot")
 func VPinballCaptureScreenshot(_ filename: UnsafePointer<CChar>)
+
+// Mobile Thread-Safe Queue Operations
+@_silgen_name("VPinballQueueMobilePlayStateChange")
+func VPinballQueueMobilePlayStateChange(_ enable: CInt)
+
+@_silgen_name("VPinballQueueMobileFPSToggle")
+func VPinballQueueMobileFPSToggle()
+
+@_silgen_name("VPinballQueueMobileTableOptionsUpdate")
+func VPinballQueueMobileTableOptionsUpdate(_ options: UnsafePointer<VPinballTableOptions>)
+
+@_silgen_name("VPinballQueueMobileViewSetupUpdate")
+func VPinballQueueMobileViewSetupUpdate(_ viewSetup: UnsafePointer<VPinballViewSetup>)
+
+@_silgen_name("VPinballQueueMobileCustomOptionUpdate")
+func VPinballQueueMobileCustomOptionUpdate(_ option: UnsafePointer<VPinballCustomTableOption>)
