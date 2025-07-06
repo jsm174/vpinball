@@ -1726,6 +1726,12 @@ void Player::MultithreadedGameLoop(const std::function<void()>& sync)
       // Continuously process input, synchronize with emulation and step physics to keep latency low
       sync();
 
+      // Process one queued UI command per loop iteration for thread safety on mobile
+      #ifdef __LIBVPINBALL__
+         if (m_liveUIOverride)
+            VPinballLib::VPinball::SendEvent(VPinballLib::Event::LiveUIUpdate, nullptr);
+      #endif
+
       // If rendering thread is ready, push a new frame as soon as possible
       if (!m_renderer->m_renderDevice->m_framePending && m_renderer->m_renderDevice->m_frameMutex.try_lock())
       {

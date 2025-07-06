@@ -327,7 +327,8 @@ class VPinballManager {
                                                                options: [.skipsHiddenFiles],
                                                                errorHandler: nil)
                     {
-                        for case let fileURL as URL in enumerator {
+                        let fileURLs = Array(enumerator.compactMap { $0 as? URL })
+                        for fileURL in fileURLs {
                             if fileURL.pathExtension.lowercased() == "vpx" {
                                 let table = PinTable(url: fileURL)
 
@@ -341,9 +342,7 @@ class VPinballManager {
                     }
                 }
             }
-        }
-
-        catch {
+        } catch {
             log(.error, "unable to import: error=\(error)")
         }
 
@@ -584,11 +583,11 @@ class VPinballManager {
     }
 
     func setPlayState(enable: Bool) {
-        _ = VPinballSetPlayState(enable ? 1 : 0)
+        VPinballSetPlayState(enable ? 1 : 0)
     }
 
     func stop() {
-        VPinballStop()
+        _ = VPinballStop()
     }
 
     func resetIni() {

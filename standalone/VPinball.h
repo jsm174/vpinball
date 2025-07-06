@@ -181,3 +181,5 @@ VPINBALLAPI void VPinballSetDefaultViewSetup();
 VPINBALLAPI void VPinballResetViewSetup();
 VPINBALLAPI void VPinballSaveViewSetup();
 VPINBALLAPI void VPinballCaptureScreenshot(const char* pFilename);
+
+// All UI functions now use command-based queue for thread safety
