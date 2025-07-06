@@ -164,11 +164,14 @@ void* VPinball::SendEvent(Event event, void* data)
 {
    if (event == Event::LiveUIUpdate) {
       {
-         std::lock_guard<std::mutex> lock(s_instance.m_liveUIMutex);
-         while (!s_instance.m_liveUIQueue.empty()) {
-            auto task = s_instance.m_liveUIQueue.front();
-            task();
-            s_instance.m_liveUIQueue.pop();
+         std::lock_guard<std::mutex> lock(s_instance.m_uiCommandMutex);
+         // Process only one command per loop iteration for smooth gameplay
+         if (!s_instance.m_uiCommandQueue.empty()) {
+            UICommand command = s_instance.m_uiCommandQueue.front();
+            s_instance.m_uiCommandQueue.pop();
+            // Process command outside the lock to avoid holding mutex during execution
+            lock.~lock_guard();
+            s_instance.ProcessUICommand(command);
          }
       }
       return nullptr;
@@ -382,31 +385,25 @@ VPinballStatus VPinball::Play()
 
 VPinballStatus VPinball::Stop()
 {
-   CComObject<PinTable>* const pActiveTable = g_pvp->GetActiveTable();
-
-   if (!pActiveTable)
-      return VPinballStatus::Failure;
-
-   pActiveTable->QuitPlayer(Player::CS_CLOSE_APP);
-
+   UICommand command;
+   command.type = UICommandType::Stop;
+   QueueUICommand(command);
    return VPinballStatus::Success;
 }
 
 void VPinball::SetPlayState(int enable)
 {
-   if (!g_pplayer)
-      return;
-
-   g_pplayer->SetPlayState(enable);
-   g_pplayer->m_renderer->DisableStaticPrePass(!enable);
+   UICommand command;
+   command.type = UICommandType::SetPlayState;
+   command.data.setPlayState.enable = enable;
+   QueueUICommand(command);
 }
 
 void VPinball::ToggleFPS()
 {
-   if (!g_pplayer)
-      return;
-
-   g_pplayer->m_liveUI->ToggleFPS();
+   UICommand command;
+   command.type = UICommandType::ToggleFPS;
+   QueueUICommand(command);
 }
 
 void VPinball::GetTableOptions(TableOptions& tableOptions)
@@ -425,29 +422,24 @@ void VPinball::GetTableOptions(TableOptions& tableOptions)
 
 void VPinball::SetTableOptions(const TableOptions& tableOptions)
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this, tableOptions]() {
-      ProcessSetTableOptions(tableOptions);
-   });
+   UICommand command;
+   command.type = UICommandType::SetTableOptions;
+   command.data.setTableOptions.options = tableOptions;
+   QueueUICommand(command);
 }
 
 void VPinball::SetDefaultTableOptions()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessSetDefaultTableOptions();
-   });
+   UICommand command;
+   command.type = UICommandType::SetDefaultTableOptions;
+   QueueUICommand(command);
 }
 
 void VPinball::ResetTableOptions()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessResetTableOptions();
-   });
+   UICommand command;
+   command.type = UICommandType::ResetTableOptions;
+   QueueUICommand(command);
 }
 
 void VPinball::SaveTableOptions()
@@ -493,36 +485,31 @@ void VPinball::GetCustomTableOption(int index, CustomTableOption& customTableOpt
    customTableOption.maxValue = optionDef.maxValue;
    customTableOption.step = optionDef.step;
    customTableOption.defaultValue = optionDef.defaultValue;
-   customTableOption.unit = (OptionUnit)optionDef.unit;
+   customTableOption.unit = (VPINBALL_OPTION_UNIT)optionDef.unit;
    customTableOption.literals = optionDef.tokenizedLiterals.c_str();
    customTableOption.value = pLiveTable->m_settings.LoadValueWithDefault(optionDef.section, optionDef.id, optionDef.defaultValue);
 }
 
 void VPinball::SetCustomTableOption(const CustomTableOption& customTableOption)
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this, customTableOption]() {
-      ProcessSetCustomTableOption(customTableOption);
-   });
+   UICommand command;
+   command.type = UICommandType::SetCustomTableOption;
+   command.data.setCustomTableOption.option = customTableOption;
+   QueueUICommand(command);
 }
 
 void VPinball::SetDefaultCustomTableOptions()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessSetDefaultCustomTableOptions();
-   });
+   UICommand command;
+   command.type = UICommandType::SetDefaultCustomTableOptions;
+   QueueUICommand(command);
 }
 
 void VPinball::ResetCustomTableOptions()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessResetCustomTableOptions();
-   });
+   UICommand command;
+   command.type = UICommandType::ResetCustomTableOptions;
+   QueueUICommand(command);
 }
 
 void VPinball::SaveCustomTableOptions()
@@ -573,29 +560,24 @@ void VPinball::GetViewSetup(ViewSetup& viewSetup)
 
 void VPinball::SetViewSetup(const ViewSetup& viewSetup)
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this, viewSetup]() {  
-      ProcessSetViewSetup(viewSetup);
-   });
+   UICommand command;
+   command.type = UICommandType::SetViewSetup;
+   command.data.setViewSetup.setup = viewSetup;
+   QueueUICommand(command);
 }
 
 void VPinball::SetDefaultViewSetup()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessSetDefaultViewSetup();
-   });
+   UICommand command;
+   command.type = UICommandType::SetDefaultViewSetup;
+   QueueUICommand(command);
 }
 
 void VPinball::ResetViewSetup()
 {
-   std::lock_guard<std::mutex> lock(m_liveUIMutex);
-
-   m_liveUIQueue.push([this]() {
-      ProcessResetViewSetup();
-   });
+   UICommand command;
+   command.type = UICommandType::ResetViewSetup;
+   QueueUICommand(command);
 }
 
 void VPinball::SaveViewSetup()
@@ -914,11 +896,81 @@ void VPinball::Cleanup()
    g_pvp->SetLogicalNumberOfProcessors(SDL_GetNumLogicalCPUCores());
 
    {
-      std::lock_guard<std::mutex> lock(m_liveUIMutex);
-      while (!m_liveUIQueue.empty())
-         m_liveUIQueue.pop();
+      std::lock_guard<std::mutex> lock(m_uiCommandMutex);
+      while (!m_uiCommandQueue.empty())
+         m_uiCommandQueue.pop();
    }
 }
+
+// Command processing implementation
+void VPinball::ProcessUICommand(const UICommand& command)
+{
+   switch (command.type) {
+      case UICommandType::SetPlayState:
+         if (g_pplayer) {
+            g_pplayer->SetPlayState(command.data.setPlayState.enable);
+            g_pplayer->m_renderer->DisableStaticPrePass(!command.data.setPlayState.enable);
+         }
+         break;
+      case UICommandType::ToggleFPS:
+         if (g_pplayer)
+            g_pplayer->m_liveUI->ToggleFPS();
+         break;
+      case UICommandType::Stop:
+         {
+            CComObject<PinTable>* const pActiveTable = g_pvp->GetActiveTable();
+            if (pActiveTable)
+               pActiveTable->QuitPlayer(Player::CS_CLOSE_APP);
+         }
+         break;
+      case UICommandType::SetTableOptions:
+         ProcessSetTableOptions(command.data.setTableOptions.options);
+         break;
+      case UICommandType::SetDefaultTableOptions:
+         ProcessSetDefaultTableOptions();
+         break;
+      case UICommandType::ResetTableOptions:
+         ProcessResetTableOptions();
+         break;
+      case UICommandType::SaveTableOptions:
+         SaveTableOptions();
+         break;
+      case UICommandType::SetCustomTableOption:
+         ProcessSetCustomTableOption(command.data.setCustomTableOption.option);
+         break;
+      case UICommandType::SetDefaultCustomTableOptions:
+         ProcessSetDefaultCustomTableOptions();
+         break;
+      case UICommandType::ResetCustomTableOptions:
+         ProcessResetCustomTableOptions();
+         break;
+      case UICommandType::SaveCustomTableOptions:
+         SaveCustomTableOptions();
+         break;
+      case UICommandType::SetViewSetup:
+         ProcessSetViewSetup(command.data.setViewSetup.setup);
+         break;
+      case UICommandType::SetDefaultViewSetup:
+         ProcessSetDefaultViewSetup();
+         break;
+      case UICommandType::ResetViewSetup:
+         ProcessResetViewSetup();
+         break;
+      case UICommandType::SaveViewSetup:
+         SaveViewSetup();
+         break;
+      case UICommandType::CaptureScreenshot:
+         CaptureScreenshot(command.data.captureScreenshot.filename);
+         break;
+   }
+}
+
+void VPinball::QueueUICommand(const UICommand& command)
+{
+   std::lock_guard<std::mutex> lock(m_uiCommandMutex);
+   m_uiCommandQueue.push(command);
+}
+
 
 VPinball VPinball::s_instance;
 

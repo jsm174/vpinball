@@ -689,3 +689,5 @@ func VPinballToggleFPS()
 
 @_silgen_name("VPinballCaptureScreenshot")
 func VPinballCaptureScreenshot(_ filename: UnsafePointer<CChar>)
+
+// All UI functions now use command-based queue for thread safety

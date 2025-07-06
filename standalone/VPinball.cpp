@@ -123,14 +123,7 @@ VPINBALLAPI void VPinballGetTableOptions(VPinballTableOptions* pTableOptions)
    if (!pTableOptions)
       return;
 
-   VPinballLib::TableOptions tableOptions;
-   s_vpinstance.GetTableOptions(tableOptions);
-   pTableOptions->globalEmissionScale = tableOptions.globalEmissionScale;
-   pTableOptions->globalDifficulty = tableOptions.globalDifficulty;
-   pTableOptions->exposure = tableOptions.exposure;
-   pTableOptions->toneMapper = tableOptions.toneMapper;
-   pTableOptions->musicVolume = tableOptions.musicVolume;
-   pTableOptions->soundVolume = tableOptions.soundVolume;
+   s_vpinstance.GetTableOptions(*pTableOptions);
 }
 
 VPINBALLAPI void VPinballSetTableOptions(VPinballTableOptions* pTableOptions)
@@ -138,14 +131,7 @@ VPINBALLAPI void VPinballSetTableOptions(VPinballTableOptions* pTableOptions)
    if (!pTableOptions)
       return;
 
-   VPinballLib::TableOptions options;
-   options.globalEmissionScale = pTableOptions->globalEmissionScale;
-   options.globalDifficulty = pTableOptions->globalDifficulty;
-   options.exposure = pTableOptions->exposure;
-   options.toneMapper = pTableOptions->toneMapper;
-   options.musicVolume = pTableOptions->musicVolume;
-   options.soundVolume = pTableOptions->soundVolume;
-   s_vpinstance.SetTableOptions(options);
+   s_vpinstance.SetTableOptions(*pTableOptions);
 }
 
 VPINBALLAPI void VPinballSetDefaultTableOptions()
@@ -173,19 +159,7 @@ VPINBALLAPI void VPinballGetCustomTableOption(int index, VPinballCustomTableOpti
    if (!pCustomTableOption)
       return;
 
-   VPinballLib::CustomTableOption customTableOption;
-   s_vpinstance.GetCustomTableOption(index, customTableOption);
-   pCustomTableOption->sectionName = customTableOption.sectionName;
-   pCustomTableOption->id = customTableOption.id;
-   pCustomTableOption->name = customTableOption.name;
-   pCustomTableOption->showMask = customTableOption.showMask;
-   pCustomTableOption->minValue = customTableOption.minValue;
-   pCustomTableOption->maxValue = customTableOption.maxValue;
-   pCustomTableOption->step = customTableOption.step;
-   pCustomTableOption->defaultValue = customTableOption.defaultValue;
-   pCustomTableOption->unit = (VPINBALL_OPTION_UNIT)customTableOption.unit;
-   pCustomTableOption->literals = customTableOption.literals;
-   pCustomTableOption->value = customTableOption.value;
+   s_vpinstance.GetCustomTableOption(index, *pCustomTableOption);
 }
 
 VPINBALLAPI void VPinballSetCustomTableOption(VPinballCustomTableOption* pCustomTableOption)
@@ -193,20 +167,7 @@ VPINBALLAPI void VPinballSetCustomTableOption(VPinballCustomTableOption* pCustom
    if (!pCustomTableOption)
       return;
 
-   int count = VPinballGetCustomTableOptionsCount();
-   for (int i = 0; i < count; ++i) {
-      VPinballCustomTableOption existingOption;
-      VPinballGetCustomTableOption(i, &existingOption);
-
-      if (strcmp(existingOption.id, pCustomTableOption->id) == 0) {
-         VPinballLib::CustomTableOption customTableOption;
-         customTableOption.sectionName = existingOption.sectionName;
-         customTableOption.id = existingOption.id;
-         customTableOption.value = pCustomTableOption->value;
-         s_vpinstance.SetCustomTableOption(customTableOption);
-         break;
-      }
-   }
+   s_vpinstance.SetCustomTableOption(*pCustomTableOption);
 }
 
 VPINBALLAPI void VPinballSetDefaultCustomTableOptions()
@@ -229,23 +190,7 @@ VPINBALLAPI void VPinballGetViewSetup(VPinballViewSetup* pViewSetup)
    if (!pViewSetup)
       return;
 
-   VPinballLib::ViewSetup viewSetup;
-   s_vpinstance.GetViewSetup(viewSetup);
-   pViewSetup->viewMode = viewSetup.viewMode;
-   pViewSetup->sceneScaleX = viewSetup.sceneScaleX;
-   pViewSetup->sceneScaleY = viewSetup.sceneScaleY;
-   pViewSetup->sceneScaleZ = viewSetup.sceneScaleZ;
-   pViewSetup->viewX = viewSetup.viewX;
-   pViewSetup->viewY = viewSetup.viewY;
-   pViewSetup->viewZ = viewSetup.viewZ;
-   pViewSetup->lookAt = viewSetup.lookAt;
-   pViewSetup->viewportRotation = viewSetup.viewportRotation;
-   pViewSetup->fov = viewSetup.fov;
-   pViewSetup->layback = viewSetup.layback;
-   pViewSetup->viewHOfs = viewSetup.viewHOfs;
-   pViewSetup->viewVOfs = viewSetup.viewVOfs;
-   pViewSetup->windowTopZOfs = viewSetup.windowTopZOfs;
-   pViewSetup->windowBottomZOfs = viewSetup.windowBottomZOfs;
+   s_vpinstance.GetViewSetup(*pViewSetup);
 }
 
 VPINBALLAPI void VPinballSetViewSetup(VPinballViewSetup* pViewSetup)
@@ -253,23 +198,7 @@ VPINBALLAPI void VPinballSetViewSetup(VPinballViewSetup* pViewSetup)
    if (!pViewSetup)
       return;
 
-   VPinballLib::ViewSetup viewSetup;
-   viewSetup.viewMode = pViewSetup->viewMode;
-   viewSetup.sceneScaleX = pViewSetup->sceneScaleX;
-   viewSetup.sceneScaleY = pViewSetup->sceneScaleY;
-   viewSetup.sceneScaleZ = pViewSetup->sceneScaleZ;
-   viewSetup.viewX = pViewSetup->viewX;
-   viewSetup.viewY = pViewSetup->viewY;
-   viewSetup.viewZ = pViewSetup->viewZ;
-   viewSetup.lookAt = pViewSetup->lookAt;
-   viewSetup.viewportRotation = pViewSetup->viewportRotation;
-   viewSetup.fov = pViewSetup->fov;
-   viewSetup.layback = pViewSetup->layback;
-   viewSetup.viewHOfs = pViewSetup->viewHOfs;
-   viewSetup.viewVOfs = pViewSetup->viewVOfs;
-   viewSetup.windowTopZOfs = pViewSetup->windowTopZOfs;
-   viewSetup.windowBottomZOfs = pViewSetup->windowBottomZOfs;
-   s_vpinstance.SetViewSetup(viewSetup);
+   s_vpinstance.SetViewSetup(*pViewSetup);
 }
 
 VPINBALLAPI void VPinballSetDefaultViewSetup()
@@ -291,4 +220,5 @@ VPINBALLAPI void VPinballCaptureScreenshot(const char* pFilename)
 {
    return s_vpinstance.CaptureScreenshot(pFilename);
 }
+
 

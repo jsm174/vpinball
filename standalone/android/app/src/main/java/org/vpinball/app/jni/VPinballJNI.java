@@ -39,4 +39,6 @@ public class VPinballJNI {
     public native VPinballTableEventData VPinballGetTableEventData();
     public native void VPinballSetTableEventDataSuccess(boolean success);
     public native void VPinballSetWebServerUpdated();
+
+    // All UI functions now use command-based queue for thread safety
 }

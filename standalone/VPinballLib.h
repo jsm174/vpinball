@@ -4,6 +4,7 @@
 #include <functional>
 #include <queue>
 #include <mutex>
+#include "VPinball.h"
 
 class WebServer;
 
@@ -55,7 +56,12 @@ enum class Event {
    TableList,
    TableImport,
    TableRename,
-   TableDelete
+   TableDelete,
+   SetPlayState,
+   ToggleFPS,
+   Stop,
+   ResetIni,
+   UpdateWebServer
 };
 
 struct ProgressData {
@@ -106,45 +112,50 @@ struct TableEventData {
    bool success;
 };
 
-struct TableOptions {
-   float globalEmissionScale;
-   float globalDifficulty;
-   float exposure;
-   int toneMapper;
-   int musicVolume;
-   int soundVolume;
+// Use C structs from VPinball.h directly (zero duplication)
+using TableOptions = VPinballTableOptions;
+using CustomTableOption = VPinballCustomTableOption;
+using ViewSetup = VPinballViewSetup;
+
+// Command-based queue system for thread-safe UI operations
+enum class UICommandType {
+   SetPlayState,
+   ToggleFPS,
+   Stop,
+   SetTableOptions,
+   SetDefaultTableOptions,
+   ResetTableOptions,
+   SaveTableOptions,
+   SetCustomTableOption,
+   SetDefaultCustomTableOptions,
+   ResetCustomTableOptions,
+   SaveCustomTableOptions,
+   SetViewSetup,
+   SetDefaultViewSetup,
+   ResetViewSetup,
+   SaveViewSetup,
+   CaptureScreenshot
 };
 
-struct CustomTableOption {
-   const char* sectionName;
-   const char* id;
-   const char* name;
-   int showMask;
-   float minValue;
-   float maxValue;
-   float step;
-   float defaultValue;
-   OptionUnit unit;
-   const char* literals;
-   float value;
-};
-
-struct ViewSetup {
-   int viewMode;
-   float sceneScaleX;
-   float sceneScaleY;
-   float sceneScaleZ;
-   float viewX;
-   float viewY;
-   float viewZ;
-   float lookAt;
-   float viewportRotation;
-   float fov;
-   float layback;
-   float viewHOfs;
-   float viewVOfs;
-   float windowTopZOfs;
-   float windowBottomZOfs;
+struct UICommand {
+   UICommandType type;
+   union {
+      struct {
+         int enable;
+      } setPlayState;
+      struct {
+         TableOptions options;
+      } setTableOptions;
+      struct {
+         CustomTableOption option;
+      } setCustomTableOption;
+      struct {
+         ViewSetup setup;
+      } setViewSetup;
+      struct {
+         char filename[256];
+      } captureScreenshot;
+   } data;
 };
 
 class VPinball {
@@ -193,6 +204,8 @@ public:
    void CaptureScreenshot(const string& filename);
    void SetWebServerUpdated();
 
+   // All UI functions now use command-based queue for thread safety
+
 private:
    VPinball();
    static void GameLoop(void* pUserData);
@@ -206,10 +219,14 @@ private:
    void ProcessSetDefaultViewSetup();
    void ProcessResetViewSetup();
    void Cleanup();
+   
+   // Command processing methods
+   void ProcessUICommand(const UICommand& command);
+   void QueueUICommand(const UICommand& command);
 
    vector<std::shared_ptr<MsgPlugin>> m_plugins;
-   std::queue<std::function<void()>> m_liveUIQueue;
-   std::mutex m_liveUIMutex;
+   std::queue<UICommand> m_uiCommandQueue;
+   std::mutex m_uiCommandMutex;
    std::function<void*(Event, void*)> m_eventCallback;
    std::function<void()> m_gameLoop;
    WebServer* m_pWebServer;

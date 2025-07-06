@@ -2,7 +2,7 @@ import SwiftData
 import UIKit
 
 @Model
-class PinTable {
+class PinTable: @unchecked Sendable {
     @Attribute(.unique)
     var tableId: UUID
 
