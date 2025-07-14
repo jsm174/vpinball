@@ -1703,6 +1703,9 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
             };
             VPinballLib::VPinball::GetInstance().SetGameLoop(gameLoop);
          #else
+            SDL_ThreadID threadId = SDL_GetThreadID(nullptr);
+            PLOGI.printf("THREADID: Main: %08X", threadId);
+
             MultithreadedGameLoop(sync);
          #endif
       #endif
@@ -1718,6 +1721,10 @@ void Player::GameLoop(std::function<void()> ProcessOSMessages)
 
 void Player::MultithreadedGameLoop(const std::function<void()>& sync)
 {
+   SDL_ThreadID threadId = SDL_GetThreadID(nullptr);
+   PLOGI.printf("THREADID: MultithreadedGameLoop: %08X", threadId);
+
+
 #ifdef ENABLE_BGFX
    m_renderer->m_renderDevice->m_frameMutex.unlock();
    m_logicProfiler.SetThreadLock();

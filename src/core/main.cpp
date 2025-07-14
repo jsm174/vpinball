@@ -191,6 +191,10 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, 
       VPApp theApp(hInstance);
       theApp.ProcessCommandLine();
       theApp.InitInstance();
+
+      SDL_ThreadID threadId = SDL_GetThreadID(nullptr);
+      PLOGI.printf("THREADID: Main: %08X", threadId);
+
       MsgPluginManager::GetInstance().ScanPluginFolder(g_pvp->m_myPath + "plugins",
          [](MsgPlugin& plugin)
          {
