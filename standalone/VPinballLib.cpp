@@ -4,6 +4,7 @@
 #include "core/VPXPluginAPIImpl.h"
 
 #include "VPinballLib.h"
+#include "VPinballTableManager.h"
 #include "VPXProgress.h"
 
 #include "standalone/inc/webserver/WebServer.h"
@@ -12,6 +13,14 @@
 #include <SDL3_ttf/SDL_ttf.h>
 #include <zip.h>
 #include <filesystem>
+#include <chrono>
+#include <thread>
+#include <set>
+#include <map>
+#include <uuid/uuid.h>
+#include <nlohmann/json.hpp>
+
+using json = nlohmann::json;
 
 MSGPI_EXPORT void MSGPIAPI AlphaDMDPluginLoad(const uint32_t sessionId, const MsgPluginAPI* api);
 MSGPI_EXPORT void MSGPIAPI AlphaDMDPluginUnload();
@@ -101,6 +110,33 @@ void VPinball::Init(std::function<void*(Event, void*)> callback)
 
    m_pWebServer = new WebServer();
    m_eventCallback = callback;
+   
+   m_scanningTables = false;
+   m_tableManager = new VPinballTableManager();
+}
+
+void VPinball::SetupEventCallback()
+{
+   PLOGI.printf("VPinball::SetupEventCallback: Setting up table management event callback");
+   
+   m_tableManager->SetEventCallback([this](TableEvent event, const VPXTable* table) {
+      switch (event) {
+         case TableEvent::RefreshStarted:
+            PLOGI.printf("VPinball: Table refresh started - notifying mobile apps");
+            SendEvent(Event::RefreshingTableList, nullptr);
+            break;
+         case TableEvent::RefreshCompleted:
+            PLOGI.printf("VPinball: Table refresh completed - notifying mobile apps");
+            SendEvent(Event::TableListRefreshComplete, nullptr);
+            UpdateWebServer(); // Safe to update web server after refresh
+            break;
+         case TableEvent::TablesChanged:
+            PLOGI.printf("VPinball: Tables changed (import/delete/etc) - notifying mobile apps");
+            SendEvent(Event::TableListRefreshComplete, nullptr);
+            UpdateWebServer(); // Update web server for table changes
+            break;
+      }
+   });
 }
 
 void VPinball::LoadPlugins()
@@ -244,95 +280,6 @@ void VPinball::SaveValueString(const string& sectionName, const string& key, con
 {
    g_pvp->m_settings.SaveValue(Settings::GetSection(sectionName), key, value);
    g_pvp->m_settings.Save();
-}
-
-VPinballStatus VPinball::Uncompress(const string& source)
-{
-   PLOGI.printf("Uncompress: pSource=%s", source.c_str());
-
-   int error = 0;
-   zip_t* zip_archive = zip_open(source.c_str(), ZIP_RDONLY, &error);
-   if (!zip_archive)
-      return VPinballStatus::Failure;
-
-   zip_int64_t file_count = zip_get_num_entries(zip_archive, 0);
-   for (zip_uint64_t i = 0; i < (zip_uint64_t)file_count; ++i) {
-      zip_stat_t st;
-      if (zip_stat_index(zip_archive, i, ZIP_STAT_NAME, &st) != 0)
-         continue;
-
-      string filename = st.name;
-      if (filename.starts_with("__MACOSX") || filename.starts_with(".DS_Store"))
-         continue;
-
-      std::filesystem::path out = std::filesystem::path(source).parent_path() / filename;
-      if (filename.back() == '/')
-         std::filesystem::create_directories(out);
-      else {
-         std::filesystem::create_directories(out.parent_path());
-         zip_file_t* zip_file = zip_fopen_index(zip_archive, i, 0);
-         if (!zip_file) {
-            zip_close(zip_archive);
-            return VPinballStatus::Failure;
-         }
-         std::ofstream ofs(out, std::ios::binary);
-         char buf[4096];
-         zip_int64_t len;
-         while ((len = zip_fread(zip_file, buf, sizeof(buf))) > 0)
-            ofs.write(buf, len);
-         zip_fclose(zip_file);
-      }
-
-      ProgressData progressData = { int((i * 100) / file_count) };
-      SendEvent(Event::ArchiveUncompressing, &progressData);
-   }
-
-   zip_close(zip_archive);
-   return VPinballStatus::Success;
-}
-
-VPinballStatus VPinball::Compress(const string& source, const string& destination)
-{
-   PLOGI.printf("Compressing: pSource=%s, pDestination=%s", source.c_str(), destination.c_str());
-
-   int error = 0;
-   zip_t* zip_archive = zip_open(destination.c_str(), ZIP_CREATE | ZIP_TRUNCATE, &error);
-   if (!zip_archive)
-      return VPinballStatus::Failure;
-
-   std::filesystem::path base(source);
-   size_t base_len = base.string().length();
-
-   vector<std::filesystem::path> items;
-   for (auto& item : std::filesystem::recursive_directory_iterator(base))
-      items.push_back(item.path());
-
-   size_t total = items.size();
-   size_t done = 0;
-
-   for (auto& item : items) {
-      string rel = item.string().substr(base_len + 1);
-      if (std::filesystem::is_directory(item))
-         zip_dir_add(zip_archive, (rel + '/').c_str(), ZIP_FL_ENC_UTF_8);
-      else {
-         zip_source_t* zip_source = zip_source_file(zip_archive, item.string().c_str(), 0, 0);
-         if (!zip_source) {
-            zip_close(zip_archive);
-            return VPinballStatus::Failure;
-         }
-         if (zip_file_add(zip_archive, rel.c_str(), zip_source, ZIP_FL_ENC_UTF_8) < 0) {
-            zip_source_free(zip_source);
-            zip_close(zip_archive);
-            return VPinballStatus::Failure;
-         }
-      }
-
-      ProgressData progressData = { int((++done * 100) / total) };
-      SendEvent(Event::ArchiveCompressing, &progressData);
-   }
-
-   zip_close(zip_archive);
-   return VPinballStatus::Success;
 }
 
 void VPinball::UpdateWebServer()
@@ -641,8 +588,11 @@ void VPinball::CaptureScreenshot(const string& filename)
 
    g_pplayer->m_renderer->m_renderDevice->CaptureScreenshot(filename.c_str(),
       [](bool success) {
-         CaptureScreenshotData captureScreenshotData = { success };
-         SendEvent(Event::CaptureScreenshot, &captureScreenshotData);
+         // Create JSON for screenshot event
+         json screenshotJson;
+         screenshotJson["success"] = success;
+         string screenshotStr = screenshotJson.dump();
+         SendEvent(Event::CaptureScreenshot, (void*)screenshotStr.c_str());
       });
 }
 
@@ -671,7 +621,9 @@ void VPinball::GameLoop(void* pUserData)
    delete g_pplayer;
    g_pplayer = nullptr;
 
-   SendEvent(Event::Stopped, nullptr);
+   // Send empty JSON for stopped event
+   string stoppedJson = "{}";
+   SendEvent(Event::Stopped, (void*)stoppedJson.c_str());
 
    s_instance.SetWebServerUpdated();
 }
@@ -937,8 +889,138 @@ void VPinball::Cleanup()
       while (!m_liveUIQueue.empty())
          m_liveUIQueue.pop();
    }
+   
+   // Clean up table data (delegated to VPinballTableManager)
+   m_tableManager->ClearAll();
+}
+
+// VPXTable Management Functions Implementation
+
+VPinballStatus VPinball::RefreshTables()
+{
+   PLOGI.printf("VPinball::RefreshTables: Starting table refresh via VPinballTableManager");
+   
+   VPinballStatus refreshStatus = m_tableManager->RefreshTables();
+   if (refreshStatus != VPinballStatus::Success) {
+      PLOGE.printf("VPinball::RefreshTables: Failed to refresh tables");
+      return refreshStatus;
+   }
+   
+   // Also directly send event to mobile apps to ensure they get notified
+   PLOGI.printf("VPinball::RefreshTables: Sending TableListRefreshComplete event to mobile apps");
+   SendEvent(Event::TableListRefreshComplete, nullptr);
+   
+   PLOGI.printf("VPinball::RefreshTables: Table refresh completed successfully");
+   return VPinballStatus::Success;
+}
+
+VPinballStatus VPinball::ImportTableFile(const string& sourceFile)
+{
+   return m_tableManager->ImportTable(sourceFile);
+}
+
+VPinballStatus VPinball::SetTableArtwork(const string& uuid, const string& artworkPath)
+{
+   return m_tableManager->SetTableArtwork(uuid, artworkPath);
+}
+
+const char* VPinball::GetTablesPath()
+{
+   return m_tableManager->GetTablesPath().c_str();
+}
+
+string VPinball::ExportTable(const string& uuid)
+{
+   return m_tableManager->ExportTable(uuid);
+}
+
+void VPinball::CleanupVPXTable(VPXTable& table)
+{
+   delete[] table.uuid;
+   delete[] table.name;
+   delete[] table.fileName;
+   delete[] table.fullPath;
+   delete[] table.path;
+   delete[] table.artwork;
+}
+
+void VPinball::NotifyTableEvent(Event event, void* data)
+{
+   if (m_eventCallback) {
+      m_eventCallback(event, data);
+   }
+}
+
+void VPinball::GetVPXTables(VPXTablesData& tablesData)
+{
+   PLOGI.printf("GetVPXTables: Delegating to VPinballTableManager");
+   m_tableManager->GetAllTables(tablesData);
+}
+
+char* VPinball::GetTablesJson()
+{
+   return m_tableManager->GetTablesJsonCopy();
+}
+
+char* VPinball::GetTableJson(const string& uuid)
+{
+   return m_tableManager->GetTableJsonCopy(uuid);
+}
+
+
+void VPinball::FreeVPXTablesData(VPXTablesData& tablesData)
+{
+   if (tablesData.tables) {
+      for (int i = 0; i < tablesData.tableCount; i++) {
+         CleanupVPXTable(tablesData.tables[i]);
+      }
+      delete[] tablesData.tables;
+      tablesData.tables = nullptr;
+   }
+   tablesData.tableCount = 0;
+}
+
+void VPinball::FreeVPXTable(VPXTable& table)
+{
+   CleanupVPXTable(table);
+}
+
+
+VPinballStatus VPinball::ImportVPXZ(const string& vpxzPath)
+{
+   return m_tableManager->ImportTable(vpxzPath);
+}
+
+VPinballStatus VPinball::GetVPXTable(const string& uuid, VPXTable& table)
+{
+   VPXTable* foundTable = m_tableManager->GetTable(uuid);
+   if (foundTable) {
+      table = *foundTable;
+      return VPinballStatus::Success;
+   }
+   return VPinballStatus::Failure;
+}
+
+VPinballStatus VPinball::AddVPXTable(const string& filePath)
+{
+   if (!std::filesystem::exists(filePath)) {
+      return VPinballStatus::Failure;
+   }
+   
+   return m_tableManager->AddTable(filePath);
+}
+
+VPinballStatus VPinball::RemoveVPXTable(const string& uuid)
+{
+   // Delegate to VPinballTableManager for smart deletion logic
+   return m_tableManager->DeleteTable(uuid);
+}
+
+VPinballStatus VPinball::RenameVPXTable(const string& uuid, const string& newName)
+{
+   return m_tableManager->RenameTable(uuid, newName);
 }
 
 VPinball VPinball::s_instance;
 
-} // namespace VPinballLib
+}

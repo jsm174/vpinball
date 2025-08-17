@@ -57,95 +57,27 @@ typedef enum {
    VPINBALL_EVENT_TABLE_LIST,
    VPINBALL_EVENT_TABLE_IMPORT,
    VPINBALL_EVENT_TABLE_RENAME,
-   VPINBALL_EVENT_TABLE_DELETE
+   VPINBALL_EVENT_TABLE_DELETE,
+   VPINBALL_EVENT_TABLE_SCAN,
+   VPINBALL_EVENT_TABLE_SCAN_COMPLETE,
+   VPINBALL_EVENT_TABLE_ADDED,
+   VPINBALL_EVENT_TABLE_UPDATED,
+   VPINBALL_EVENT_TABLE_REMOVED,
+   VPINBALL_EVENT_TABLES_JSON_GENERATED
 } VPINBALL_EVENT;
 
-typedef struct {
-   int progress;
-} VPinballProgressData;
-
-typedef struct {
-   void* pWindow;
-   const char* pTitle;
-} VPinballWindowCreatedData;
-
-typedef struct {
-   VPINBALL_SCRIPT_ERROR_TYPE error;
-   int line;
-   int position;
-   const char* pDescription;
-} VPinballScriptErrorData;
-
-typedef struct {
-   uint16_t lowFrequencyRumble;
-   uint16_t highFrequencyRumble;
-   uint32_t durationMs;
-} VPinballRumbleData;
-
-typedef struct {
-   const char* pUrl;
-} VPinballWebServerData;
-
-typedef struct {
-   int success;
-} VPinballCaptureScreenshotData;
-
-typedef struct {
-   const char* tableId;
-   const char* newName;
-   const char* path;
-   bool success;
-} VPinballTableEventData;
-
-typedef struct {
-   float globalEmissionScale;
-   float globalDifficulty;
-   float exposure;
-   int toneMapper;
-   int musicVolume;
-   int soundVolume;
-} VPinballTableOptions;
-
-typedef struct {
-   const char* sectionName;
-   const char* id;
-   const char* name;
-   int showMask;
-   float minValue;
-   float maxValue;
-   float step;
-   float defaultValue;
-   VPINBALL_OPTION_UNIT unit;
-   const char* literals;
-   float value;
-} VPinballCustomTableOption;
-
-typedef struct {
-   int viewMode;
-   float sceneScaleX;
-   float sceneScaleY;
-   float sceneScaleZ;
-   float viewX;
-   float viewY;
-   float viewZ;
-   float lookAt;
-   float viewportRotation;
-   float fov;
-   float layback;
-   float viewHOfs;
-   float viewVOfs;
-   float windowTopZOfs;
-   float windowBottomZOfs;
-} VPinballViewSetup;
+// All data structures now passed as JSON strings
+// No C structs needed - platforms use native JSON parsing
 
 // Callbacks
 
-typedef void* (*VPinballEventCallback)(VPINBALL_EVENT, void*);
+typedef void* (*VPinballEventCallback)(VPINBALL_EVENT, const char*, void*);
 
 // Functions
 
 VPINBALLAPI const char* VPinballGetVersionStringFull();
 VPINBALLAPI void VPinballInit(VPinballEventCallback callback);
+VPINBALLAPI void VPinballSetupEventCallback();
 VPINBALLAPI void VPinballLog(VPINBALL_LOG_LEVEL level, const char* pMessage);
 VPINBALLAPI void VPinballResetLog();
 VPINBALLAPI int VPinballLoadValueInt(const char* pSectionName, const char* pKey, int defaultValue);
@@ -154,8 +86,6 @@ VPINBALLAPI const char* VPinballLoadValueString(const char* pSectionName, const 
 VPINBALLAPI void VPinballSaveValueInt(const char* pSectionName, const char* pKey, int value);
 VPINBALLAPI void VPinballSaveValueFloat(const char* pSectionName, const char* pKey, float value);
 VPINBALLAPI void VPinballSaveValueString(const char* pSectionName, const char* pKey, const char* pValue);
-VPINBALLAPI VPINBALL_STATUS VPinballUncompress(const char* pSource);
-VPINBALLAPI VPINBALL_STATUS VPinballCompress(const char* pSource, const char* pDestination);
 VPINBALLAPI void VPinballUpdateWebServer();
 VPINBALLAPI void VPinballSetWebServerUpdated();
 VPINBALLAPI VPINBALL_STATUS VPinballResetIni();
@@ -165,20 +95,33 @@ VPINBALLAPI VPINBALL_STATUS VPinballPlay();
 VPINBALLAPI VPINBALL_STATUS VPinballStop();
 VPINBALLAPI void VPinballSetPlayState(int enable);
 VPINBALLAPI void VPinballToggleFPS();
-VPINBALLAPI void VPinballGetTableOptions(VPinballTableOptions* pTableOptions);
-VPINBALLAPI void VPinballSetTableOptions(VPinballTableOptions* pTableOptions);
+VPINBALLAPI char* VPinballGetTableOptions();
+VPINBALLAPI void VPinballSetTableOptions(const char* jsonOptions);
 VPINBALLAPI void VPinballSetDefaultTableOptions();
 VPINBALLAPI void VPinballResetTableOptions();
 VPINBALLAPI void VPinballSaveTableOptions();
 VPINBALLAPI int VPinballGetCustomTableOptionsCount();
-VPINBALLAPI void VPinballGetCustomTableOption(int index, VPinballCustomTableOption* pCustomTableOption);
-VPINBALLAPI void VPinballSetCustomTableOption(VPinballCustomTableOption* pCustomTableOption);
+VPINBALLAPI char* VPinballGetCustomTableOptions();
+VPINBALLAPI void VPinballSetCustomTableOption(const char* jsonOption);
 VPINBALLAPI void VPinballSetDefaultCustomTableOptions();
 VPINBALLAPI void VPinballResetCustomTableOptions();
 VPINBALLAPI void VPinballSaveCustomTableOptions();
-VPINBALLAPI void VPinballGetViewSetup(VPinballViewSetup* pViewSetup);
-VPINBALLAPI void VPinballSetViewSetup(VPinballViewSetup* pViewSetup);
+VPINBALLAPI char* VPinballGetViewSetup();
+VPINBALLAPI void VPinballSetViewSetup(const char* jsonSetup);
 VPINBALLAPI void VPinballSetDefaultViewSetup();
 VPINBALLAPI void VPinballResetViewSetup();
 VPINBALLAPI void VPinballSaveViewSetup();
 VPINBALLAPI void VPinballCaptureScreenshot(const char* pFilename);
+
+// VPXTable Management Functions
+VPINBALLAPI VPINBALL_STATUS VPinballRefreshTables();
+VPINBALLAPI char* VPinballGetVPXTables();
+VPINBALLAPI char* VPinballGetVPXTable(const char* uuid);
+VPINBALLAPI VPINBALL_STATUS VPinballAddVPXTable(const char* pFilePath);
+VPINBALLAPI VPINBALL_STATUS VPinballRemoveVPXTable(const char* pUuid);
+VPINBALLAPI VPINBALL_STATUS VPinballRenameVPXTable(const char* pUuid, const char* pNewName);
+VPINBALLAPI VPINBALL_STATUS VPinballImportTableFile(const char* pSourceFile);
+VPINBALLAPI VPINBALL_STATUS VPinballSetTableArtwork(const char* pUuid, const char* pArtworkPath);
+VPINBALLAPI const char* VPinballGetTablesPath();
+VPINBALLAPI const char* VPinballExportTable(const char* pUuid);
+VPINBALLAPI void VPinballFreeString(char* jsonString);

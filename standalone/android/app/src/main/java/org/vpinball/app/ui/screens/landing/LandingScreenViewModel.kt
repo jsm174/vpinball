@@ -10,18 +10,31 @@ import kotlinx.coroutines.launch
 import org.vpinball.app.TableListMode
 import org.vpinball.app.TableListSortOrder
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
-import org.vpinball.app.data.repository.PinTableRepository
+import org.vpinball.app.jni.VPinballVPXTable
+import org.vpinball.app.jni.VPinballJNI
 import org.vpinball.app.jni.VPinballSettingsSection.STANDALONE
+import kotlinx.serialization.json.Json
 
-class LandingScreenViewModel(private val repository: PinTableRepository) : ViewModel() {
+class LandingScreenViewModel : ViewModel() {
+    companion object {
+        private var refreshCallback: (() -> Unit)? = null
+        
+        fun setRefreshCallback(callback: () -> Unit) {
+            refreshCallback = callback
+        }
+        
+        fun triggerRefresh() {
+            refreshCallback?.invoke()
+        }
+    }
     private var tableJob: Job? = null
+    private val vpinballJNI = VPinballJNI()
 
-    private val _unfilteredTables = MutableStateFlow(emptyList<PinTable>())
-    val unfilteredTables: StateFlow<List<PinTable>> = _unfilteredTables
+    private val _unfilteredTables = MutableStateFlow(emptyList<VPinballVPXTable>())
+    val unfilteredTables: StateFlow<List<VPinballVPXTable>> = _unfilteredTables
 
-    private val _filteredTables = MutableStateFlow(emptyList<PinTable>())
-    val filteredTables: StateFlow<List<PinTable>> = _filteredTables
+    private val _filteredTables = MutableStateFlow(emptyList<VPinballVPXTable>())
+    val filteredTables: StateFlow<List<VPinballVPXTable>> = _filteredTables
 
     private val _tableListMode = MutableStateFlow(TableListMode.TWO_COLUMN)
     val tableListMode: StateFlow<TableListMode> = _tableListMode
@@ -35,6 +48,8 @@ class LandingScreenViewModel(private val repository: PinTableRepository) : ViewM
     init {
         loadSettings()
         fetchTables()
+        // Register this instance for refresh callbacks
+        setRefreshCallback { refreshTables() }
     }
 
     fun setTableListMode(mode: TableListMode) {
@@ -57,15 +72,37 @@ class LandingScreenViewModel(private val repository: PinTableRepository) : ViewM
             _filteredTables.update { unfilteredTables.filter { it.name.lowercase().contains(query.trim().lowercase()) } }
         }
     }
+    
+    fun refreshTables() {
+        fetchTables()
+    }
 
     private fun fetchTables() {
         tableJob?.cancel()
         tableJob =
             viewModelScope.launch {
-                repository.getAllSorted(isAscending = (_tableListSortOrder.value == TableListSortOrder.A_Z)).collect { sortedTables ->
-                    _filteredTables.update { sortedTables }
+                try {
+                    // Use C++ library to get tables
+                    val jsonString = vpinballJNI.VPinballGetVPXTables()
+                    VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.DEBUG, "fetchTables: Received JSON (length=${jsonString.length}): $jsonString")
+                    
+                    val tablesResponse = Json.decodeFromString<org.vpinball.app.jni.VPXTablesResponse>(jsonString)
+                    VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.DEBUG, "fetchTables: Parsed ${tablesResponse.tableCount} tables, success=${tablesResponse.success}")
+                    vpinballJNI.VPinballFreeString(jsonString)
+                    
+                    // Sort tables based on current sort order
+                    val sortedTables = when (_tableListSortOrder.value) {
+                        TableListSortOrder.A_Z -> tablesResponse.tables.sortedBy { it.name }
+                        TableListSortOrder.Z_A -> tablesResponse.tables.sortedByDescending { it.name }
+                    }
+                    
                     _unfilteredTables.update { sortedTables }
+                    _filteredTables.update { sortedTables }
                     search(search.value)
+                } catch (e: Exception) {
+                    VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.ERROR, "Failed to fetch tables: ${e.message}")
+                    _unfilteredTables.update { emptyList() }
+                    _filteredTables.update { emptyList() }
                 }
             }
     }

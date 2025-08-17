@@ -2,7 +2,7 @@
 import SwiftUI
 
 struct TableImageView: View {
-    var table: PinTable
+    var table: VPXTable
     var selected: Bool = false
 
     var body: some View {
