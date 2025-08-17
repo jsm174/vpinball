@@ -88,7 +88,35 @@ const LogState = {
 
 const UIState = {
   statusWs: null,
-  currentContextMenu: null
+  currentContextMenu: null,
+  isUploadingFolder: false
+};
+
+const UploadProgress = {
+  totalFiles: 0,
+  completedFiles: 0,
+  currentFileName: '',
+  currentFileProgress: 0,
+  reset() {
+    this.totalFiles = 0;
+    this.completedFiles = 0;
+    this.currentFileName = '';
+    this.currentFileProgress = 0;
+    this.lastDisplayedPercent = -1;
+  },
+  updateOverallProgress() {
+    if (this.totalFiles === 0) return;
+    
+    const overallPercent = Math.floor((this.completedFiles / this.totalFiles) * 100);
+    
+    let message = `Uploading files... ${overallPercent}% (${this.completedFiles}/${this.totalFiles})`;
+    
+    if (this.lastDisplayedPercent !== overallPercent) {
+      showStatusMessage("main-status", message, "info", true);
+      this.lastDisplayedPercent = overallPercent;
+    }
+  },
+  lastDisplayedPercent: -1
 };
 
 const DOMCache = {
@@ -271,7 +299,9 @@ function connectStatusWebSocket() {
 
         fetchTableList();
 
-        navigateToPath(_directory || '');
+        if (!UIState.isUploadingFolder) {
+          navigateToPath(_directory || '');
+        }
       }
 
       _statusData = newStatusData;
@@ -1135,7 +1165,7 @@ function sendCommand(cmd) {
   }
 }
 
-function showStatusMessage(elementId, message, type) {
+function showStatusMessage(elementId, message, type, persistent = false) {
   const statusElement = DOMCache.get(elementId);
   statusElement.textContent = message;
 
@@ -1148,9 +1178,17 @@ function showStatusMessage(elementId, message, type) {
     statusElement.style.color = "var(--text-secondary)";
   }
 
-  setTimeout(() => {
-    statusElement.textContent = "";
-  }, 3000);
+  if (statusElement.clearTimeout) {
+    clearTimeout(statusElement.clearTimeout);
+    statusElement.clearTimeout = null;
+  }
+
+  if (!persistent) {
+    statusElement.clearTimeout = setTimeout(() => {
+      statusElement.textContent = "";
+      statusElement.clearTimeout = null;
+    }, 3000);
+  }
 }
 
 function sendChunk(filePath, data, offset, chunkSize, statusId, callback) {
@@ -1218,6 +1256,225 @@ function sendTableImportChunk(filename, data, offset, chunkSize, statusId, callb
     });
 }
 
+async function countFilesInEntry(entry) {
+  if (entry.isFile) {
+    return 1;
+  } else if (entry.isDirectory) {
+    const reader = entry.createReader();
+    let totalFiles = 0;
+    
+    return new Promise((resolve) => {
+      function readEntries() {
+        reader.readEntries(async (entries) => {
+          if (entries.length === 0) {
+            resolve(totalFiles);
+            return;
+          }
+          
+          for (const subEntry of entries) {
+            totalFiles += await countFilesInEntry(subEntry);
+          }
+          
+          readEntries();
+        }, () => resolve(totalFiles));
+      }
+      readEntries();
+    });
+  }
+  return 0;
+}
+
+async function handleFileEntry(fileEntry) {
+  return new Promise((resolve, reject) => {
+    fileEntry.file((file) => {
+      if (UIState.isUploadingFolder && UploadProgress.totalFiles > 1) {
+        UploadProgress.currentFileName = file.name;
+        UploadProgress.currentFileProgress = 0;
+        UploadProgress.updateOverallProgress();
+      }
+      
+      const reader = new FileReader();
+      reader.onload = () => {
+        const filePath = _directory ? `${_directory}/${file.name}` : file.name;
+        const data = new Uint8Array(reader.result);
+        
+        if (UIState.isUploadingFolder && UploadProgress.totalFiles > 1) {
+          sendChunkSequential(filePath, data, 0, 1024 * 512, "main-status")
+            .then(() => {
+              UploadProgress.completedFiles++;
+              UploadProgress.currentFileName = '';
+              UploadProgress.currentFileProgress = 0;
+              UploadProgress.updateOverallProgress();
+              resolve();
+            })
+            .catch(reject);
+        } else {
+          sendChunk(filePath, data, 0, 1024 * 512, "main-status", resolve);
+        }
+      };
+      reader.onerror = reject;
+      reader.readAsArrayBuffer(file);
+    }, reject);
+  });
+}
+
+async function handleDirectoryEntry(directoryEntry, basePath = '') {
+  const reader = directoryEntry.createReader();
+  const allEntries = [];
+  
+  const dirPath = _directory ? `${_directory}/${basePath}` : basePath;
+  await createDirectory(dirPath);
+  
+  return new Promise((resolve, reject) => {
+    function readEntries() {
+      reader.readEntries(async (entries) => {
+        if (entries.length === 0) {
+          try {
+            await processEntriesSequentially(allEntries, basePath);
+            resolve();
+          } catch (error) {
+            reject(error);
+          }
+          return;
+        }
+        
+        allEntries.push(...entries);
+        readEntries();
+      }, reject);
+    }
+    
+    readEntries();
+  });
+}
+
+async function processEntriesSequentially(entries, basePath) {
+  const directories = entries.filter(entry => entry.isDirectory);
+  const files = entries.filter(entry => entry.isFile);
+  
+  for (const entry of directories) {
+    const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+    await handleDirectoryEntry(entry, entryPath);
+  }
+  
+  for (const entry of files) {
+    const entryPath = basePath ? `${basePath}/${entry.name}` : entry.name;
+    
+    await handleFileEntrySequential(entry, entryPath);
+    
+    if (UIState.isUploadingFolder && UploadProgress.totalFiles > 1) {
+      UploadProgress.completedFiles++;
+      UploadProgress.updateOverallProgress();
+    }
+  }
+}
+
+async function handleFileEntrySequential(fileEntry, entryPath) {
+  return new Promise((resolve, reject) => {
+    fileEntry.file((file) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const filePath = _directory ? `${_directory}/${entryPath}` : entryPath;
+        const data = new Uint8Array(reader.result);
+        
+        
+        sendChunkSequential(filePath, data, 0, 1024 * 512, "main-status")
+          .then(() => {
+            resolve();
+          })
+          .catch((error) => {
+            reject(new Error(`Failed to upload ${entryPath}: ${error.message}`));
+          });
+      };
+      reader.onerror = () => reject(new Error(`Failed to read file: ${entryPath}`));
+      reader.readAsArrayBuffer(file);
+    }, (error) => reject(new Error(`Failed to access file: ${entryPath} - ${error.message}`)));
+  });
+}
+
+function sendChunkSequential(filePath, data, offset, chunkSize, statusId) {
+  return new Promise((resolve, reject) => {
+    const uploadChunk = (currentOffset) => {
+      const progressPercentage = (currentOffset / data.length) * 100;
+      
+      if (!UIState.isUploadingFolder || UploadProgress.totalFiles === 1) {
+        const statusElement = DOMCache.get(statusId);
+        if (statusElement) {
+          const fileName = filePath.split('/').pop();
+          statusElement.innerHTML = `Uploading ${fileName}... ${progressPercentage.toFixed(0)}%`;
+          statusElement.style.color = "var(--primary-color)";
+        }
+      }
+      
+      let directory = "";
+      let filename = filePath;
+      const lastSlashIndex = filePath.lastIndexOf('/');
+      if (lastSlashIndex !== -1) {
+        directory = filePath.substring(0, lastSlashIndex);
+        filename = filePath.substring(lastSlashIndex + 1);
+      }
+      
+      const chunk = data.subarray(currentOffset, currentOffset + chunkSize) || new Uint8Array(0);
+      
+      fetch(`/upload?offset=${currentOffset}&q=${encodeURIComponent(directory)}&file=${encodeURIComponent(filename)}&length=${data.length}`, {
+        method: "POST",
+        body: chunk
+      })
+      .then((res) => {
+        if (!res.ok) {
+          throw new Error(`Upload failed with status: ${res.status}`);
+        }
+        return res.text();
+      })
+      .then((text) => {
+        if (text === "0") {
+          if (!UIState.isUploadingFolder) {
+            const statusElement = DOMCache.get(statusId);
+            if (statusElement) {
+              statusElement.innerHTML = `Upload complete!`;
+              statusElement.style.color = "var(--success-color)";
+            }
+          }
+          resolve();
+        } else if (chunk.length > 0) {
+          setTimeout(() => uploadChunk(currentOffset + chunk.length), 10);
+        } else {
+          resolve();
+        }
+      })
+      .catch((error) => {
+        if (statusElement) {
+          statusElement.innerHTML = `Upload failed: ${error.message}`;
+          statusElement.style.color = "var(--error-color)";
+        }
+        reject(error);
+      });
+    };
+    
+    uploadChunk(offset);
+  });
+}
+
+async function createDirectory(dirPath) {
+  return new Promise((resolve) => {
+    if (!dirPath) {
+      resolve();
+      return;
+    }
+    
+    const encodedPath = encodeURIComponent(dirPath);
+    
+    fetch(`/folder?q=${encodedPath}`, {
+      method: 'POST'
+    })
+    .then(response => {
+      resolve();
+    })
+    .catch(() => {
+      resolve();
+    });
+  });
+}
+
 function setupDragAndDrop() {
   const dropOverlay = DOMCache.get("drop-overlay");
   let dragCounter = 0;
@@ -1244,25 +1501,100 @@ function setupDragAndDrop() {
     e.preventDefault();
   };
 
-  const dropHandler = (e) => {
+  const dropHandler = async (e) => {
     e.preventDefault();
     e.stopPropagation();
     dragCounter = 0;
     dropOverlay.style.display = "none";
 
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const reader = new FileReader();
-        reader.onload = () => {
-          const filePath = _directory ? `${_directory}/${file.name}` : file.name;
-          const data = new Uint8Array(reader.result);
-          sendChunk(filePath, data, 0, 1024 * 512, "main-status", () => {
-            navigateToPath(_directory);
-          });
-        };
-        reader.readAsArrayBuffer(file);
+    const items = e.dataTransfer.items;
+    if (items && items.length > 0) {
+      const hasDirectories = Array.from(items).some(item => {
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry();
+          return entry && entry.isDirectory;
+        }
+        return false;
+      });
+      
+      UIState.isUploadingFolder = true;
+      showStatusMessage("main-status", "Analyzing files... Please wait.", "info", true);
+      
+      UploadProgress.reset();
+      const allEntries = [];
+      
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.kind === 'file') {
+          const entry = item.webkitGetAsEntry();
+          if (entry) {
+            allEntries.push(entry);
+          }
+        }
+      }
+      
+      for (const entry of allEntries) {
+        UploadProgress.totalFiles += await countFilesInEntry(entry);
+      }
+      
+      if (UploadProgress.totalFiles === 1) {
+        showStatusMessage("main-status", "Starting file upload...", "info", true);
+        UIState.isUploadingFolder = false;
+      } else {
+        showStatusMessage("main-status", `Found ${UploadProgress.totalFiles} files. Starting upload...`, "info", true);
+      }
+      
+      const promises = [];
+      
+      for (let i = 0; i < allEntries.length; i++) {
+        const entry = allEntries[i];
+        if (entry.isFile) {
+          promises.push(handleFileEntry(entry));
+        } else if (entry.isDirectory) {
+          promises.push(handleDirectoryEntry(entry, entry.name));
+        }
+      }
+      
+      try {
+        await Promise.all(promises);
+        
+        UIState.isUploadingFolder = false;
+        
+        if (UploadProgress.totalFiles > 1) {
+          showStatusMessage("main-status", `✓ Successfully uploaded ${UploadProgress.totalFiles} files!`, "success", true);
+        } else {
+          showStatusMessage("main-status", "✓ Upload completed successfully!", "success", true);
+        }
+        
+        setTimeout(() => {
+          showStatusMessage("main-status", "Refreshing...", "info");
+          navigateToPath(_directory);
+        }, 3000);
+        
+      } catch (error) {
+        UIState.isUploadingFolder = false;
+        showStatusMessage("main-status", `✗ Upload failed: ${error.message}`, "error", true);
+        
+        setTimeout(() => {
+          showStatusMessage("main-status", "Refreshing...", "info");
+          navigateToPath(_directory);
+        }, 3000);
+      }
+    } else {
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          const reader = new FileReader();
+          reader.onload = () => {
+            const filePath = _directory ? `${_directory}/${file.name}` : file.name;
+            const data = new Uint8Array(reader.result);
+            sendChunk(filePath, data, 0, 1024 * 512, "main-status", () => {
+              navigateToPath(_directory);
+            });
+          };
+          reader.readAsArrayBuffer(file);
+        }
       }
     }
   };
@@ -2178,6 +2510,39 @@ function waitForRefresh(maxTimeMs = 40000) {
       navigateToPath(_directory);
       showStatusMessage("main-status", "Import completed", "success");
     }, 5000);
+  }
+}
+
+function refreshTables() {
+  showStatusMessage("main-status", "Refreshing tables...", "info");
+  
+  if (_statusWs && _statusWs.readyState === WebSocket.OPEN) {
+    _statusWs.send("refresh_tables");
+    
+    const originalOnMessage = _statusWs.onmessage;
+    _statusWs.onmessage = function(event) {
+      try {
+        const data = JSON.parse(event.data);
+        if (data.command === "refresh_tables") {
+          if (data.status === "success") {
+            showStatusMessage("main-status", "Tables refreshed successfully", "success");
+            navigateToPath(_directory);
+          } else {
+            showStatusMessage("main-status", "Failed to refresh tables", "error");
+          }
+          _statusWs.onmessage = originalOnMessage;
+          return;
+        }
+      } catch (error) {
+        console.error('Error parsing refresh response:', error);
+      }
+      
+      if (originalOnMessage) {
+        originalOnMessage.call(this, event);
+      }
+    };
+  } else {
+    showStatusMessage("main-status", "WebSocket not connected", "error");
   }
 }
 

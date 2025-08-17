@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 import SwiftUI
 
 @main
@@ -22,7 +21,6 @@ struct VPinballApp: App {
             }
         }
         .environmentObject(VPinballViewModel.shared)
-        .modelContainer(for: PinTable.self)
     }
 
     func handleAppear() {
