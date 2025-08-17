@@ -11,8 +11,7 @@ public class VPinballJNI {
     public native void VPinballSaveValueInt(String sectionName, String key, int value);
     public native void VPinballSaveValueFloat(String sectionName, String key, float value);
     public native void VPinballSaveValueString(String sectionName, String key, String value);
-    public native int VPinballUncompress(String source);
-    public native int VPinballCompress(String source, String destination);
+    public native String VPinballExportTable(String uuid);
     public native void VPinballUpdateWebServer();
     public native int VPinballResetIni();
     public native int VPinballLoad(String source);
@@ -22,16 +21,16 @@ public class VPinballJNI {
     public native void VPinballToggleFPS();
     public native void VPinballSetPlayState(int enable);
     public native int VPinballGetCustomTableOptionsCount();
-    public native VPinballCustomTableOption VPinballGetCustomTableOption(int index);
-    public native void VPinballSetCustomTableOption(VPinballCustomTableOption customTableOption);
+    public native String VPinballGetCustomTableOptions();
+    public native void VPinballSetCustomTableOption(String jsonOption);
     public native void VPinballResetCustomTableOptions();
     public native void VPinballSaveCustomTableOptions();
-    public native VPinballTableOptions VPinballGetTableOptions();
-    public native void VPinballSetTableOptions(VPinballTableOptions tableOptions);
+    public native String VPinballGetTableOptions();
+    public native void VPinballSetTableOptions(String jsonOptions);
     public native void VPinballResetTableOptions();
     public native void VPinballSaveTableOptions();
-    public native VPinballViewSetup VPinballGetViewSetup();
-    public native void VPinballSetViewSetup(VPinballViewSetup viewSetup);
+    public native String VPinballGetViewSetup();
+    public native void VPinballSetViewSetup(String jsonSetup);
     public native void VPinballSetDefaultViewSetup();
     public native void VPinballResetViewSetup();
     public native void VPinballSaveViewSetup();
@@ -39,4 +38,16 @@ public class VPinballJNI {
     public native VPinballTableEventData VPinballGetTableEventData();
     public native void VPinballSetTableEventDataSuccess(boolean success);
     public native void VPinballSetWebServerUpdated();
+    
+    // VPX Table Management Functions
+    public native int VPinballRefreshTables();
+    public native String VPinballGetVPXTables();
+    public native String VPinballGetVPXTable(String uuid);
+    public native int VPinballAddVPXTable(String filePath);
+    public native int VPinballRemoveVPXTable(String uuid);
+    public native int VPinballRenameVPXTable(String uuid, String newName);
+    public native int VPinballImportTableFile(String sourceFile);
+    public native int VPinballSetTableArtwork(String uuid, String artworkPath);
+    public native String VPinballGetTablesPath();
+    public native void VPinballFreeString(String jsonString);
 }

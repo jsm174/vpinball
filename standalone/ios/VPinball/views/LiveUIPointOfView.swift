@@ -810,8 +810,12 @@ struct LiveUIPointOfView: View {
     func handleRefresh() {
         isUpdating = true
 
-        let viewSetup = vpinballManager.getViewSetup()
-        viewMode = VPinballViewLayoutMode(rawValue: viewSetup.viewMode)!
+        guard let viewSetup = vpinballManager.getViewSetup() else {
+            isUpdating = false
+            return
+        }
+
+        viewMode = VPinballViewLayoutMode(rawValue: CInt(viewSetup.viewMode))!
         lookAt = viewSetup.lookAt
         fov = viewSetup.fov
         layback = viewSetup.layback
@@ -837,21 +841,21 @@ struct LiveUIPointOfView: View {
             return
         }
 
-        let viewSetup = VPinballViewSetup(viewMode: viewMode.rawValue,
-                                          sceneScaleX: Float(sceneScaleX),
-                                          sceneScaleY: Float(sceneScaleY),
-                                          sceneScaleZ: Float(sceneScaleZ),
-                                          viewX: Float(viewX),
-                                          viewY: Float(viewY),
-                                          viewZ: Float(viewZ),
-                                          lookAt: Float(lookAt),
-                                          viewportRotation: Float(viewportRotation),
-                                          fov: Float(fov),
-                                          layback: Float(layback),
-                                          viewHOfs: Float(viewHOfs),
-                                          viewVOfs: Float(viewVOfs),
-                                          windowTopZOfs: Float(windowTopZOfs),
-                                          windowBottomZOfs: Float(windowBottomZOfs))
+        let viewSetup = ViewSetup(viewMode: Int(viewMode.rawValue),
+                                  sceneScaleX: Float(sceneScaleX),
+                                  sceneScaleY: Float(sceneScaleY),
+                                  sceneScaleZ: Float(sceneScaleZ),
+                                  viewX: Float(viewX),
+                                  viewY: Float(viewY),
+                                  viewZ: Float(viewZ),
+                                  lookAt: Float(lookAt),
+                                  viewportRotation: Float(viewportRotation),
+                                  fov: Float(fov),
+                                  layback: Float(layback),
+                                  viewHOfs: Float(viewHOfs),
+                                  viewVOfs: Float(viewVOfs),
+                                  windowTopZOfs: Float(windowTopZOfs),
+                                  windowBottomZOfs: Float(windowBottomZOfs))
 
         vpinballManager.setViewSetup(viewSetup)
     }

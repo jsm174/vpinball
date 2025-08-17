@@ -1,12 +1,11 @@
 import PhotosUI
-import SwiftData
 import SwiftUI
 
 struct TableListButton: View {
     @EnvironmentObject var vpinballViewModel: VPinballViewModel
 
-    @State var table: PinTable
-    @State var selectedTable: PinTable?
+    let table: VPXTable
+    @State var selectedTable: VPXTable?
 
     var showTitle = true
 
@@ -53,7 +52,7 @@ struct TableListButton: View {
                     Button(action: {
                         handleViewScript()
                     }) {
-                        Label(table.hasScript() ? "View Script" : "Extract Script",
+                        Label(table.hasScriptFile() ? "View Script" : "Extract Script",
                               systemImage: "applescript")
                     }
 
@@ -75,7 +74,7 @@ struct TableListButton: View {
                         Label("Reset",
                               systemImage: "gobackward")
                     }
-                    .disabled(!table.hasIni())
+                    .disabled(!table.hasIniFile())
 
                     Divider()
 
@@ -94,7 +93,7 @@ struct TableListButton: View {
                     .background(Color.black)
                     .frame(height: 300)
             }
-            .id(table.lastUpdate)
+            .id(table.modifiedAt)
     }
 
     func handleShowRename() {
