@@ -27,12 +27,12 @@ class VPinballViewModel: ObservableObject {
     @Published var didReceiveMemoryWarning = false
 
     var action: Action?
-    var table: PinTable?
+    var table: VPXTable?
     var scriptError: String?
     var hudTitle: String?
     var hudStatus: String?
 
-    func setAction(action: Action, table: PinTable? = nil) {
+    func setAction(action: Action, table: VPXTable? = nil) {
         self.action = action
         self.table = table
 

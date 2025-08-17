@@ -2,8 +2,6 @@
 
 #include "core/stdafx.h"
 
-#include <SDL3/SDL_main.h>
-
 #ifndef __STANDALONE__
 #include "BAM/BAMView.h"
 #endif

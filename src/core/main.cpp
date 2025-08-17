@@ -241,7 +241,7 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, 
    return retval;
 }
 
-#ifdef __STANDALONE__
+/*#ifdef __STANDALONE__
 #ifdef __ANDROID__
 int main(int argc, char** argv) {
    while(true)
@@ -257,4 +257,4 @@ int main(int argc, char** argv) {
    return WinMain(NULL, NULL, NULL, 0);
 }
 #endif
-#endif
+#endif*/

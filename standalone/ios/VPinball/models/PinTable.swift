@@ -102,20 +102,12 @@ class PinTable {
 }
 
 extension PinTable {
-    static func create(table: PinTable) {
-        if let modelContext = VPinballManager.shared.modelContext {
-            modelContext.insert(table)
-            try? modelContext.save()
-        }
+    static func create(table _: PinTable) {
+        // Legacy method - no longer using SwiftData
     }
 
     static func delete(table: PinTable) {
         try? FileManager.default.removeItem(at: table.baseURL)
-        if let modelContext = VPinballManager.shared.modelContext {
-            modelContext.delete(table)
-            try? modelContext.save()
-        }
-
         VPinballSetWebServerUpdated()
     }
 
@@ -135,11 +127,7 @@ extension PinTable {
     }
 
     static func update(table: PinTable) {
-        if let modelContext = VPinballManager.shared.modelContext {
-            table.lastUpdate = Date()
-            try? modelContext.save()
-        }
-
+        table.lastUpdate = Date()
         VPinballSetWebServerUpdated()
     }
 

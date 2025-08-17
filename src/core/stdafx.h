@@ -12,9 +12,9 @@
 #pragma warning(disable : 26440)
 #pragma warning(disable : 26446)
 
-#ifndef __ANDROID__
-#define SDL_MAIN_HANDLED // https://wiki.libsdl.org/SDL3/SDL_SetMainReady#remarks
-#endif
+//#ifndef __ANDROID__
+//#define SDL_MAIN_HANDLED // https://wiki.libsdl.org/SDL3/SDL_SetMainReady#remarks
+//#endif
 
 //#define DISABLE_FORCE_NVIDIA_OPTIMUS // do not enable NVIDIA Optimus cards (on Laptops, etc) by default
 

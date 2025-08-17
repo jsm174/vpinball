@@ -4,10 +4,14 @@
 #include <functional>
 #include <queue>
 #include <mutex>
+#include "VPinballTableManager.h"
 
 class WebServer;
 
 namespace VPinballLib {
+
+using std::string;
+using std::vector;
 
 enum class LogLevel {
    Debug,
@@ -56,7 +60,15 @@ enum class Event {
    TableList,
    TableImport,
    TableRename,
-   TableDelete
+   TableDelete,
+   TableScan,
+   TableScanComplete,
+   RefreshingTableList,
+   TableListRefreshComplete,
+   TableAdded,
+   TableUpdated,
+   TableRemoved,
+   TablesJsonGenerated
 };
 
 struct ProgressData {
@@ -89,6 +101,17 @@ struct CaptureScreenshotData {
    bool success;
 };
 
+struct VPXTable {
+   char* uuid;
+   char* name;
+   char* fileName;
+   char* fullPath;
+   char* path;
+   char* artwork;
+   int64_t createdAt;
+   int64_t modifiedAt;
+};
+
 struct TableInfo {
    char* tableId;
    char* name;
@@ -105,6 +128,25 @@ struct TableEventData {
    const char* newName;
    const char* path;
    bool success;
+};
+
+struct VPXTablesData {
+   VPXTable* tables;
+   int tableCount;
+   bool success;
+};
+
+struct TableScanData {
+   int tablesFound;
+   int tablesProcessed;
+   bool scanComplete;
+   const char* currentTable;
+};
+
+struct VPXTableEventData {
+   const VPXTable* table;
+   bool success;
+   const char* errorMessage;
 };
 
 struct TableOptions {
@@ -148,6 +190,14 @@ struct ViewSetup {
    float windowBottomZOfs;
 };
 
+enum class TableEvent {
+   TablesChanged,
+   RefreshStarted, 
+   RefreshCompleted 
+};
+
+class VPinballTableManager;
+
 class VPinball {
 public:
    void LoadPlugins();
@@ -156,6 +206,7 @@ public:
    void SetGameLoop(std::function<void()> gameLoop) { m_gameLoop = gameLoop; }
    static void* SendEvent(Event event, void* data);
    void Init(std::function<void*(Event, void*)> callback);
+   void SetupEventCallback();
    string GetVersionStringFull();
    void Log(LogLevel level, const string& message);
    void ResetLog();
@@ -165,8 +216,6 @@ public:
    void SaveValueInt(const string& sectionName, const string& key, int value);
    void SaveValueFloat(const string& sectionName, const string& key, float value);
    void SaveValueString(const string& sectionName, const string& key, const string& value);
-   VPinballStatus Uncompress(const string& source);
-   VPinballStatus Compress(const string& source, const string& destination);
    void UpdateWebServer();
    VPinballStatus ResetIni();
    VPinballStatus Load(const string& source);
@@ -193,6 +242,26 @@ public:
    void SaveViewSetup();
    void CaptureScreenshot(const string& filename);
    void SetWebServerUpdated();
+   
+   VPinballStatus RefreshTables();
+   void GetVPXTables(VPXTablesData& tablesData);
+   char* GetTablesJson();
+   char* GetTableJson(const string& uuid);
+   VPinballStatus GetVPXTable(const string& uuid, VPXTable& table);
+   VPinballStatus AddVPXTable(const string& filePath);
+   VPinballStatus RemoveVPXTable(const string& uuid);
+   VPinballStatus RenameVPXTable(const string& uuid, const string& newName);
+   VPinballStatus ImportVPXZ(const string& vpxzPath);
+   void FreeVPXTablesData(VPXTablesData& tablesData);
+   void FreeVPXTable(VPXTable& table);
+   VPinballStatus ImportTableFile(const string& sourceFile);
+   VPinballStatus SetTableArtwork(const string& uuid, const string& artworkPath);
+   const char* GetTablesPath();
+   string ExportTable(const string& uuid);
+   void NotifyTableEvent(Event event, void* data);
+   
+   void CleanupVPXTable(VPXTable& table);
+   
 
 private:
    VPinball();
@@ -207,6 +276,7 @@ private:
    void ProcessSetDefaultViewSetup();
    void ProcessResetViewSetup();
    void Cleanup();
+   
 
    vector<std::shared_ptr<MsgPlugin>> m_plugins;
    std::queue<std::function<void()>> m_liveUIQueue;
@@ -214,8 +284,23 @@ private:
    std::function<void*(Event, void*)> m_eventCallback;
    std::function<void()> m_gameLoop;
    WebServer* m_pWebServer;
+   
+   bool m_scanningTables;
+   
+   VPinballTableManager* m_tableManager;
 
    static VPinball s_instance;
 };
 
-} // namespace VPinballLib
+}
+
+// C interface for Swift integration
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void VPinball_SetSwiftCallback(void (*callback)(void*));
+
+#ifdef __cplusplus
+}
+#endif
