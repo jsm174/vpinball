@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		C104D1CA2E52744800FD86CC /* VPXTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C104D1C92E52744800FD86CC /* VPXTable.swift */; };
 		C11419052C277D9800582B6F /* VPinballApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11419042C277D9800582B6F /* VPinballApp.swift */; };
 		C11419092C277D9900582B6F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C11419082C277D9900582B6F /* Assets.xcassets */; };
 		C114190C2C277D9900582B6F /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = C114190B2C277D9900582B6F /* Preview Assets.xcassets */; };
@@ -33,7 +34,6 @@
 		C16266442C29955E0002FD15 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162663A2C29955E0002FD15 /* SettingsView.swift */; };
 		C16266452C29955E0002FD15 /* SplashView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162663B2C29955E0002FD15 /* SplashView.swift */; };
 		C16266462C29955E0002FD15 /* DocumentPickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162663C2C29955E0002FD15 /* DocumentPickerView.swift */; };
-		C16266472C29955E0002FD15 /* PinTable.swift in Sources */ = {isa = PBXBuildFile; fileRef = C162663E2C29955E0002FD15 /* PinTable.swift */; };
 		C16266482C29955E0002FD15 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = C16266402C29955E0002FD15 /* Extensions.swift */; };
 		C1920AF62C67BCE000483104 /* TableImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1920AF52C67BCE000483104 /* TableImageView.swift */; };
 		C1920AF82C67CBC700483104 /* TableListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1920AF72C67CBC700483104 /* TableListView.swift */; };
@@ -80,6 +80,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		C104D1C92E52744800FD86CC /* VPXTable.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPXTable.swift; sourceTree = "<group>"; };
 		C11419012C277D9800582B6F /* Visual Pinball.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Visual Pinball.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		C11419042C277D9800582B6F /* VPinballApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VPinballApp.swift; sourceTree = "<group>"; };
 		C11419082C277D9900582B6F /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -109,7 +110,6 @@
 		C162663A2C29955E0002FD15 /* SettingsView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		C162663B2C29955E0002FD15 /* SplashView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SplashView.swift; sourceTree = "<group>"; };
 		C162663C2C29955E0002FD15 /* DocumentPickerView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DocumentPickerView.swift; sourceTree = "<group>"; };
-		C162663E2C29955E0002FD15 /* PinTable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = PinTable.swift; sourceTree = "<group>"; };
 		C16266402C29955E0002FD15 /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		C1920AF52C67BCE000483104 /* TableImageView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableImageView.swift; sourceTree = "<group>"; };
 		C1920AF72C67CBC700483104 /* TableListView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = TableListView.swift; sourceTree = "<group>"; };
@@ -230,8 +230,8 @@
 		C162663F2C29955E0002FD15 /* models */ = {
 			isa = PBXGroup;
 			children = (
-				C162663E2C29955E0002FD15 /* PinTable.swift */,
 				C1D90AE42C9A6007006CB735 /* SettingsModel.swift */,
+				C104D1C92E52744800FD86CC /* VPXTable.swift */,
 			);
 			path = models;
 			sourceTree = "<group>";
@@ -385,7 +385,6 @@
 				C15DE57C2C75A324001F1D13 /* CodeWebView.swift in Sources */,
 				C1320F602C8E56BD00035C0F /* HUDOverlayView.swift in Sources */,
 				C16266422C29955E0002FD15 /* MainView.swift in Sources */,
-				C16266472C29955E0002FD15 /* PinTable.swift in Sources */,
 				C1610F1C2C4BE8930049ED87 /* ViewModifiers.swift in Sources */,
 				C145FE1F2C5B4ADB0049D313 /* SettingsAntiAliasingView.swift in Sources */,
 				C1D90AE52C9A6007006CB735 /* SettingsModel.swift in Sources */,
@@ -405,6 +404,7 @@
 				C11419182C28C5C500582B6F /* Shimmer.metal in Sources */,
 				C1A656742C85ED8500B6BE3C /* LiveUITableOptions.swift in Sources */,
 				C16266442C29955E0002FD15 /* SettingsView.swift in Sources */,
+				C104D1CA2E52744800FD86CC /* VPXTable.swift in Sources */,
 				C1320F5E2C8DED0100035C0F /* ArtworkSnapshotView.swift in Sources */,
 				C1A1153C2C8BE8200068BF3E /* TouchInstructionsView.swift in Sources */,
 				C1920AF62C67BCE000483104 /* TableImageView.swift in Sources */,

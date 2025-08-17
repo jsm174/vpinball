@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct CustomTableOptionView: View {
-    @Binding var customTableOption: VPinballCustomTableOption
+    @Binding var customTableOption: CustomTableOption
     @State var label: String = ""
     @State var options: [String] = []
     @State var value: Float = 0.0
@@ -54,7 +54,7 @@ struct CustomTableOptionView: View {
                         step: Double(customTableOption.step)
                     )
 
-                    if let optionUnit = VPinballOptionUnit(rawValue: customTableOption.unit) {
+                    if let optionUnit = VPinballOptionUnit(rawValue: CInt(customTableOption.unit)) {
                         Text(optionUnit.formatValue(value))
                             .foregroundStyle(Color.white)
                             .frame(width: 75,
@@ -77,17 +77,9 @@ struct CustomTableOptionView: View {
     func handleRefresh() {
         isUpdating = true
 
-        if let name = customTableOption.name {
-            label = String(cString: name)
-        } else {
-            label = ""
-        }
+        label = customTableOption.name
 
-        if let literals = customTableOption.literals {
-            options = String(cString: literals).split(separator: "||").map { String($0) }
-        } else {
-            options = []
-        }
+        options = customTableOption.literals.split(separator: "||").map { String($0) }
 
         value = customTableOption.value
 
@@ -101,7 +93,21 @@ struct CustomTableOptionView: View {
             return
         }
 
-        customTableOption.value = value
-        vpinballManager.setCustomTableOption(customTableOption)
+        let updatedOption = CustomTableOption(
+            sectionName: customTableOption.sectionName,
+            id: customTableOption.id,
+            name: customTableOption.name,
+            showMask: customTableOption.showMask,
+            minValue: customTableOption.minValue,
+            maxValue: customTableOption.maxValue,
+            step: customTableOption.step,
+            defaultValue: customTableOption.defaultValue,
+            unit: customTableOption.unit,
+            literals: customTableOption.literals,
+            value: value
+        )
+
+        customTableOption = updatedOption
+        vpinballManager.setCustomTableOption(updatedOption)
     }
 }

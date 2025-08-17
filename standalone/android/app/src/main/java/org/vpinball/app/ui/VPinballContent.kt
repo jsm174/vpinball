@@ -38,7 +38,6 @@ import org.vpinball.app.ui.screens.touch.TouchOverlayScreen
 import org.vpinball.app.ui.theme.VPinballTheme
 import org.vpinball.app.ui.theme.VpxRed
 import org.vpinball.app.ui.util.koinActivityViewModel
-import org.vpinball.app.util.deleteFiles
 import org.vpinball.app.util.getActivity
 
 @Composable
@@ -67,24 +66,27 @@ fun VPinballContent(viewModel: VPinballViewModel = koinActivityViewModel()) {
                     progress = viewModel.progress,
                     status = viewModel.status,
                     onTableImported = { uuid, path ->
-                        scope.launch {
-                            viewModel.saveImportTable(uuid, path).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // With the new unified import system, the C++ library handles everything internally
+                        // We just need to update the web server status since table list refresh happens automatically
+                        VPinballManager.setWebLastUpdate()
                     },
                     onRenameTable = { table, name ->
-                        scope.launch {
-                            viewModel.renameTable(table, name).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // Use C++ library for table rename - it handles everything and updates web server
+                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Renaming table ${table.uuid} to: $name")
+                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
+                        vpinballJNI.VPinballRenameVPXTable(table.uuid, name)
+                        VPinballManager.setWebLastUpdate()
                     },
-                    onChangeTableArtwork = { table -> scope.launch { viewModel.markTableAsModified(table).last() } },
+                    onChangeTableArtwork = { table -> 
+                        // Artwork changes are handled by the UI directly, just update web server
+                        VPinballManager.setWebLastUpdate() 
+                    },
                     onDeleteTable = { table ->
-                        table.deleteFiles()
-                        scope.launch {
-                            viewModel.deleteTable(table).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // Use C++ library for table deletion - it handles filesystem and registry
+                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Deleting table: ${table.uuid}")
+                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
+                        vpinballJNI.VPinballRemoveVPXTable(table.uuid)
+                        VPinballManager.setWebLastUpdate()
                     },
                     onViewFile = { file -> codeFile = file },
                 )

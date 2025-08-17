@@ -336,22 +336,17 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSaveValueSt
    env->ReleaseStringUTFChars(sectionName, pSectionName);
 }
 
-JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballUncompress(JNIEnv* env, jobject obj, jstring source)
+JNIEXPORT jstring JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballExportTable(JNIEnv* env, jobject obj, jstring uuid)
 {
-   const char* pSource = env->GetStringUTFChars(source, nullptr);
-   VPINBALL_STATUS status = VPinballUncompress(pSource);
-   env->ReleaseStringUTFChars(source, pSource);
-   return status;
-}
-
-JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballCompress(JNIEnv* env, jobject obj, jstring source, jstring destination)
-{
-   const char* pSource = env->GetStringUTFChars(source, nullptr);
-   const char* pDestination = env->GetStringUTFChars(destination, nullptr);
-   VPINBALL_STATUS status = VPinballCompress(pSource, pDestination);
-   env->ReleaseStringUTFChars(source, pSource);
-   env->ReleaseStringUTFChars(destination, pDestination);
-   return status;
+   const char* pUuid = env->GetStringUTFChars(uuid, nullptr);
+   const char* exportPath = VPinballExportTable(pUuid);
+   env->ReleaseStringUTFChars(uuid, pUuid);
+   
+   if (exportPath) {
+      return env->NewStringUTF(exportPath);
+   } else {
+      return nullptr;
+   }
 }
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballUpdateWebServer(JNIEnv* env, jobject obj)
@@ -648,6 +643,93 @@ JNIEXPORT jobject JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetTable
       return env->CallObjectMethod(gJNICallbackObject, getTableListMethod);
 
    return nullptr;
+}
+
+// Table Management JNI Implementations
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballRefreshTables(JNIEnv* env, jobject obj)
+{
+   return VPinballRefreshTables();
+}
+
+JNIEXPORT jstring JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetVPXTables(JNIEnv* env, jobject obj)
+{
+   char* result = VPinballGetVPXTables();
+   if (result) {
+      jstring jResult = env->NewStringUTF(result);
+      VPinballFreeString(result);
+      return jResult;
+   }
+   return nullptr;
+}
+
+JNIEXPORT jstring JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetVPXTable(JNIEnv* env, jobject obj, jstring uuid)
+{
+   const char* pUuid = env->GetStringUTFChars(uuid, nullptr);
+   char* result = VPinballGetVPXTable(pUuid);
+   env->ReleaseStringUTFChars(uuid, pUuid);
+   
+   if (result) {
+      jstring jResult = env->NewStringUTF(result);
+      VPinballFreeString(result);
+      return jResult;
+   }
+   return nullptr;
+}
+
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballAddVPXTable(JNIEnv* env, jobject obj, jstring filePath)
+{
+   const char* pFilePath = env->GetStringUTFChars(filePath, nullptr);
+   int result = VPinballAddVPXTable(pFilePath);
+   env->ReleaseStringUTFChars(filePath, pFilePath);
+   return result;
+}
+
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballRemoveVPXTable(JNIEnv* env, jobject obj, jstring uuid)
+{
+   const char* pUuid = env->GetStringUTFChars(uuid, nullptr);
+   int result = VPinballRemoveVPXTable(pUuid);
+   env->ReleaseStringUTFChars(uuid, pUuid);
+   return result;
+}
+
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballRenameVPXTable(JNIEnv* env, jobject obj, jstring uuid, jstring newName)
+{
+   const char* pUuid = env->GetStringUTFChars(uuid, nullptr);
+   const char* pNewName = env->GetStringUTFChars(newName, nullptr);
+   int result = VPinballRenameVPXTable(pUuid, pNewName);
+   env->ReleaseStringUTFChars(uuid, pUuid);
+   env->ReleaseStringUTFChars(newName, pNewName);
+   return result;
+}
+
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballImportTableFile(JNIEnv* env, jobject obj, jstring sourceFile)
+{
+   const char* pSourceFile = env->GetStringUTFChars(sourceFile, nullptr);
+   int result = VPinballImportTableFile(pSourceFile);
+   env->ReleaseStringUTFChars(sourceFile, pSourceFile);
+   return result;
+}
+
+JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSetTableArtwork(JNIEnv* env, jobject obj, jstring uuid, jstring artworkPath)
+{
+   const char* pUuid = env->GetStringUTFChars(uuid, nullptr);
+   const char* pArtworkPath = env->GetStringUTFChars(artworkPath, nullptr);
+   int result = VPinballSetTableArtwork(pUuid, pArtworkPath);
+   env->ReleaseStringUTFChars(uuid, pUuid);
+   env->ReleaseStringUTFChars(artworkPath, pArtworkPath);
+   return result;
+}
+
+JNIEXPORT jstring JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetTablesPath(JNIEnv* env, jobject obj)
+{
+   const char* tablesPath = VPinballGetTablesPath();
+   return env->NewStringUTF(tablesPath);
+}
+
+JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballFreeString(JNIEnv* env, jobject obj, jstring jsonString)
+{
+   // Note: Java strings are handled by the JVM, this is just for API compatibility
+   // The actual freeing happens when we call VPinballFreeString on the C char* before creating jstring
 }
 
 

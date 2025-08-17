@@ -48,6 +48,8 @@ set(VPINBALL_SOURCES
 
    standalone/VPinballLib.h
    standalone/VPinballLib.cpp
+   standalone/VPinballTableManager.h
+   standalone/VPinballTableManager.cpp
    standalone/VPinball.h
    standalone/VPinball.cpp
    standalone/VPXProgress.h

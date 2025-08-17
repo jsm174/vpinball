@@ -3,7 +3,7 @@ import SwiftUI
 struct LiveUITableOptions: View {
     @EnvironmentObject var vpinballViewModel: VPinballViewModel
 
-    @State var customTableOptions: [VPinballCustomTableOption] = []
+    @State var customTableOptions: [CustomTableOption] = []
     @State var refreshCustomTableOptions = UUID()
     @State var globalEmissionScale: Float = 0.0
     @State var globalDifficulty: Float = 0.0
@@ -208,11 +208,11 @@ struct LiveUITableOptions: View {
     func handleRefresh() {
         isUpdating = true
 
-        let tableOptions = vpinballManager.getTableOptions()
+        guard let tableOptions = vpinballManager.getTableOptions() else { return }
         globalEmissionScale = tableOptions.globalEmissionScale
         globalDifficulty = tableOptions.globalDifficulty
         exposure = tableOptions.exposure
-        toneMapper = VPinballToneMapper(rawValue: tableOptions.toneMapper)!
+        toneMapper = VPinballToneMapper(rawValue: CInt(tableOptions.toneMapper))!
         musicVolume = Float(tableOptions.musicVolume)
         soundVolume = Float(tableOptions.soundVolume)
 
@@ -229,12 +229,12 @@ struct LiveUITableOptions: View {
             return
         }
 
-        let tableOptions = VPinballTableOptions(globalEmissionScale: Float(globalEmissionScale),
-                                                globalDifficulty: Float(globalDifficulty),
-                                                exposure: Float(exposure),
-                                                toneMapper: toneMapper.rawValue,
-                                                musicVolume: CInt(musicVolume),
-                                                soundVolume: CInt(soundVolume))
+        let tableOptions = TableOptions(globalEmissionScale: Float(globalEmissionScale),
+                                        globalDifficulty: Float(globalDifficulty),
+                                        exposure: Float(exposure),
+                                        toneMapper: Int(toneMapper.rawValue),
+                                        musicVolume: Int(musicVolume),
+                                        soundVolume: Int(soundVolume))
 
         vpinballManager.setTableOptions(tableOptions)
     }
