@@ -880,7 +880,10 @@ void PinInput::HandleInputSDL(DIDEVICEOBJECTDATA *didod)
             didod[j].dwOfs = axes[e.jaxis.axis];
             const int value = e.jaxis.value * axisMultiplier[e.jaxis.axis];
             didod[j].dwData = (DWORD)(value);
+            PLOGI.printf("SDL Axis Event: axis=%d, raw_value=%d, multiplier=%d, final_value=%d, dwOfs=0x%x", 
+                        e.jaxis.axis, e.jaxis.value, axisMultiplier[e.jaxis.axis], value, didod[j].dwOfs);
             PushQueue(&didod[j], APP_JOYSTICK(0));
+            PLOGI.printf("Queued SDL axis event: dwOfs=0x%x, dwData=%d", didod[j].dwOfs, didod[j].dwData);
             j++;
          }
          break;
@@ -1587,6 +1590,8 @@ void PinInput::ProcessThrowBalls(const DIDEVICEOBJECTDATA * __restrict input)
 
 void PinInput::ProcessJoystick(const DIDEVICEOBJECTDATA * __restrict input, int curr_time_msec)
 {
+   PLOGI.printf("ProcessJoystick: dwOfs=0x%x, dwData=%d, DIJOFS_Z=0x%x, DIJOFS_RX=0x%x", 
+                input->dwOfs, input->dwData, DIJOFS_Z, DIJOFS_RX);
     const int joyk = input->dwSequence - APP_JOYSTICKMN; // joystick index
     static constexpr bool rotLeftManual = false; //!! delete
 
@@ -1817,6 +1822,8 @@ void PinInput::ProcessJoystick(const DIDEVICEOBJECTDATA * __restrict input, int 
 
             case DIJOFS_Y:
             {
+                PLOGI.printf("Received Y-axis input: dwData=%d, uShockType=%d, plunger_axis=%d, plunger_speed_axis=%d", 
+                           (int)input->dwData, uShockType, m_plunger_axis, m_plunger_speed_axis);
                 if (g_pplayer)
                 {
                     if ((m_lr_axis == 2) || (m_ud_axis == 2) || (uShockType != USHOCKTYPE_GENERIC))
@@ -1841,13 +1848,21 @@ void PinInput::ProcessJoystick(const DIDEVICEOBJECTDATA * __restrict input, int 
                     }
                     else if (m_plunger_axis == 2)
                     {	// if X or Y ARE NOT chosen for this axis and Plunger IS chosen for this axis and (uShockType == USHOCKTYPE_GENERIC)
-                        g_pplayer->MechPlungerIn(!m_plunger_reverse ? -(int)input->dwData : (int)input->dwData, joyk);
+                        int rawValue = (int)input->dwData;
+                        int processedValue = !m_plunger_reverse ? -rawValue : rawValue;
+                        PLOGI.printf("Plunger Axis 2 (Y): raw=%d, processed=%d, reverse=%s", rawValue, processedValue, m_plunger_reverse ? "true" : "false");
+                        g_pplayer->MechPlungerIn(processedValue, joyk);
                     }
                     else if (m_plunger_speed_axis == 2)
                     {
                        // not nudge X/Y or plunger
                        if (uShockType == USHOCKTYPE_GENERIC)
-                          g_pplayer->MechPlungerSpeedIn((m_plunger_reverse == 0) ? -(int)input->dwData : (int)input->dwData, joyk);
+                       {
+                          int rawValue = (int)input->dwData;
+                          int processedValue = (m_plunger_reverse == 0) ? -rawValue : rawValue;
+                          PLOGI.printf("Plunger Speed Axis 2 (Y): raw=%d, processed=%d, reverse=%s", rawValue, processedValue, m_plunger_reverse ? "true" : "false");
+                          g_pplayer->MechPlungerSpeedIn(processedValue, joyk);
+                       }
                     }
                 }
                 break;
@@ -1855,6 +1870,8 @@ void PinInput::ProcessJoystick(const DIDEVICEOBJECTDATA * __restrict input, int 
 
             case DIJOFS_Z:
             {
+                PLOGI.printf("Received Z-axis input: dwData=%d, uShockType=%d, plunger_axis=%d, plunger_speed_axis=%d", 
+                           (int)input->dwData, uShockType, m_plunger_axis, m_plunger_speed_axis);
                 if (g_pplayer)
                 {
                     if (uShockType == USHOCKTYPE_ULTRACADE)
@@ -1879,7 +1896,12 @@ void PinInput::ProcessJoystick(const DIDEVICEOBJECTDATA * __restrict input, int 
                     else if (m_plunger_axis == 3)
                     {   // if X or Y ARE NOT chosen for this axis and Plunger IS chosen for this axis...
                         if (uShockType == USHOCKTYPE_GENERIC)
-                            g_pplayer->MechPlungerIn(!m_plunger_reverse ? -(int)input->dwData : (int)input->dwData, joyk);
+                        {
+                            int rawValue = (int)input->dwData;
+                            int processedValue = !m_plunger_reverse ? -rawValue : rawValue;
+                            PLOGI.printf("Plunger Axis 3 (Z): raw=%d, processed=%d, reverse=%s", rawValue, processedValue, m_plunger_reverse ? "true" : "false");
+                            g_pplayer->MechPlungerIn(processedValue, joyk);
+                        }
                     }
                     else if (m_plunger_speed_axis == 3)
                     {
@@ -2333,7 +2355,11 @@ void PinInput::ProcessKeys(/*const U32 curr_sim_msec,*/ int curr_time_msec) // l
              FireKeyEvent((input->dwData & 0x80) ? DISPID_GameEvents_KeyDown : DISPID_GameEvents_KeyUp, input->dwOfs);
       }
       else if (input->dwSequence >= APP_JOYSTICKMN && input->dwSequence <= APP_JOYSTICKMX)
+      {
+          PLOGI.printf("Dequeued joystick event: dwSequence=%d, dwOfs=0x%x, dwData=%d", 
+                       input->dwSequence, input->dwOfs, input->dwData);
           ProcessJoystick(input, curr_time_msec);
+      }
    }
 }
 

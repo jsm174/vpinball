@@ -2417,6 +2417,13 @@ void Player::MechPlungerUpdate()   // called on every integral physics frame, on
    float cur = 0;
    for (int i = 0; i < PININ_JOYMXCNT; ++i)
       cur += (float)m_curPlunger[i];
+   
+   static int debug_counter = 0;
+   if (cur != 0 || debug_counter++ % 300 == 0) // Log non-zero values or every ~3 seconds at 100fps
+   {
+      PLOGI.printf("MechPlungerUpdate: sum_of_inputs=%.2f, moved_plunger=%d, pos=%.2f", 
+                   cur, m_movedPlunger, m_curMechPlungerPos);
+   }
 
    if (!m_ptable->m_plungerFilter)
    {
@@ -2546,6 +2553,7 @@ float PlungerMoverObject::MechPlungerSpeed() const
 void Player::MechPlungerIn(const int z, const int joyidx)
 {
    m_curPlunger[joyidx] = -z; //axis reversal
+   PLOGI.printf("MechPlungerIn: input_z=%d, joyidx=%d, stored_value=%d", z, joyidx, m_curPlunger[joyidx]);
 
    if (++m_movedPlunger == 0xffffffff)
       m_movedPlunger = 3; //restart at 3
@@ -2555,6 +2563,7 @@ void Player::MechPlungerSpeedIn(const int z, const int joyidx)
 {
    // record it
    m_curPlungerSpeed[joyidx] = -z;
+   PLOGI.printf("MechPlungerSpeedIn: input_z=%d, joyidx=%d, stored_speed=%d", z, joyidx, m_curPlungerSpeed[joyidx]);
 
    // flag that an external speed setting has been applied
    m_fExtPlungerSpeed = fTrue;
