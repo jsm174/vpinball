@@ -149,10 +149,6 @@ public:
 
    void FireSyncController();
 
-#ifdef __LIBVPINBALL__
-   bool m_liveUIOverride = false;
-#endif
-
 private:
    bool m_playing = true;
    void ApplyPlayingState(const bool play);
@@ -259,8 +255,8 @@ public:
 #pragma region Rendering
 public:
    VPX::Window *m_playfieldWnd = nullptr;
-   VPX::RenderOutput m_scoreviewOutput;
    VPX::RenderOutput m_backglassOutput;
+   VPX::RenderOutput m_scoreViewOutput;
    VPX::RenderOutput m_topperOutput;
    Renderer *m_renderer = nullptr;
    VRDevice *m_vrDevice = nullptr;

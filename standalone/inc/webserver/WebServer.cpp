@@ -2,7 +2,7 @@
 #include "core/vpversion.h"
 #include "WebServer.h"
 
-#include "standalone/VPinballLib.h"
+#include "standalone/lib/VPinballLib.h"
 
 #include <zip.h>
 #include <chrono>
@@ -97,6 +97,26 @@ void WebServer::EventHandler(struct mg_connection *c, int ev, void *ev_data)
    else if (ev == MG_EV_WS_OPEN) {
    }
    else if (ev == MG_EV_WS_MSG) {
+      mg_ws_message* wm = (mg_ws_message*)ev_data;
+      std::string message(wm->data.buf, wm->data.len);
+      
+      if (message == "refresh_tables") {
+         PLOGI.printf("WebServer: Received refresh_tables command via WebSocket");
+         
+         // Call VPinballRefreshTables in a separate thread to avoid blocking
+         std::thread([c]() {
+            VPinballLib::VPinballStatus status = VPinballLib::VPinball::GetInstance().RefreshTables();
+            
+            std::string response = (status == VPinballLib::VPinballStatus::Success) 
+               ? "{\"command\":\"refresh_tables\",\"status\":\"success\"}"
+               : "{\"command\":\"refresh_tables\",\"status\":\"error\"}";
+               
+            mg_ws_send(c, response.c_str(), response.length(), WEBSOCKET_OP_TEXT);
+            
+            PLOGI.printf("WebServer: Table refresh completed with status: %s", 
+                        (status == VPinballLib::VPinballStatus::Success) ? "success" : "error");
+         }).detach();
+      }
    }
    else if (ev == MG_EV_CLOSE) {
       std::lock_guard<std::mutex> lock(s_logMutex);
@@ -215,24 +235,24 @@ void WebServer::Start()
          m_url.clear();
 
       VPinballLib::WebServerData webServerData = { m_url.c_str() };
-      VPinballLib::VPinball::SendEvent(VPinballLib::Event::WebServer, &webServerData);
+      VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::WebServer, &webServerData);
 
       m_pThread = new std::thread([this]() {
          while (m_run)
-            mg_mgr_poll(&m_mgr, 1000);
+            mg_mgr_poll(&m_mgr, 100); // Reduced timeout for faster shutdown
 
          mg_mgr_free(&m_mgr);
          m_url.clear();
 
          PLOGI.printf("Web server closed");
 
-         VPinballLib::VPinball::SendEvent(VPinballLib::Event::WebServer, nullptr);
+         VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::WebServer, nullptr);
       });
    }
    else {
       PLOGE.printf("Unable to start web server");
 
-      VPinballLib::VPinball::SendEvent(VPinballLib::Event::WebServer, nullptr);
+      VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::WebServer, nullptr);
    }
 
    CleanupTempDirectory();
@@ -248,10 +268,12 @@ void WebServer::Stop()
    m_run = false;
 
    if (m_pThread) {
-      m_pThread->join();
+      // Don't block the main thread - detach instead of join
+      m_pThread->detach();
       delete m_pThread;
-
       m_pThread = nullptr;
+      
+      PLOGI.printf("Web server stop initiated (non-blocking)");
    }
 }
 
@@ -457,7 +479,7 @@ void WebServer::Delete(struct mg_connection *c, struct mg_http_message* hm)
          tablesData.tableCount = 0;
          tablesData.success = false;
 
-         VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableList, &tablesData);
+         VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::TableList, &tablesData);
 
          if (tablesData.success && tablesData.tables && tablesData.tableCount > 0) {
             for (int i = 0; i < tablesData.tableCount; i++) {
@@ -486,7 +508,7 @@ void WebServer::Delete(struct mg_connection *c, struct mg_http_message* hm)
          eventData.path = nullptr;
          eventData.success = false;
 
-         VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableDelete, &eventData);
+         VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::TableDelete, &eventData);
 
          if (eventData.success) {
             SetLastUpdate();
@@ -649,12 +671,8 @@ void WebServer::LogStream(struct mg_connection *c, struct mg_http_message* hm)
 
 void WebServer::TableList(struct mg_connection *c, struct mg_http_message* hm)
 {
-   VPinballLib::TablesData tablesData = {};
-   tablesData.tables = nullptr;
-   tablesData.tableCount = 0;
-   tablesData.success = false;
-
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableList, &tablesData);
+   VPinballLib::VPXTablesData tablesData = {};
+   VPinballLib::VPinball::GetInstance().GetVPXTables(tablesData);
 
    if (tablesData.success && tablesData.tables && tablesData.tableCount > 0) {
       std::ostringstream json;
@@ -663,12 +681,18 @@ void WebServer::TableList(struct mg_connection *c, struct mg_http_message* hm)
          if (i > 0)
             json << ",";
 
-         const char* tableId = tablesData.tables[i].tableId ? tablesData.tables[i].tableId : "";
+         const char* tableId = tablesData.tables[i].uuid ? tablesData.tables[i].uuid : "";
          const char* tableName = tablesData.tables[i].name ? tablesData.tables[i].name : "";
+         const char* fileName = tablesData.tables[i].fileName ? tablesData.tables[i].fileName : "";
+         const char* path = tablesData.tables[i].path ? tablesData.tables[i].path : "";
 
-         char* tableEntry = mg_mprintf("{%m:%m,%m:%m}", 
+         char* tableEntry = mg_mprintf("{%m:%m,%m:%m,%m:%m,%m:%m,%m:%lld,%m:%lld}", 
             MG_ESC("table"), MG_ESC(tableId),
-            MG_ESC("name"), MG_ESC(tableName));
+            MG_ESC("name"), MG_ESC(tableName),
+            MG_ESC("fileName"), MG_ESC(fileName),
+            MG_ESC("path"), MG_ESC(path),
+            MG_ESC("createdAt"), tablesData.tables[i].createdAt,
+            MG_ESC("modifiedAt"), tablesData.tables[i].modifiedAt);
          json << tableEntry;
          free(tableEntry);
       }
@@ -680,15 +704,7 @@ void WebServer::TableList(struct mg_connection *c, struct mg_http_message* hm)
       mg_http_reply(c, STATUS_OK, HEADER_JSON, "%s", "[]");
    }
 
-   if (tablesData.tables) {
-      for (int i = 0; i < tablesData.tableCount; i++) {
-         if (tablesData.tables[i].tableId)
-            free(tablesData.tables[i].tableId);
-         if (tablesData.tables[i].name)
-            free(tablesData.tables[i].name);
-      }
-      free(tablesData.tables);
-   }
+   VPinballLib::VPinball::GetInstance().FreeVPXTablesData(tablesData);
 }
 
 void WebServer::TableImport(struct mg_connection *c, struct mg_http_message* hm)
@@ -707,22 +723,34 @@ void WebServer::TableImport(struct mg_connection *c, struct mg_http_message* hm)
       std::filesystem::path fullPath = tempDir / file;
 
       if (std::filesystem::exists(fullPath)) {
-         VPinballLib::TableEventData eventData = {};
-         eventData.tableId = nullptr;
-         eventData.newName = nullptr;
-         eventData.path = fullPath.c_str();
-         eventData.success = false;
-
-         VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableImport, &eventData);
+         // Use the new ImportTableFile function which handles both VPX and VPXZ files
+         // and organizes them into proper folder structure
+         VPinballLib::VPinballStatus status = VPinballLib::VPinball::GetInstance().ImportTableFile(fullPath.string());
+         
+         // Send response
+         if (status == VPinballLib::VPinballStatus::Success) {
+            char* json = mg_mprintf("{%m:%s}", MG_ESC("success"), "true");
+            mg_http_reply(c, STATUS_OK, HEADER_JSON, "%s", json);
+            free(json);
+         } else {
+            char* json = mg_mprintf("{%m:%s,%m:%s}", MG_ESC("success"), "false", MG_ESC("error"), "Import failed");
+            mg_http_reply(c, STATUS_OK, HEADER_JSON, "%s", json);
+            free(json);
+         }
 
          SetLastUpdate();
+         
+         // Clean up temp file
+         std::filesystem::remove(fullPath);
       }
    }
 }
 
 void WebServer::TableExport(struct mg_connection *c, struct mg_http_message* hm)
 {
-   string table;
+   return;
+
+/*   string table;
    if (!ValidatePathParameter(c, hm, "table", table))
       return;
 
@@ -753,7 +781,8 @@ void WebServer::TableExport(struct mg_connection *c, struct mg_http_message* hm)
       }
    }
 
-   if (VPinballLib::VPinball::GetInstance().Compress(tablePath, exportPath.string()) != VPinballLib::VPinballStatus::Success) {
+   string exportPath = VPinballLib::VPinball::GetInstance().ExportTable(table);
+   if (exportPath.empty()) {
       mg_http_reply(c, STATUS_INTERNAL_SERVER_ERROR, "", "Failed to create export file");
       return;
    }
@@ -763,9 +792,10 @@ void WebServer::TableExport(struct mg_connection *c, struct mg_http_message* hm)
    string headers = "Content-Disposition: attachment; filename=\"" + downloadFileName + "\"\r\n";
    opts.extra_headers = headers.c_str();
 
-   mg_http_serve_file(c, hm, exportPath.string().c_str(), &opts);
+   mg_http_serve_file(c, hm, exportPath.c_str(), &opts);
 
    PLOGI.printf("Exporting %s...", actualTableName.c_str());
+*/
 }
 
 void WebServer::TableRename(struct mg_connection *c, struct mg_http_message* hm)
@@ -778,15 +808,9 @@ void WebServer::TableRename(struct mg_connection *c, struct mg_http_message* hm)
    if (!ValidatePathParameter(c, hm, "name", newName))
       return;
 
-   VPinballLib::TableEventData eventData = {};
-   eventData.tableId = table.c_str();
-   eventData.newName = newName.c_str();
-   eventData.path = nullptr;
-   eventData.success = false;
+   VPinballLib::VPinballStatus status = VPinballLib::VPinball::GetInstance().RenameVPXTable(table, newName);
 
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableRename, &eventData);
-
-   if (eventData.success) {
+   if (status == VPinballLib::VPinballStatus::Success) {
       char* json = mg_mprintf("{%m:%s}", MG_ESC("success"), "true");
       mg_http_reply(c, STATUS_OK, HEADER_JSON, "%s", json);
       free(json);
@@ -794,7 +818,9 @@ void WebServer::TableRename(struct mg_connection *c, struct mg_http_message* hm)
       PLOGI.printf("Table renamed successfully: %s -> %s", table.c_str(), newName.c_str());
    } 
    else {
-      mg_http_reply(c, STATUS_INTERNAL_SERVER_ERROR, "", "%s", "Failed to rename table");
+      char* json = mg_mprintf("{%m:%s,%m:%s}", MG_ESC("success"), "false", MG_ESC("error"), "Failed to rename table");
+      mg_http_reply(c, STATUS_OK, HEADER_JSON, "%s", json);
+      free(json);
       PLOGI.printf("Table rename failed: %s -> %s", table.c_str(), newName.c_str());
    }
 }
@@ -970,7 +996,7 @@ string WebServer::LookupTableName(const string& tableId)
    tablesData.tableCount = 0;
    tablesData.success = false;
 
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::TableList, &tablesData);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::TableList, &tablesData);
 
    string actualTableName = tableId;
    if (tablesData.success && tablesData.tables && tablesData.tableCount > 0) {

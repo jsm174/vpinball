@@ -22,7 +22,7 @@ import org.vpinball.app.R
 import org.vpinball.app.ui.theme.VPinballTheme
 
 @Composable
-fun ImportTableDropdownMenu(expanded: Boolean, onDismissRequest: () -> Unit, onFiles: () -> Unit, onExampleTable: () -> Unit) {
+fun ImportTableDropdownMenu(expanded: Boolean, onDismissRequest: () -> Unit, onFiles: () -> Unit, onBlankTable: () -> Unit) {
     DropdownMenu(expanded = expanded, onDismissRequest = onDismissRequest) {
         Text(
             text = "Import from...",
@@ -69,8 +69,8 @@ fun ImportTableDropdownMenu(expanded: Boolean, onDismissRequest: () -> Unit, onF
         HorizontalDivider()
 
         DropdownMenuItem(
-            text = { Text(text = "exampleTable.vpx", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface) },
-            onClick = onExampleTable,
+            text = { Text(text = "blankTable.vpx", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface) },
+            onClick = onBlankTable,
         )
     }
 }
@@ -84,7 +84,7 @@ private fun ImportTableDropdownMenuPreview() {
             topBar = {
                 TopAppBar(
                     title = { Text("VPinBall") },
-                    actions = { ImportTableDropdownMenu(expanded = true, onDismissRequest = {}, onExampleTable = {}, onFiles = {}) },
+                    actions = { ImportTableDropdownMenu(expanded = true, onDismissRequest = {}, onBlankTable = {}, onFiles = {}) },
                 )
             }
         ) { padding ->

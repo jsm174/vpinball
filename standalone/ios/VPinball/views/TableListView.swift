@@ -1,4 +1,3 @@
-import SwiftData
 import SwiftUI
 
 enum TableListMode: Int, Hashable {
@@ -9,27 +8,24 @@ enum TableListMode: Int, Hashable {
 
 struct TableListView: View {
     @EnvironmentObject var vpinballViewModel: VPinballViewModel
+    @EnvironmentObject var tableManager: VPXTableManager
 
     var mode: TableListMode
+    var sortOrder: SortOrder
     var searchText: String
     @Binding var scrollToTableId: UUID?
 
-    @State var selectedTable: PinTable?
-
-    @Query var tables: [PinTable]
+    @State var selectedTable: VPXTable?
 
     init(mode: TableListMode = .column2, sortOrder: SortOrder = .reverse, searchText: String = "", scrollToTableId: Binding<UUID?> = .constant(nil)) {
         self.mode = mode
+        self.sortOrder = sortOrder
         self.searchText = searchText
-
-        _tables = Query(filter: PinTable.predicate(searchText: searchText),
-                        sort: [SortDescriptor(\.name,
-                                              comparator: .localizedStandard,
-                                              order: sortOrder),
-                               SortDescriptor(\.createdAt,
-                                              order: .reverse)])
-
         _scrollToTableId = scrollToTableId
+    }
+
+    var filteredTables: [VPXTable] {
+        return tableManager.filteredTables(searchText: searchText, sortOrder: sortOrder)
     }
 
     var body: some View {
@@ -40,7 +36,7 @@ struct TableListView: View {
                                                                  alignment: .top),
                                              count: mode == .column2 ? 2 : 3))
                     {
-                        ForEach(tables) { table in
+                        ForEach(filteredTables) { table in
                             EmptyView()
                                 .id(table.tableId)
 
@@ -56,10 +52,19 @@ struct TableListView: View {
                 }
                 .scrollPosition(id: $scrollToTableId,
                                 anchor: .top)
+                .refreshable {
+                    let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                    impactFeedback.impactOccurred()
+                    await tableManager.refreshTables()
+                }
+                .onAppear {
+                    // Set refresh control tint to white for visibility on dark background
+                    UIRefreshControl.appearance().tintColor = UIColor.white
+                }
             } else {
                 ScrollViewReader { proxy in
                     List {
-                        ForEach(tables) { table in
+                        ForEach(filteredTables) { table in
                             Button {
                                 handlePlay(table)
                             }
@@ -103,6 +108,15 @@ struct TableListView: View {
                         }
                     }
                     .listStyle(.plain)
+                    .refreshable {
+                        let impactFeedback = UIImpactFeedbackGenerator(style: .light)
+                        impactFeedback.impactOccurred()
+                        await tableManager.refreshTables()
+                    }
+                    .onAppear {
+                        // Set refresh control tint to white for visibility on dark background
+                        UIRefreshControl.appearance().tintColor = UIColor.white
+                    }
                     .onChange(of: scrollToTableId) {
                         proxy.scrollTo(scrollToTableId,
                                        anchor: .top)
@@ -110,7 +124,7 @@ struct TableListView: View {
                 }
             }
 
-            if tables.isEmpty && !searchText.isEmpty {
+            if filteredTables.isEmpty && !searchText.isEmpty {
                 GeometryReader { geometry in
                     VStack {
                         Spacer()
@@ -142,14 +156,14 @@ struct TableListView: View {
         }
     }
 
-    func handleDelete(table: PinTable) {
+    func handleDelete(table: VPXTable) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             vpinballViewModel.setAction(action: .delete,
                                         table: table)
         }
     }
 
-    func handlePlay(_ table: PinTable) {
+    func handlePlay(_ table: VPXTable) {
         selectedTable = table
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {

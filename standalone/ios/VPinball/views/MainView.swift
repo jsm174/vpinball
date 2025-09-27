@@ -1,11 +1,9 @@
 import PhotosUI
-import SwiftData
 import SwiftUI
 
 struct MainView: View {
     @EnvironmentObject var vpinballViewModel: VPinballViewModel
 
-    @Environment(\.modelContext) var modelContext
     @Environment(\.dismissSearch) var dismissSearch
 
     @State var settingsSection: String?
@@ -22,7 +20,7 @@ struct MainView: View {
     @State var tableListSearchText = ""
     @State var tableListScrollToTableId: UUID?
 
-    @State var selectedTable: PinTable? = nil
+    @State var selectedTable: VPXTable? = nil
 
     @State var shareItems: [Any] = []
     @State var showShare = false
@@ -39,7 +37,7 @@ struct MainView: View {
     @State var errorMessage = ""
     @State var showError = false
 
-    @Query var tables: [PinTable]
+    @ObservedObject var tableManager = VPXTableManager.shared
 
     let vpinballManager = VPinballManager.shared
     let settingsModel = SettingsModel()
@@ -54,10 +52,11 @@ struct MainView: View {
                                   sortOrder: tableListSortOrder,
                                   searchText: tableListSearchText,
                                   scrollToTableId: $tableListScrollToTableId)
+                        .environmentObject(tableManager)
                         .searchable(text: $tableListSearchText)
-                        .disabled(tables.isEmpty)
+                        .disabled(tableManager.tables.isEmpty)
 
-                    if tables.isEmpty {
+                    if tableManager.tables.isEmpty {
                         GeometryReader { geometry in
                             VStack {
                                 Spacer()
@@ -155,9 +154,9 @@ struct MainView: View {
 
                             Section("Built in...") {
                                 Button(action: {
-                                    handleImportExampleTable()
+                                    handleImportBlankTable()
                                 }) {
-                                    Text("exampleTable.vpx")
+                                    Text("blankTable.vpx")
                                 }
                             }
                         }, label: {
@@ -290,11 +289,11 @@ struct MainView: View {
         .onAppear {
             handleAppear()
         }
-        .onOpenURL { url in
-            if url.scheme == "file" {
-                handleShowConfirmImportFile(url: url)
-            }
-        }
+        // .onOpenURL { url in
+        //     if url.scheme == "file" {
+        //         handleShowConfirmImportFile(url: url)
+        //     }
+        // }
         .onChange(of: tableListMode) {
             handleTableListMode()
         }
@@ -304,7 +303,7 @@ struct MainView: View {
         .onChange(of: importFileURL) {
             handleShowConfirmImportFile(url: importFileURL)
         }
-        .onChange(of: tables) {
+        .onChange(of: tableManager.tables) {
             handleTables()
         }
         .onChange(of: vpinballViewModel.didSetAction) {
@@ -317,8 +316,6 @@ struct MainView: View {
     }
 
     func handleAppear() {
-        vpinballManager.modelContext = modelContext
-
         tableListMode = TableListMode(rawValue: vpinballManager.loadValue(.standalone,
                                                                           "TableListMode",
                                                                           TableListMode.column2.rawValue)) ?? .column2
@@ -327,8 +324,9 @@ struct MainView: View {
                                                        "TableListSort",
                                                        1) == 1 ? .forward : .reverse
 
-        for table in tables where !table.exists() {
-            PinTable.delete(table: table)
+        // Load tables from C++ library
+        Task {
+            await tableManager.refreshTables()
         }
     }
 
@@ -369,7 +367,7 @@ struct MainView: View {
         showImport = true
     }
 
-    func handleImportExampleTable() {
+    func handleImportBlankTable() {
         handleShowConfirmImportFile(url: Bundle.main.url(forResource: "assets/exampleTable",
                                                          withExtension: "vpx"))
     }
@@ -379,10 +377,8 @@ struct MainView: View {
             Task {
                 let scopedResource = url.startAccessingSecurityScopedResource()
 
-                if let table = await vpinballManager.import(url: url) {
-                    PinTable.create(table: table)
+                if let table = await tableManager.addTable(from: url) {
                     tableListScrollToTableId = table.tableId
-
                     VPinballSetWebServerUpdated()
                 } else {
                     handleShowError(message: "Unable to import table.")
@@ -400,7 +396,7 @@ struct MainView: View {
     }
 
     func handleTables() {
-        if tables.isEmpty {
+        if tableManager.tables.isEmpty {
             tableListSearchText = ""
             dismissSearch()
         }
@@ -454,9 +450,10 @@ struct MainView: View {
 
     func handleRename() {
         if let selectedTable = selectedTable {
-            PinTable.updateName(table: selectedTable,
-                                name: renameTableName)
-            tableListScrollToTableId = selectedTable.tableId
+            Task {
+                await tableManager.renameTable(selectedTable, newName: renameTableName)
+                tableListScrollToTableId = selectedTable.tableId
+            }
         }
     }
 
@@ -477,13 +474,16 @@ struct MainView: View {
                     case let .success(data?):
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                             if let image = UIImage(data: data),
-                               let resizedImageData = image.resizeWithAspectFit(newSize: CGSize(width: 1179,
-                                                                                                height: 2556))?.jpegData(compressionQuality: 0.75)
+                               let resizedImage = image.resizeWithAspectFit(newSize: CGSize(width: 1179,
+                                                                                            height: 2556))
                             {
-                                PinTable.updateImage(table: selectedTable,
-                                                     data: resizedImageData)
+                                Task {
+                                    await tableManager.updateTableImage(selectedTable, image: resizedImage)
+                                }
                             } else {
-                                PinTable.resetImage(table: selectedTable)
+                                Task {
+                                    await tableManager.resetTableImage(selectedTable)
+                                }
                             }
                         }
                     default:
@@ -497,19 +497,21 @@ struct MainView: View {
     func handleChangeArtworkReset() {
         if let selectedTable = selectedTable {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                PinTable.resetImage(table: selectedTable)
+                Task {
+                    await tableManager.resetTableImage(selectedTable)
+                }
             }
         }
     }
 
     func handleViewScript() {
         if let selectedTable = selectedTable {
-            if selectedTable.hasScript() {
+            if selectedTable.hasScriptFile() {
                 showScript = true
             } else {
                 Task {
                     if await vpinballManager.extractScript(table: selectedTable) == true {
-                        PinTable.update(table: selectedTable)
+                        tableManager.updateTable(selectedTable)
                         showScript = true
                     } else {
                         handleShowError(message: "Unable to extract script")
@@ -533,7 +535,7 @@ struct MainView: View {
     func handleReset() {
         if let selectedTable = selectedTable {
             try? FileManager.default.removeItem(at: selectedTable.iniURL)
-            PinTable.update(table: selectedTable)
+            tableManager.updateTable(selectedTable)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 tableListScrollToTableId = selectedTable.tableId
             }
@@ -542,7 +544,9 @@ struct MainView: View {
 
     func handleDelete() {
         if let selectedTable = selectedTable {
-            PinTable.delete(table: selectedTable)
+            Task {
+                await tableManager.deleteTable(selectedTable)
+            }
         }
     }
 

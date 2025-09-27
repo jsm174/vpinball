@@ -2,6 +2,7 @@ package org.vpinball.app
 
 import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.ui.graphics.asImageBitmap
 import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
@@ -22,32 +23,12 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.toLocalDateTime
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import org.vpinball.app.data.entity.PinTable
-import org.vpinball.app.data.repository.PinTableRepository
-import org.vpinball.app.jni.VPinballCaptureScreenshotData
-import org.vpinball.app.jni.VPinballCustomTableOption
-import org.vpinball.app.jni.VPinballEvent
-import org.vpinball.app.jni.VPinballJNI
-import org.vpinball.app.jni.VPinballLogLevel
-import org.vpinball.app.jni.VPinballProgressData
-import org.vpinball.app.jni.VPinballRumbleData
-import org.vpinball.app.jni.VPinballScriptErrorData
-import org.vpinball.app.jni.VPinballSettingsSection
+import org.vpinball.app.jni.*
 import org.vpinball.app.jni.VPinballSettingsSection.STANDALONE
-import org.vpinball.app.jni.VPinballStatus
-import org.vpinball.app.jni.VPinballTableEventData
-import org.vpinball.app.jni.VPinballTableInfo
-import org.vpinball.app.jni.VPinballTableOptions
-import org.vpinball.app.jni.VPinballTablesData
-import org.vpinball.app.jni.VPinballViewSetup
-import org.vpinball.app.jni.VPinballWebServerData
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.encodeToString
 import org.vpinball.app.util.FileUtils
-import org.vpinball.app.util.basePath
-import org.vpinball.app.util.deleteFiles
-import org.vpinball.app.util.hasImage
-import org.vpinball.app.util.imageFile
 import org.vpinball.app.util.loadImage
-import org.vpinball.app.util.tableFile
 
 object VPinballManager : KoinComponent {
     enum class ScreenshotMode(val value: Int) {
@@ -58,8 +39,7 @@ object VPinballManager : KoinComponent {
 
     private const val TAG = "VPinballManager"
 
-    private var vpinballJNI: VPinballJNI = VPinballJNI()
-    private val pinTableRepository: PinTableRepository by inject()
+    val vpinballJNI: VPinballJNI = VPinballJNI()
 
     private lateinit var activity: VPinballActivity
     private lateinit var filesDir: File
@@ -67,7 +47,7 @@ object VPinballManager : KoinComponent {
     private lateinit var displaySize: Size
     private lateinit var vibrator: Vibrator
 
-    private var activeTable: PinTable? = null
+    private var activeTable: VPinballVPXTable? = null
     private var haptics = false
     private var error: String? = null
     private var screenshotMode: ScreenshotMode? = null
@@ -77,6 +57,8 @@ object VPinballManager : KoinComponent {
 
         filesDir = activity.filesDir
         cacheDir = activity.cacheDir
+        
+        // Tables path is now set automatically by VPinballTableManager
 
         val displayMetrics = activity.resources.displayMetrics
         val width = displayMetrics.widthPixels
@@ -91,7 +73,7 @@ object VPinballManager : KoinComponent {
                 activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
 
-        vpinballJNI.VPinballInit { value, data ->
+        vpinballJNI.VPinballInit { value, jsonData, rawData ->
             val viewModel = activity.viewModel
             val event = VPinballEvent.entries.find { it.ordinal == value }
             when (event) {
@@ -102,8 +84,17 @@ object VPinballManager : KoinComponent {
                 VPinballEvent.LOADING_IMAGES,
                 VPinballEvent.LOADING_FONTS,
                 VPinballEvent.LOADING_COLLECTIONS,
-                VPinballEvent.PRERENDERING -> {
-                    val progressData = data as? VPinballProgressData
+                VPinballEvent.PRERENDERING,
+                VPinballEvent.REFRESHING_TABLE_LIST -> {
+                    // Parse JSON progress data
+                    val progressData = jsonData?.let { jsonStr ->
+                        try {
+                            Json.decodeFromString<VPinballProgressData>(jsonStr)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to parse progress data JSON: $jsonStr", e)
+                            null
+                        }
+                    }
                     Log.v(TAG, "event=${event.name}, data=${progressData}")
                     progressData?.let {
                         CoroutineScope(Dispatchers.Main).launch {
@@ -130,26 +121,34 @@ object VPinballManager : KoinComponent {
                 }
                 VPinballEvent.RUMBLE -> {
                     if (haptics) {
-                        val rumbleData = data as? VPinballRumbleData
+                        val rumbleData = jsonData?.let { jsonStr ->
+                            try {
+                                Json.decodeFromString<VPinballRumbleData>(jsonStr)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to parse rumble data JSON: $jsonStr", e)
+                                null
+                            }
+                        }
                         rumbleData?.let { rumble(it) }
                     }
                 }
                 VPinballEvent.SCRIPT_ERROR -> {
                     if (error == null) {
-                        val scriptErrorData = data as? VPinballScriptErrorData
+                        val scriptErrorData = jsonData?.let { jsonStr ->
+                            try {
+                                Json.decodeFromString<VPinballScriptErrorData>(jsonStr)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to parse script error data JSON: $jsonStr", e)
+                                null
+                            }
+                        }
                         error =
-                            scriptErrorData?.let { "${it.error.text} on line ${it.line}, position ${it.position}:\n\n${it.description}" }
-                                ?: "Script error."
+                            scriptErrorData?.let { 
+                                val errorType = VPinballScriptErrorType.fromInt(it.error)
+                                "${errorType.text} on line ${it.line}, position ${it.position}:\n\n${it.description}"
+                            } ?: "Script error."
                     }
                 }
-                VPinballEvent.LIVE_UI_TOGGLE -> {
-                    log(VPinballLogLevel.INFO, "event=${event.name}")
-                    CoroutineScope(Dispatchers.Main).launch {
-                        viewModel.toggleLiveUI()
-                        setPlayState(!viewModel.isLiveUI())
-                    }
-                }
-                VPinballEvent.LIVE_UI_UPDATE -> {}
                 VPinballEvent.PLAYER_CLOSING -> {
                     log(VPinballLogLevel.INFO, "event=${event.name}")
                 }
@@ -169,35 +168,68 @@ object VPinballManager : KoinComponent {
                     vpinballJNI.VPinballSetWebServerUpdated()
                 }
                 VPinballEvent.WEB_SERVER -> {
-                    val webServerData = data as? VPinballWebServerData
+                    val webServerData = jsonData?.let { jsonStr ->
+                        try {
+                            Json.decodeFromString<VPinballWebServerData>(jsonStr)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to parse web server data JSON: $jsonStr", e)
+                            null
+                        }
+                    }
                     log(VPinballLogLevel.INFO, "event=${event.name}, data=${webServerData}")
                     webServerData?.let { CoroutineScope(Dispatchers.Main).launch { viewModel.webServerURL = webServerData.url } }
                 }
                 VPinballEvent.CAPTURE_SCREENSHOT -> {
-                    val captureScreenshotData = data as? VPinballCaptureScreenshotData
+                    val captureScreenshotData = jsonData?.let { jsonStr ->
+                        try {
+                            Json.decodeFromString<VPinballCaptureScreenshotData>(jsonStr)
+                        } catch (e: Exception) {
+                            Log.w(TAG, "Failed to parse capture screenshot data JSON: $jsonStr", e)
+                            null
+                        }
+                    }
                     log(VPinballLogLevel.INFO, "event=${event.name}, data=$captureScreenshotData")
 
                     when (screenshotMode) {
                         ScreenshotMode.INSTRUCTIONS ->
                             viewModel.instructionsImage = BitmapFactory.decodeFile(File(cacheDir, "haze-bg.jpg").absolutePath)?.asImageBitmap()
 
-                        ScreenshotMode.ARTWORK -> viewModel.artworkImage = activeTable?.loadImage()
+                        ScreenshotMode.ARTWORK -> {
+                            activeTable?.let { table ->
+                                // Load image for VPinballVPXTable
+                                viewModel.artworkImage = table.loadImage()
+                            }
+                        }
 
                         ScreenshotMode.QUIT -> stop()
                         else -> {}
+                    }
+                }
+                VPinballEvent.TABLE_LIST_REFRESH_COMPLETE -> {
+                    log(VPinballLogLevel.INFO, "Received TABLE_LIST_REFRESH_COMPLETE event - refreshing Android table list")
+                    CoroutineScope(Dispatchers.Main).launch {
+                        viewModel.loading(false)
+                        // Trigger table list refresh in the landing screen
+                        org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
                     }
                 }
                 VPinballEvent.TABLE_LIST -> {
                     return@VPinballInit handleTableList()
                 }
                 VPinballEvent.TABLE_IMPORT -> {
-                    handleTableImport(data)
+                    jsonData?.let { jsonStr ->
+                        handleTableImport(jsonStr)
+                    }
                 }
                 VPinballEvent.TABLE_RENAME -> {
-                    handleTableRename(data)
+                    jsonData?.let { jsonStr ->
+                        handleTableRename(jsonStr)
+                    }
                 }
                 VPinballEvent.TABLE_DELETE -> {
-                    handleTableDelete(data)
+                    jsonData?.let { jsonStr ->
+                        handleTableDelete(jsonStr)
+                    }
                 }
                 else -> {
                     log(VPinballLogLevel.WARN, "event=${event}")
@@ -207,6 +239,17 @@ object VPinballManager : KoinComponent {
 
         CoroutineScope(Dispatchers.Main).launch {
             delay(500)
+            
+            // Scan for tables on startup
+            CoroutineScope(Dispatchers.IO).launch {
+                val scanResult = vpinballJNI.VPinballRefreshTables()
+                if (scanResult == VPinballStatus.SUCCESS.value) {
+                    log(VPinballLogLevel.INFO, "Table scan completed successfully on startup")
+                } else {
+                    log(VPinballLogLevel.ERROR, "Table scan failed on startup")
+                }
+            }
+            
             updateWebServer()
         }
     }
@@ -283,20 +326,25 @@ object VPinballManager : KoinComponent {
         vpinballJNI.VPinballSetPlayState(if (enable) 1 else 0)
     }
 
-    fun getCustomTableOptions(): List<VPinballCustomTableOption> {
-        val count = vpinballJNI.VPinballGetCustomTableOptionsCount()
-        val options = mutableListOf<VPinballCustomTableOption>()
-        for (i in 0 until count) {
-            val option = vpinballJNI.VPinballGetCustomTableOption(i)
-            if (option != null) {
-                options.add(option)
-            }
+    fun getCustomTableOptions(): List<CustomTableOption> {
+        return try {
+            val jsonString = vpinballJNI.VPinballGetCustomTableOptions()
+            val options = Json.decodeFromString<List<CustomTableOption>>(jsonString)
+            vpinballJNI.VPinballFreeString(jsonString)
+            options
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "getCustomTableOptions: Exception: ${e.message}")
+            emptyList()
         }
-        return options
     }
 
-    fun setCustomTableOption(customTableOption: VPinballCustomTableOption) {
-        vpinballJNI.VPinballSetCustomTableOption(customTableOption)
+    fun setCustomTableOption(customTableOption: CustomTableOption) {
+        try {
+            val jsonString = Json.encodeToString(customTableOption)
+            vpinballJNI.VPinballSetCustomTableOption(jsonString)
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "setCustomTableOption: Exception: ${e.message}")
+        }
     }
 
     fun resetCustomTableOptions() {
@@ -307,12 +355,25 @@ object VPinballManager : KoinComponent {
         vpinballJNI.VPinballSaveCustomTableOptions()
     }
 
-    fun getTableOptions(): VPinballTableOptions {
-        return vpinballJNI.VPinballGetTableOptions()
+    fun getTableOptions(): TableOptions? {
+        return try {
+            val jsonString = vpinballJNI.VPinballGetTableOptions()
+            val options = Json.decodeFromString<TableOptions>(jsonString)
+            vpinballJNI.VPinballFreeString(jsonString)
+            options
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "getTableOptions: Exception: ${e.message}")
+            null
+        }
     }
 
-    fun setTableOptions(tableOptions: VPinballTableOptions) {
-        vpinballJNI.VPinballSetTableOptions(tableOptions)
+    fun setTableOptions(tableOptions: TableOptions) {
+        try {
+            val jsonString = Json.encodeToString(tableOptions)
+            vpinballJNI.VPinballSetTableOptions(jsonString)
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "setTableOptions: Exception: ${e.message}")
+        }
     }
 
     fun resetTableOptions() {
@@ -323,12 +384,25 @@ object VPinballManager : KoinComponent {
         vpinballJNI.VPinballSaveTableOptions()
     }
 
-    fun getViewSetup(): VPinballViewSetup {
-        return vpinballJNI.VPinballGetViewSetup()
+    fun getViewSetup(): ViewSetup? {
+        return try {
+            val jsonString = vpinballJNI.VPinballGetViewSetup()
+            val viewSetup = Json.decodeFromString<ViewSetup>(jsonString)
+            vpinballJNI.VPinballFreeString(jsonString)
+            viewSetup
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "getViewSetup: Exception: ${e.message}")
+            null
+        }
     }
 
-    fun setViewSetup(viewSetup: VPinballViewSetup) {
-        vpinballJNI.VPinballSetViewSetup(viewSetup)
+    fun setViewSetup(viewSetup: ViewSetup) {
+        try {
+            val jsonString = Json.encodeToString(viewSetup)
+            vpinballJNI.VPinballSetViewSetup(jsonString)
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "setViewSetup: Exception: ${e.message}")
+        }
     }
 
     fun setDefaultViewSetup() {
@@ -344,7 +418,7 @@ object VPinballManager : KoinComponent {
     }
 
     fun hasScreenshot(): Boolean {
-        return activeTable?.hasImage() ?: false
+        return activeTable?.hasImage ?: false
     }
 
     fun captureScreenshot(mode: ScreenshotMode) {
@@ -353,7 +427,7 @@ object VPinballManager : KoinComponent {
             val path =
                 when (mode) {
                     ScreenshotMode.INSTRUCTIONS -> File(cacheDir, "haze-bg.jpg").absolutePath
-                    else -> table.imageFile.absolutePath
+                    else -> table.fullPath.substringBeforeLast('.') + ".jpg"
                 }
             vpinballJNI.VPinballCaptureScreenshot(path)
         }
@@ -383,8 +457,11 @@ object VPinballManager : KoinComponent {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Clean up cache directory
                 cacheDir.deleteRecursively()
                 cacheDir.mkdir()
+                
+                // Get filename from URI
                 val filename = FileUtils.filenameFromUri(context, uri)
                 if (filename == null) {
                     log(VPinballLogLevel.ERROR, "Unable to get filename: uri=$uri")
@@ -394,72 +471,68 @@ object VPinballManager : KoinComponent {
                     }
                     return@launch
                 }
-                withContext(Dispatchers.Main) { onUpdate(0, "Staging") }
-                val outputFile = File(cacheDir, filename)
-                FileUtils.copyFile(context, uri, outputFile) { progress -> launch(Dispatchers.Main) { onUpdate(progress, "Copying") } }
-                if (!outputFile.extension.equals("vpx", ignoreCase = true)) {
-                    if (vpinballJNI.VPinballUncompress(outputFile.absolutePath) != VPinballStatus.SUCCESS.value) {
-                        log(VPinballLogLevel.ERROR, "Failed to uncompress file")
-                        withContext(Dispatchers.Main) {
-                            onError()
-                            showErrorAndReset("Unable to import table.")
-                        }
-                        return@launch
-                    }
-                    outputFile.delete()
+                
+                withContext(Dispatchers.Main) { onUpdate(20, "Copying file") }
+                
+                // Copy file to temp location for processing
+                val tempFile = File(cacheDir, filename)
+                FileUtils.copyFile(context, uri, tempFile) { progress -> 
+                    launch(Dispatchers.Main) { onUpdate((20 + progress * 0.3).toInt(), "Copying file") } 
                 }
-                val vpxFile = FileUtils.findFileByExtension(cacheDir, "vpx")
-                if (vpxFile == null) {
-                    log(VPinballLogLevel.ERROR, "Unable to find vpx file")
+                
+                withContext(Dispatchers.Main) { onUpdate(60, "Importing table") }
+                
+                // Extract table name from filename (remove extension)
+                // Use the new unified import method
+                val importResult = vpinballJNI.VPinballImportTableFile(tempFile.absolutePath)
+                
+                // Clean up temp file
+                tempFile.delete()
+                
+                if (importResult == VPinballStatus.SUCCESS.value) {
+                    log(VPinballLogLevel.INFO, "Successfully imported table: $filename")
+                    
+                    withContext(Dispatchers.Main) { onUpdate(90, "Refreshing table list") }
+                    
+                    // Trigger table list refresh
+                    vpinballJNI.VPinballRefreshTables()
+                    
+                    // For Android, we need to find the imported table since we don't know the UUID
+                    // We'll return a placeholder - the calling code should refresh the table list
+                    withContext(Dispatchers.Main) { 
+                        onUpdate(100, "Import complete")
+                        onComplete("imported", filename) 
+                    }
+                } else {
+                    log(VPinballLogLevel.ERROR, "Failed to import table: $filename")
                     withContext(Dispatchers.Main) {
                         onError()
                         showErrorAndReset("Unable to import table.")
                     }
-                    return@launch
                 }
-                val uuid = UUID.randomUUID().toString()
-                val uuidFolder = File(filesDir, uuid)
-                if (!uuidFolder.mkdir()) {
-                    log(VPinballLogLevel.ERROR, "Failed to create UUID folder")
-                    withContext(Dispatchers.Main) {
-                        onError()
-                        showErrorAndReset("Unable to import table.")
-                    }
-                    return@launch
-                }
-                FileUtils.copyDirectoryContents(vpxFile.parentFile!!, uuidFolder)
-                val newVpxFile = FileUtils.findFileByExtension(uuidFolder, "vpx")
-                if (newVpxFile == null) {
-                    log(VPinballLogLevel.ERROR, "Unable to find vpx file in UUID folder")
-                    withContext(Dispatchers.Main) {
-                        onError()
-                        showErrorAndReset("Unable to import table.")
-                    }
-                    return@launch
-                }
-                withContext(Dispatchers.Main) { onComplete(uuid, newVpxFile.name) }
+                
             } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "An error occurred: ${e.message}")
+                log(VPinballLogLevel.ERROR, "Import error: ${e.message}")
                 withContext(Dispatchers.Main) {
                     onError()
-                    showErrorAndReset("Unable to import script.")
+                    showErrorAndReset("Unable to import table.")
                 }
             }
         }
     }
 
-    fun extractScript(table: PinTable, onComplete: () -> Unit, onError: () -> Unit) {
+    fun extractScript(table: VPinballVPXTable, onComplete: () -> Unit, onError: () -> Unit) {
         if (activeTable != null) return
         activeTable = table
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
+            if (!File(table.fullPath).exists()) {
                 withContext(Dispatchers.Main) {
                     onError()
                     showErrorAndReset("Unable to extract script.")
                 }
                 return@launch
             }
-            val status = vpinballJNI.VPinballExtractScript(table.tableFile.absolutePath)
+            val status = vpinballJNI.VPinballExtractScript(table.fullPath)
             withContext(Dispatchers.Main) {
                 if (status == VPinballStatus.SUCCESS.value) {
                     onComplete()
@@ -472,11 +545,12 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    fun share(table: PinTable, onComplete: (file: File) -> Unit, onError: () -> Unit) {
+    fun share(table: VPinballVPXTable, onComplete: (file: File) -> Unit, onError: () -> Unit) {
         if (activeTable != null) return
         activeTable = table
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
+            val tableFile = File(table.fullPath)
+            if (!tableFile.exists()) {
                 withContext(Dispatchers.Main) {
                     onError()
                     showErrorAndReset("Unable to share table.")
@@ -484,18 +558,15 @@ object VPinballManager : KoinComponent {
                 return@launch
             }
             try {
-                cacheDir.deleteRecursively()
-                cacheDir.mkdir()
-                val name = table.name.replace(Regex("[ ]"), "_")
-                val shareFile = File(cacheDir, "${name}.vpxz")
-                val status = vpinballJNI.VPinballCompress(table.basePath.absolutePath, shareFile.absolutePath)
+                val exportPath = vpinballJNI.VPinballExportTable(table.uuid)
                 withContext(Dispatchers.Main) {
-                    if (status == VPinballStatus.SUCCESS.value) {
-                        onComplete(shareFile)
+                    if (exportPath != null) {
+                        val exportFile = File(exportPath)
+                        onComplete(exportFile)
                         activeTable = null
                     } else {
                         onError()
-                        showErrorAndReset("Unable to share table.")
+                        showErrorAndReset("Failed to export table.")
                     }
                 }
             } catch (e: Exception) {
@@ -505,12 +576,12 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    fun play(table: PinTable) {
+    fun play(table: VPinballVPXTable) {
         if (activeTable != null) return
         activeTable = table
         error = null
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
+            if (!File(table.fullPath).exists()) {
                 showErrorAndReset("Unable to load table.")
                 return@launch
             }
@@ -519,7 +590,7 @@ object VPinballManager : KoinComponent {
             }
             haptics = loadValue(STANDALONE, "Haptics", true)
             withContext(Dispatchers.Main) { activity.viewModel.loading(true, table) }
-            if (vpinballJNI.VPinballLoad(table.tableFile.absolutePath) == VPinballStatus.SUCCESS.value) {
+            if (vpinballJNI.VPinballLoad(table.fullPath) == VPinballStatus.SUCCESS.value) {
                 vpinballJNI.VPinballPlay()
             } else {
                 delay(500)
@@ -547,118 +618,122 @@ object VPinballManager : KoinComponent {
 
     private fun handleTableList(): VPinballTablesData {
         return try {
-            val tables = kotlinx.coroutines.runBlocking { pinTableRepository.getAllSorted(true).first() }
-            log(VPinballLogLevel.DEBUG, "handleTableList: Found ${tables.size} tables")
-
-            val tableInfoList = tables.map { table -> VPinballTableInfo(tableId = table.uuid, name = table.name) }
-
-            VPinballTablesData(tables = tableInfoList, success = true)
+            // Use C++ library to get VPX tables as JSON
+            val jsonString = vpinballJNI.VPinballGetVPXTables()
+            log(VPinballLogLevel.DEBUG, "handleTableList: Received JSON response")
+            
+            // Parse JSON response
+            val tablesResponse = Json.decodeFromString<VPXTablesResponse>(jsonString)
+            vpinballJNI.VPinballFreeString(jsonString)
+            
+            log(VPinballLogLevel.DEBUG, "handleTableList: Found ${tablesResponse.tableCount} tables")
+            
+            // Convert to legacy format for backward compatibility
+            val tableInfoList = tablesResponse.tables.map { table -> 
+                VPinballTableInfo(tableId = table.uuid, name = table.name) 
+            }
+            
+            VPinballTablesData(tables = tableInfoList, success = tablesResponse.success)
         } catch (e: Exception) {
             log(VPinballLogLevel.ERROR, "handleTableList: Exception: ${e.message}")
             VPinballTablesData(tables = emptyList(), success = false)
         }
     }
 
-    private fun handleTableImport(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val filePath = eventData.path ?: ""
+    private fun handleTableImport(jsonString: String) {
+        try {
+            val eventData = Json.decodeFromString<VPinballTableEventData>(jsonString)
+            val filePath = eventData.path ?: ""
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
-            try {
-                val fileUri = Uri.fromFile(File(filePath))
-                var importSuccess = false
-                var importError = false
-
-                importUri(
-                    context = activity,
-                    uri = fileUri,
-                    onUpdate = { _, _ -> },
-                    onComplete = { uuid, path ->
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                val name = path.substringBeforeLast('.').replace(Regex("[_]"), " ")
-                                val now = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
-
-                                val table = PinTable(uuid = uuid, name = name, path = path, createdAt = now, modifiedAt = now)
-                                pinTableRepository.insert(table)
-
-                                withContext(Dispatchers.Main) {
-                                    importSuccess = true
-                                    vpinballJNI.VPinballSetWebServerUpdated()
-                                }
-                            } catch (e: Exception) {
-                                log(VPinballLogLevel.ERROR, "Failed to add imported table to database: ${e.message}")
-                                importError = true
-                            }
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                try {
+                    log(VPinballLogLevel.DEBUG, "handleTableImport: Importing table from $filePath")
+                    
+                    // Use C++ library to import the table file instead of manual process
+                    val status = vpinballJNI.VPinballImportTableFile(filePath)
+                    
+                    val success = (status == VPinballStatus.SUCCESS.value)
+                    log(VPinballLogLevel.DEBUG, "handleTableImport: Import ${if (success) "succeeded" else "failed"}")
+                    
+                    if (success) {
+                        withContext(Dispatchers.Main) {
+                            vpinballJNI.VPinballSetWebServerUpdated()
                         }
-                    },
-                    onError = {
-                        log(VPinballLogLevel.ERROR, "Failed to import table from web server")
-                        importError = true
-                    },
-                )
-
-                var attempts = 0
-                while (!importSuccess && !importError && attempts < 300) {
-                    delay(100)
-                    attempts++
+                    }
+                } catch (e: Exception) {
+                    log(VPinballLogLevel.ERROR, "Failed to import table: ${e.message}")
                 }
-
-                eventData.success = importSuccess
-            } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to import table: ${e.message}")
-                eventData.success = false
             }
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "Failed to decode table import event data: ${e.message}")
         }
     }
 
-    private fun handleTableRename(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val tableId = eventData.tableId ?: ""
-        val newName = eventData.newName ?: ""
+    private fun handleTableRename(jsonString: String) {
+        try {
+            val eventData = Json.decodeFromString<VPinballTableEventData>(jsonString)
+            val tableId = eventData.tableId ?: ""
+            val newName = eventData.newName ?: ""
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
-            try {
-                val table = pinTableRepository.getById(tableId).first()
-                val updatedTable =
-                    table.copy(
-                        name = newName,
-                        modifiedAt = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()),
-                    )
-
-                pinTableRepository.update(updatedTable)
-
-                eventData.success = true
-                vpinballJNI.VPinballSetWebServerUpdated()
-            } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to rename table: ${e.message}")
-                eventData.success = false
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                try {
+                    log(VPinballLogLevel.DEBUG, "handleTableRename: Renaming table $tableId to $newName")
+                    
+                    // Use C++ library to rename the table instead of Room database
+                    val status = vpinballJNI.VPinballRenameVPXTable(tableId, newName)
+                    
+                    val success = (status == VPinballStatus.SUCCESS.value)
+                    log(VPinballLogLevel.DEBUG, "handleTableRename: Rename ${if (success) "succeeded" else "failed"}")
+                    
+                    if (success) {
+                        withContext(Dispatchers.Main) {
+                            vpinballJNI.VPinballSetWebServerUpdated()
+                        }
+                    }
+                } catch (e: Exception) {
+                    log(VPinballLogLevel.ERROR, "Failed to rename table: ${e.message}")
+                }
             }
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "Failed to decode table rename event data: ${e.message}")
         }
     }
 
-    private fun handleTableDelete(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val tableId = eventData.tableId ?: ""
+    private fun handleTableDelete(jsonString: String) {
+        try {
+            val eventData = Json.decodeFromString<VPinballTableEventData>(jsonString)
+            val tableId = eventData.tableId ?: ""
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
-            try {
-                val table = pinTableRepository.getById(tableId).first()
-
-                table.deleteFiles()
-
-                pinTableRepository.delete(table)
-
-                eventData.success = true
-                vpinballJNI.VPinballSetWebServerUpdated()
-            } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to delete table: ${e.message}")
-                eventData.success = false
+            kotlinx.coroutines.runBlocking(Dispatchers.IO) {
+                try {
+                    log(VPinballLogLevel.DEBUG, "handleTableDelete: Deleting table $tableId")
+                    
+                    // Use C++ library to remove the table instead of Room database
+                    val status = vpinballJNI.VPinballRemoveVPXTable(tableId)
+                    
+                    val success = (status == VPinballStatus.SUCCESS.value)
+                    log(VPinballLogLevel.DEBUG, "handleTableDelete: Delete ${if (success) "succeeded" else "failed"}")
+                    
+                    if (success) {
+                        withContext(Dispatchers.Main) {
+                            vpinballJNI.VPinballSetWebServerUpdated()
+                        }
+                    }
+                } catch (e: Exception) {
+                    log(VPinballLogLevel.ERROR, "Failed to delete table: ${e.message}")
+                }
             }
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "Failed to decode table delete event data: ${e.message}")
         }
     }
 
     fun setWebLastUpdate() {
         vpinballJNI.VPinballSetWebServerUpdated()
+    }
+
+    fun getTablesPath(): File {
+        val tablesPath = vpinballJNI.VPinballGetTablesPath()
+        return File(tablesPath)
     }
 }

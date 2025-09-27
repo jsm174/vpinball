@@ -15,7 +15,7 @@
 #endif
 
 #ifdef __LIBVPINBALL__
-#include "standalone/VPinballLib.h"
+#include "standalone/lib/VPinballLib.h"
 #endif
 
 #include <filesystem>
@@ -1006,7 +1006,7 @@ void VPinball::DoPlay(const int playMode)
       return;
 
 #ifdef __LIBVPINBALL__
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::Play, nullptr);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::Play, nullptr);
 #endif
 
    PLOGI << "Starting Play mode [table: " << table->m_tableName << ", play mode: " << playMode << ']';
@@ -1052,7 +1052,7 @@ void VPinball::DoPlay(const int playMode)
    }
 
    #ifdef __LIBVPINBALL__
-      VPinballLib::VPinball::SendEvent(VPinballLib::Event::Stopped, nullptr);
+      VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::Stopped, nullptr);
    #endif
 }
 
@@ -1242,14 +1242,12 @@ void VPinball::CloseTable(const PinTable * const ppt)
          m_notesDialog->Disable();
    }
 #else
-    auto it = std::find_if(m_vtable.begin(), m_vtable.end(),
-      [ppt](CComObject<PinTable>* obj) { return obj == ppt; });
+    PinTableMDI* mdiTable = ppt->GetMDITable();
+    if (mdiTable)
+        RemoveMDIChild(mdiTable);
 
-    if (it != m_vtable.end()) {
-       CComObject<PinTable>* obj = *it;
-       m_vtable.erase(it);
-       obj->Release();
-    }
+    RemoveFromVectorSingle(m_vtable, (CComObject<PinTable>*)ppt);
+    ((CComObject<PinTable>*)ppt)->Release();
 #endif
 }
 

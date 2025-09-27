@@ -214,7 +214,7 @@ fun TableListModeDropdownMenu(expanded: Boolean, onDismissRequest: () -> Unit, v
 @Preview
 @Composable
 private fun TableListModeDropdownMenuPreview() {
-    val viewModel = LandingScreenViewModel(TestPinTableRepository)
+    val viewModel = LandingScreenViewModel()
 
     VPinballTheme {
         Scaffold(

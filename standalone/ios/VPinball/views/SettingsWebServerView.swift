@@ -60,7 +60,7 @@ struct SettingsWebServerView: View {
     }
 
     func handleWebServerPortConfirm(value: String) {
-        if let webServerPort = Int(value), webServerPort >= 0 && webServerPort <= 65535 {
+        if let webServerPort = Int(value), webServerPort >= 0, webServerPort <= 65535 {
             settingsModel.webServerPort = webServerPort
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {

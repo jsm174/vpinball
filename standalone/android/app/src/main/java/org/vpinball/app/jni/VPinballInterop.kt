@@ -1,5 +1,8 @@
 package org.vpinball.app.jni
 
+import java.io.File
+import kotlinx.serialization.Serializable
+
 interface VPinballDisplayText {
     val text: String
 }
@@ -206,22 +209,27 @@ enum class VPinballEvent(val value: Int) {
     LOADING_COLLECTIONS(6),
     PLAY(7),
     CREATING_PLAYER(8),
-    WINDOW_CREATED(9),
-    PRERENDERING(10),
-    PLAYER_STARTED(11),
-    RUMBLE(12),
-    SCRIPT_ERROR(13),
-    LIVE_UI_TOGGLE(14),
-    LIVE_UI_UPDATE(15),
-    PLAYER_CLOSING(16),
-    PLAYER_CLOSED(17),
-    STOPPED(18),
-    WEB_SERVER(19),
-    CAPTURE_SCREENSHOT(20),
-    TABLE_LIST(21),
-    TABLE_IMPORT(22),
-    TABLE_RENAME(23),
-    TABLE_DELETE(24);
+    PRERENDERING(9),
+    PLAYER_STARTED(10),
+    RUMBLE(11),
+    SCRIPT_ERROR(12),
+    PLAYER_CLOSING(13),
+    PLAYER_CLOSED(14),
+    STOPPED(15),
+    WEB_SERVER(16),
+    CAPTURE_SCREENSHOT(17),
+    TABLE_LIST(18),
+    TABLE_IMPORT(19),
+    TABLE_RENAME(20),
+    TABLE_DELETE(21),
+    TABLE_SCAN(22),
+    TABLE_SCAN_COMPLETE(23),
+    REFRESHING_TABLE_LIST(24),
+    TABLE_LIST_REFRESH_COMPLETE(25),
+    TABLE_ADDED(26),
+    TABLE_UPDATED(27),
+    TABLE_REMOVED(28),
+    TABLES_JSON_GENERATED(29);
 
     val text: String?
         get() =
@@ -234,6 +242,7 @@ enum class VPinballEvent(val value: Int) {
                 LOADING_FONTS -> "Loading Fonts"
                 LOADING_COLLECTIONS -> "Loading Collections"
                 PRERENDERING -> "Prerendering Static Parts"
+                REFRESHING_TABLE_LIST -> "Refreshing Tables"
                 else -> null
             }
 }
@@ -308,67 +317,134 @@ object VPinballUnitConverter {
     fun vpuToCM(vpu: Float): Float = vpu * (2.54f * 1.0625f / 50.0f)
 }
 
-// VPinball Callbacks
+// VPinball Callbacks (hybrid approach: JSON + void pointer)
 
 fun interface VPinballEventCallback {
-    fun onEvent(event: Int, data: Any?): Any?
+    fun onEvent(event: Int, jsonData: String?, rawData: Any?): Any?
 }
 
 // VPinball Objects
 
+// Event data structures using kotlinx.serialization
+@Serializable
 data class VPinballProgressData(val progress: Int)
 
-data class VPinballScriptErrorData(val error: VPinballScriptErrorType, val line: Int, val position: Int, val description: String)
+@Serializable
+data class VPinballRumbleData(
+    val lowFrequencyRumble: Int,
+    val highFrequencyRumble: Int,
+    val durationMs: Int
+)
 
-data class VPinballRumbleData(val lowFrequencyRumble: Int, val highFrequencyRumble: Int, val durationMs: Int)
+@Serializable
+data class VPinballScriptErrorData(
+    val error: Int,
+    val line: Int,
+    val position: Int,
+    val description: String
+)
 
-data class VPinballWebServerData(val url: String)
+@Serializable
+data class ProgressEventData(val progress: Int)
 
-data class VPinballCaptureScreenshotData(val success: Boolean)
+@Serializable
+data class ScreenshotEventData(val success: Boolean)
 
+@Serializable
+data class TableEventData(val success: Boolean, val table: VPinballVPXTable?)
+
+@Serializable
+data class TableScanEventData(
+    val tablesFound: Int? = null,
+    val tablesProcessed: Int? = null,
+    val scanComplete: Boolean? = null,
+    val currentTable: String? = null
+)
+
+// Legacy data structures (kept for backward compatibility)
 data class VPinballTableInfo(val tableId: String, val name: String)
-
 data class VPinballTablesData(var tables: List<VPinballTableInfo>, var success: Boolean)
-
 data class VPinballTableEventData(val tableId: String?, val newName: String?, val path: String?, var success: Boolean = false)
 
-data class VPinballCustomTableOption(
-    var sectionName: String,
-    var id: String,
-    var name: String,
-    var showMask: Int,
-    var minValue: Float,
-    var maxValue: Float,
-    var step: Float,
-    var defaultValue: Float,
-    var unit: VPinballOptionUnit,
-    var literals: String,
-    var value: Float,
+// Main data structures using kotlinx.serialization
+@Serializable
+data class CustomTableOption(
+    val sectionName: String,
+    val id: String,
+    val name: String,
+    val showMask: Int,
+    val minValue: Float,
+    val maxValue: Float,
+    val step: Float,
+    val defaultValue: Float,
+    val unit: Int,
+    val literals: String,
+    val value: Float,
 )
 
-data class VPinballTableOptions(
-    var globalEmissionScale: Float,
-    var globalDifficulty: Float,
-    var exposure: Float,
-    var toneMapper: VPinballToneMapper,
-    var musicVolume: Int,
-    var soundVolume: Int,
+@Serializable
+data class TableOptions(
+    val globalEmissionScale: Float,
+    val globalDifficulty: Float,
+    val exposure: Float,
+    val toneMapper: Int,
+    val musicVolume: Int,
+    val soundVolume: Int,
 )
 
-data class VPinballViewSetup(
-    var viewMode: VPinballViewLayoutMode,
-    var sceneScaleX: Float,
-    var sceneScaleY: Float,
-    var sceneScaleZ: Float,
-    var viewX: Float,
-    var viewY: Float,
-    var viewZ: Float,
-    var lookAt: Float,
-    var viewportRotation: Float,
-    var fov: Float,
-    var layback: Float,
-    var viewHOfs: Float,
-    var viewVOfs: Float,
-    var windowTopZOfs: Float,
-    var windowBottomZOfs: Float,
+@Serializable
+data class ViewSetup(
+    val viewMode: Int,
+    val sceneScaleX: Float,
+    val sceneScaleY: Float,
+    val sceneScaleZ: Float,
+    val viewX: Float,
+    val viewY: Float,
+    val viewZ: Float,
+    val lookAt: Float,
+    val viewportRotation: Float,
+    val fov: Float,
+    val layback: Float,
+    val viewHOfs: Float,
+    val viewVOfs: Float,
+    val windowTopZOfs: Float,
+    val windowBottomZOfs: Float,
+)
+
+@Serializable
+data class VPinballVPXTable(
+    val uuid: String,
+    val name: String,
+    val fullPath: String,
+    val path: String,
+    val artwork: String,
+    val createdAt: Long,
+    val modifiedAt: Long,
+    val fileSize: Long,
+    val hasScript: Boolean,
+    val hasImage: Boolean,
+    val hasIni: Boolean,
+    val author: String,
+    val version: String,
+    val description: String,
+) {
+    val fileName: String
+        get() = File(path).name
+}
+
+@Serializable
+data class VPXTablesResponse(
+    val success: Boolean,
+    val tableCount: Int,
+    val tables: List<VPinballVPXTable>,
+)
+
+@Serializable
+data class VPinballWebServerData(
+    val url: String
+)
+
+@Serializable
+data class VPinballCaptureScreenshotData(
+    val success: Boolean
 )

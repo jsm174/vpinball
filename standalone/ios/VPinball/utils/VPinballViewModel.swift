@@ -17,28 +17,24 @@ class VPinballViewModel: ObservableObject {
     @Published var didSetAction: UUID?
     @Published var hudType: HUDOverlayType?
     @Published var showHUD = false
-    @Published var liveUIOverride = false
     @Published var showTouchInstructions = false
     @Published var showTouchOverlay = false
     @Published var showLowMemoryNotice = false
-    @Published var showLiveUI = false
+    @Published var isPlaying = false
     @Published var artworkImage: UIImage?
     @Published var webServerURL: String?
     @Published var didReceiveMemoryWarning = false
 
     var action: Action?
-    var table: PinTable?
+    var table: VPXTable?
     var scriptError: String?
     var hudTitle: String?
     var hudStatus: String?
 
-    func setAction(action: Action, table: PinTable? = nil) {
+    func setAction(action: Action, table: VPXTable? = nil) {
         self.action = action
         self.table = table
 
-        if action == .stopped {
-            showLiveUI = false
-        }
 
         didSetAction = UUID()
     }

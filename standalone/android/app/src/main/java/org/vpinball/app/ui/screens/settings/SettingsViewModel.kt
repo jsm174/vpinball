@@ -42,9 +42,6 @@ class SettingsViewModel : ViewModel() {
     var renderingModeOverride by mutableStateOf(false)
         private set
 
-    var liveUIOverride by mutableStateOf(false)
-        private set
-
     var gfxBackend by mutableStateOf(VPinballGfxBackend.OPENGLES)
         private set
 
@@ -190,7 +187,6 @@ class SettingsViewModel : ViewModel() {
 
         haptics = VPinballManager.loadValue(STANDALONE, "Haptics", true)
         renderingModeOverride = (VPinballManager.loadValue(STANDALONE, "RenderingModeOverride", 2) == 2)
-        liveUIOverride = VPinballManager.loadValue(STANDALONE, "LiveUIOverride", true)
         gfxBackend = VPinballGfxBackend.fromString(VPinballManager.loadValue(PLAYER, "GfxBackend", VPinballGfxBackend.OPENGLES.value))
 
         // External DMD
@@ -291,11 +287,6 @@ class SettingsViewModel : ViewModel() {
     fun handleRenderingModeOverride(value: Boolean) {
         renderingModeOverride = value
         VPinballManager.saveValue(STANDALONE, "RenderingModeOverride", if (renderingModeOverride) 2 else -1)
-    }
-
-    fun handleLiveUIOverride(value: Boolean) {
-        liveUIOverride = value
-        VPinballManager.saveValue(STANDALONE, "LiveUIOverride", liveUIOverride)
     }
 
     fun handleGfxBackend(value: VPinballGfxBackend) {

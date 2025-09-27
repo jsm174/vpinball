@@ -274,10 +274,13 @@ void InGameUIPage::Render()
    else
    {
       if (io.DisplaySize.x > io.DisplaySize.y)
-         ImGui::SetNextWindowSize(ImVec2(0.4f * io.DisplaySize.x, 0.4f * io.DisplaySize.y));
+         // Landscape: make it taller and wider for better finger access
+         ImGui::SetNextWindowSize(ImVec2(0.6f * io.DisplaySize.x, 0.8f * io.DisplaySize.y));
       else
-         ImGui::SetNextWindowSize(ImVec2(0.8f * io.DisplaySize.x, 0.3f * io.DisplaySize.y));
-      ImGui::SetNextWindowPos(ImVec2(0.5f * io.DisplaySize.x, 0.8f * io.DisplaySize.y), 0, ImVec2(0.5f, 1.f));
+         // Portrait: make it taller for better finger access
+         ImGui::SetNextWindowSize(ImVec2(0.9f * io.DisplaySize.x, 0.7f * io.DisplaySize.y));
+      // Center the window both horizontally and vertically
+      ImGui::SetNextWindowPos(ImVec2(0.5f * io.DisplaySize.x, 0.5f * io.DisplaySize.y), 0, ImVec2(0.5f, 0.5f));
    }
    ImGui::Begin("InGameUI", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoSavedSettings);
 
@@ -477,6 +480,16 @@ void InGameUIPage::Render()
          }
          break;
 
+      case CustomRender:
+      {
+         ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(0.f, itemPadding.y));
+         if (item->m_customRender) {
+            item->m_customRender(i, item.get());
+         }
+         ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(0.f, itemPadding.y));
+         break;
+      }
+
       case Toggle:
       {
          ImGui::Text("%s", item->m_label.c_str());
@@ -577,6 +590,8 @@ void InGameUIPage::Render()
       if (hovered)
          ImGui::PopStyleColor();
    }
+
+
    ImGui::Dummy(ImVec2(0, 0));
    ImGui::EndChild();
 

@@ -138,7 +138,7 @@ struct SettingsExternalDMDView: View {
     }
 
     func handlePortConfirm(value: String) {
-        if let port = Int(value), port >= 0 && port <= 65535 {
+        if let port = Int(value), port >= 0, port <= 65535 {
             switch settingsModel.externalDMD {
             case .dmdServer:
                 settingsModel.dmdServerPort = port

@@ -5,7 +5,6 @@ class SettingsModel: ObservableObject {
 
     @Published var haptics: Bool = false
     @Published var renderingModeOverride: Bool = false
-    @Published var liveUIOverride: Bool = false
     @Published var viewMode: VPinballViewMode = .desktopFSS
     @Published var ssreflection: Bool = false
     @Published var resetLogOnPlay: Bool = false
@@ -78,7 +77,6 @@ class SettingsModel: ObservableObject {
 
         haptics = vpinballManager.loadValue(.standalone, "Haptics", true)
         renderingModeOverride = (vpinballManager.loadValue(.standalone, "RenderingModeOverride", 2) == 2)
-        liveUIOverride = vpinballManager.loadValue(.standalone, "LiveUIOverride", true)
         viewMode = VPinballViewMode(rawValue: vpinballManager.loadValue(.player, "BGSet", VPinballViewMode.desktopFSS.rawValue)) ?? .desktopFSS
         ssreflection = vpinballManager.loadValue(.player, "SSRefl", false)
         resetLogOnPlay = vpinballManager.loadValue(.standalone, "ResetLogOnPlay", true)

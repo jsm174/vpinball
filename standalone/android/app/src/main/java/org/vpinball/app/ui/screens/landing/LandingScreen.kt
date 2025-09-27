@@ -81,7 +81,7 @@ import org.koin.compose.koinInject
 import org.vpinball.app.R
 import org.vpinball.app.TableListMode
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.VPinballVPXTable
 import org.vpinball.app.ui.screens.common.ProgressOverlay
 import org.vpinball.app.ui.screens.settings.SettingsModalBottomSheet
 import org.vpinball.app.ui.theme.DarkBlack
@@ -91,7 +91,7 @@ import org.vpinball.app.ui.theme.VPinballTheme
 import org.vpinball.app.ui.theme.VpxDarkYellow
 import org.vpinball.app.ui.theme.VpxRed
 import org.vpinball.app.util.FileUtils
-import org.vpinball.app.util.hasScript
+import org.vpinball.app.util.hasScriptFile
 import org.vpinball.app.util.scriptFile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
@@ -101,9 +101,9 @@ fun LandingScreen(
     progress: MutableState<Int>,
     status: MutableState<String>,
     onTableImported: (uuid: String, path: String) -> Unit,
-    onRenameTable: (table: PinTable, name: String) -> Unit,
-    onChangeTableArtwork: (table: PinTable) -> Unit,
-    onDeleteTable: (table: PinTable) -> Unit,
+    onRenameTable: (table: VPinballVPXTable, name: String) -> Unit,
+    onChangeTableArtwork: (table: VPinballVPXTable) -> Unit,
+    onDeleteTable: (table: VPinballVPXTable) -> Unit,
     onViewFile: (file: File) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LandingScreenViewModel = koinInject(),
@@ -273,10 +273,10 @@ fun LandingScreen(
 
                                         launcher.launch(arrayOf("*/*"))
                                     },
-                                    onExampleTable = {
+                                    onBlankTable = {
                                         showImportTableMenu = false
 
-                                        importUri = File(VPinballManager.getFilesDir(), "assets/exampleTable.vpx").toUri()
+                                        importUri = File(VPinballManager.getFilesDir(), "assets/blankTable.vpx").toUri()
                                         importFilename = FileUtils.filenameFromUri(context, importUri!!)
                                         showConfirmDialog = true
                                     },
@@ -395,7 +395,7 @@ fun LandingScreen(
                     onRename = onRenameTable,
                     onChangeArtwork = onChangeTableArtwork,
                     onViewScript = { table ->
-                        if (table.hasScript()) {
+                        if (table.hasScriptFile()) {
                             onViewFile(table.scriptFile)
                         } else {
                             title = table.name
@@ -469,7 +469,9 @@ fun LandingScreen(
                                 onComplete = { uuid, path ->
                                     showProgress = false
                                     onTableImported(uuid, path)
-                                    scrollToTableUuid = uuid
+                                    // Note: With the new import system, uuid is just a placeholder ("imported")
+                                    // The actual table list refresh happens in the background via VPinballScanTablesAsync
+                                    // so we don't scroll to a specific UUID anymore
                                 },
                                 onError = { showProgress = false },
                             )

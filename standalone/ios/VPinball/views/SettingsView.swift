@@ -84,17 +84,6 @@ struct SettingsView: View {
                                 .font(.footnote)
                                 .foregroundStyle(Color.secondary)
                         }
-
-                        VStack(alignment: .leading) {
-                            Toggle(isOn: $settingsModel.liveUIOverride) {
-                                Text("Mobile LiveUI")
-                            }
-                            .tint(Color.vpxRed)
-
-                            Text("If disabled, use Visual Pinball's built in LiveUI.")
-                                .font(.footnote)
-                                .foregroundStyle(Color.secondary)
-                        }
                     }
 
                     SettingsExternalDMDView(showInput: handleShowInput)
@@ -347,9 +336,6 @@ struct SettingsView: View {
         .onChange(of: settingsModel.renderingModeOverride) {
             handleRenderingModeOverride()
         }
-        .onChange(of: settingsModel.liveUIOverride) {
-            handleLiveUIOverride()
-        }
         .onChange(of: settingsModel.viewMode) {
             handleViewMode()
         }
@@ -367,10 +353,6 @@ struct SettingsView: View {
 
     func handleRenderingModeOverride() {
         vpinballManager.saveValue(.standalone, "RenderingModeOverride", settingsModel.renderingModeOverride ? 2 : -1)
-    }
-
-    func handleLiveUIOverride() {
-        vpinballManager.saveValue(.standalone, "LiveUIOverride", settingsModel.liveUIOverride)
     }
 
     func handleViewMode() {

@@ -333,13 +333,10 @@ enum VPinballEvent: CInt {
     case loadingCollections
     case play
     case creatingPlayer
-    case windowCreated
     case prerendering
     case playerStarted
     case rumble
     case scriptError
-    case liveUIToggle
-    case liveUIUpdate
     case playerClosing
     case playerClosed
     case stopped
@@ -349,6 +346,14 @@ enum VPinballEvent: CInt {
     case tableImport
     case tableRename
     case tableDelete
+    case tableScan
+    case tableScanComplete
+    case refreshingTableList
+    case tableListRefreshComplete
+    case tableAdded
+    case tableUpdated
+    case tableRemoved
+    case tablesJsonGenerated
 
     var name: String? {
         switch self {
@@ -368,6 +373,8 @@ enum VPinballEvent: CInt {
             return "Loading Collections"
         case .prerendering:
             return "Prerendering Static Parts"
+        case .refreshingTableList:
+            return "Refreshing Tables"
         default:
             return nil
         }
@@ -388,19 +395,6 @@ enum VPinballScriptErrorType: CInt {
     }
 }
 
-enum VPinballOptionUnit: CInt {
-    case noUnit
-    case percent
-
-    func formatValue(_ value: Float) -> String {
-        switch self {
-        case .noUnit:
-            return String(format: "%.1f", value)
-        case .percent:
-            return String(format: "%.1f %%", value * 100.0)
-        }
-    }
-}
 
 // VPinball Touch Areas
 
@@ -482,100 +476,62 @@ enum VPinballUnitConverter {
     }
 }
 
-// VPinball Objects
+// Native Swift Codable Data Structures (replaces C structs)
+// Note: VPXTable is defined in VPXTable.swift
 
-struct VPinballProgressData {
-    var progress: CInt
+
+// Event Data Structures
+struct ProgressEventData: Codable {
+    let progress: Int
 }
 
-struct VPinballWindowCreatedData {
-    var window: Unmanaged<UIWindow>?
-    var title: UnsafePointer<CChar>?
+struct RumbleData: Codable {
+    let lowFrequencyRumble: UInt16
+    let highFrequencyRumble: UInt16
+    let durationMs: UInt32
 }
 
-struct VPinballScriptErrorData {
-    var error: CInt
-    var line: CInt
-    var position: CInt
-    var description: UnsafePointer<CChar>?
+struct ScreenshotEventData: Codable {
+    let success: Bool
 }
 
-struct VPinballRumbleData {
-    var low_frequency_rumble: UInt16
-    var high_frequency_rumble: UInt16
-    var duration_ms: UInt32
+struct ScriptErrorData: Codable {
+    let error: Int
+    let line: Int
+    let position: Int
+    let description: String
 }
 
-struct VPinballWebServerData {
-    var url: UnsafePointer<CChar>?
+struct WebServerData: Codable {
+    let url: String
 }
 
-struct VPinballCaptureScreenshotData {
-    var success: CBool
+struct CaptureScreenshotData: Codable {
+    let success: Bool
 }
 
-struct VPinballTableInfo {
-    var tableId: UnsafeMutablePointer<CChar>?
-    var name: UnsafeMutablePointer<CChar>?
+struct TableEventData: Codable {
+    let success: Bool
+    let table: VPXTable?
 }
 
-struct VPinballTablesData {
-    var tables: UnsafeMutablePointer<VPinballTableInfo>?
-    var tableCount: CInt
-    var success: CBool
+struct VPinballTableEventData: Codable {
+    let tableId: String?
+    let newName: String?
+    let path: String?
+    var success: Bool
 }
 
-struct VPinballTableEventData {
-    var tableId: UnsafePointer<CChar>?
-    var newName: UnsafePointer<CChar>?
-    var path: UnsafePointer<CChar>?
-    var success: CBool
+struct TableScanEventData: Codable {
+    let tablesFound: Int?
+    let tablesProcessed: Int?
+    let scanComplete: Bool?
+    let currentTable: String?
 }
 
-struct VPinballTableOptions {
-    var globalEmissionScale: Float = 0.0
-    var globalDifficulty: Float = 0.0
-    var exposure: Float = 0.0
-    var toneMapper: CInt = 0
-    var musicVolume: CInt = 0
-    var soundVolume: CInt = 0
-}
+// VPinball Callbacks (hybrid approach: JSON + void pointer)
 
-struct VPinballCustomTableOption {
-    var sectionName: UnsafePointer<CChar>?
-    var id: UnsafePointer<CChar>?
-    var name: UnsafePointer<CChar>?
-    var showMask: CInt = 0
-    var minValue: Float = 0.0
-    var maxValue: Float = 0.0
-    var step: Float = 0.0
-    var defaultValue: Float = 0.0
-    var unit: CInt = 0
-    var literals: UnsafePointer<CChar>?
-    var value: Float = 0.0
-}
-
-struct VPinballViewSetup {
-    var viewMode: CInt = 0
-    var sceneScaleX: Float = 0.0
-    var sceneScaleY: Float = 0.0
-    var sceneScaleZ: Float = 0.0
-    var viewX: Float = 0.0
-    var viewY: Float = 0.0
-    var viewZ: Float = 0.0
-    var lookAt: Float = 0.0
-    var viewportRotation: Float = 0.0
-    var fov: Float = 0.0
-    var layback: Float = 0.0
-    var viewHOfs: Float = 0.0
-    var viewVOfs: Float = 0.0
-    var windowTopZOfs: Float = 0.0
-    var windowBottomZOfs: Float = 0.0
-}
-
-// VPinball Callbacks
-
-typealias VPinballEventCallback = @convention(c) (CInt, UnsafeRawPointer?) -> UnsafeRawPointer?
+typealias VPinballEventCallback = @convention(c) (CInt, UnsafePointer<CChar>?, UnsafeRawPointer?) -> UnsafeRawPointer?
 
 // VPinball C Definitions
 
@@ -612,11 +568,8 @@ func VPinballSaveValueString(_ section: UnsafePointer<CChar>, _ pKey: UnsafePoin
 @_silgen_name("VPinballGetVersionStringFull")
 func VPinballGetVersionStringFull() -> UnsafePointer<CChar>
 
-@_silgen_name("VPinballUncompress")
-func VPinballUncompress(_ pSource: UnsafePointer<CChar>) -> CInt
-
-@_silgen_name("VPinballCompress")
-func VPinballCompress(_ pSource: UnsafePointer<CChar>, _ pDestination: UnsafePointer<CChar>) -> CInt
+@_silgen_name("VPinballExportTable")
+func VPinballExportTable(_ pUuid: UnsafePointer<CChar>) -> UnsafePointer<CChar>?
 
 @_silgen_name("VPinballUpdateWebServer")
 func VPinballUpdateWebServer()
@@ -636,59 +589,40 @@ func VPinballPlay() -> CInt
 @_silgen_name("VPinballStop")
 func VPinballStop()
 
-@_silgen_name("VPinballSetPlayState")
-func VPinballSetPlayState(_ enable: CInt) -> CInt
-
-@_silgen_name("VPinballGetTableOptions")
-func VPinballGetTableOptions(_ viewSetup: UnsafePointer<VPinballTableOptions>)
-
-@_silgen_name("VPinballSetTableOptions")
-func VPinballSetTableOptions(_ viewSetup: UnsafePointer<VPinballTableOptions>)
-
-@_silgen_name("VPinballSetDefaultTableOptions")
-func VPinballSetDefaultTableOptions()
-
-@_silgen_name("VPinballResetTableOptions")
-func VPinballResetTableOptions()
-
-@_silgen_name("VPinballSaveTableOptions")
-func VPinballSaveTableOptions()
-
-@_silgen_name("VPinballGetCustomTableOptionsCount")
-func VPinballGetCustomTableOptionsCount() -> CInt
-
-@_silgen_name("VPinballGetCustomTableOption")
-func VPinballGetCustomTableOption(_ index: CInt, _ customTableOption: UnsafePointer<VPinballCustomTableOption>)
-
-@_silgen_name("VPinballSetCustomTableOption")
-func VPinballSetCustomTableOption(_ customTableOption: UnsafePointer<VPinballCustomTableOption>)
-
-@_silgen_name("VPinballSetDefaultCustomTableOptions")
-func VPinballSetDefaultCustomTableOptions()
-
-@_silgen_name("VPinballResetCustomTableOptions")
-func VPinballResetCustomTableOptions()
-
-@_silgen_name("VPinballSaveCustomTableOptions")
-func VPinballSaveCustomTableOptions()
-
-@_silgen_name("VPinballGetViewSetup")
-func VPinballGetViewSetup(_ viewSetup: UnsafePointer<VPinballViewSetup>)
-
-@_silgen_name("VPinballSetViewSetup")
-func VPinballSetViewSetup(_ viewSetup: UnsafePointer<VPinballViewSetup>)
-
-@_silgen_name("VPinballSetDefaultViewSetup")
-func VPinballSetDefaultViewSetup()
-
-@_silgen_name("VPinballResetViewSetup")
-func VPinballResetViewSetup()
-
-@_silgen_name("VPinballSaveViewSetup")
-func VPinballSaveViewSetup()
 
 @_silgen_name("VPinballToggleFPS")
 func VPinballToggleFPS()
 
 @_silgen_name("VPinballCaptureScreenshot")
 func VPinballCaptureScreenshot(_ filename: UnsafePointer<CChar>)
+
+// VPXTable Management Functions
+@_silgen_name("VPinballRefreshTables")
+func VPinballRefreshTables() -> CInt
+
+@_silgen_name("VPinballGetVPXTables")
+func VPinballGetVPXTables() -> UnsafePointer<CChar>
+
+@_silgen_name("VPinballGetVPXTable")
+func VPinballGetVPXTable(_ uuid: UnsafePointer<CChar>) -> UnsafePointer<CChar>
+
+@_silgen_name("VPinballAddVPXTable")
+func VPinballAddVPXTable(_ filePath: UnsafePointer<CChar>) -> CInt
+
+@_silgen_name("VPinballRemoveVPXTable")
+func VPinballRemoveVPXTable(_ uuid: UnsafePointer<CChar>) -> CInt
+
+@_silgen_name("VPinballRenameVPXTable")
+func VPinballRenameVPXTable(_ uuid: UnsafePointer<CChar>, _ newName: UnsafePointer<CChar>) -> CInt
+
+@_silgen_name("VPinballSetTableArtwork")
+func VPinballSetTableArtwork(_ uuid: UnsafePointer<CChar>, _ artworkPath: UnsafePointer<CChar>) -> CInt
+
+@_silgen_name("VPinballGetTablesPath")
+func VPinballGetTablesPath() -> UnsafePointer<CChar>
+
+@_silgen_name("VPinballImportTableFile")
+func VPinballImportTableFile(_ sourceFile: UnsafePointer<CChar>) -> CInt
+
+@_silgen_name("VPinballFreeString")
+func VPinballFreeString(_ jsonString: UnsafeMutablePointer<CChar>)

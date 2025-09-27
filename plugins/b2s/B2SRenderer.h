@@ -46,7 +46,7 @@ private:
 
    ResURIResolver m_resURIResolver;
    VPXTexture m_dmdTex = nullptr;
-   B2SDMDOverlay m_scoreviewDmdOverlay;
+   B2SDMDOverlay m_scoreViewDmdOverlay;
    B2SDMDOverlay m_backglassDmdOverlay;
 
    std::chrono::time_point<std::chrono::high_resolution_clock> m_lastBackglassRenderTick;

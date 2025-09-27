@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ksp)
     alias(libs.plugins.ktfmt)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 fun parseVersion(versionName: String): List<Int> {
@@ -137,6 +138,7 @@ dependencies {
     implementation(libs.haze)
 
     implementation(libs.kotlinx.datetime)
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.navigation)
 }

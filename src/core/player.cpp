@@ -2,13 +2,11 @@
 
 #include "core/stdafx.h"
 
-#include <SDL3/SDL_main.h>
-
-#include "imgui/imgui_impl_sdl3.h"
-
 #ifndef __STANDALONE__
 #include "BAM/BAMView.h"
 #endif
+
+#include "imgui/imgui_impl_sdl3.h"
 
 #ifdef __STANDALONE__
 #include "standalone/Standalone.h"
@@ -16,7 +14,7 @@
 #endif
 
 #ifdef __LIBVPINBALL__
-#include "standalone/VPinballLib.h"
+#include "standalone/lib/VPinballLib.h"
 #endif
 
 #include <iomanip>
@@ -81,7 +79,7 @@ extern marker_series series;
 Player::Player(PinTable *const editor_table, PinTable *const live_table, const int playMode)
    : m_pEditorTable(editor_table)
    , m_ptable(live_table)
-   , m_scoreviewOutput("Visual Pinball - Score"s, live_table->m_settings, Settings::ScoreView, "ScoreView"s)
+   , m_scoreViewOutput("Visual Pinball - Score"s, live_table->m_settings, Settings::ScoreView, "ScoreView"s)
    , m_backglassOutput("Visual Pinball - Backglass"s, live_table->m_settings, Settings::Backglass, "Backglass"s)
    , m_topperOutput("Visual Pinball - Topper"s, live_table->m_settings, Settings::Topper, "Topper"s)
    , m_audioPlayer(std::make_unique<VPX::AudioPlayer>(live_table->m_settings))
@@ -100,7 +98,7 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
    m_progressDialog.ShowWindow(g_pvp->m_open_minimized ? SW_HIDE : SW_SHOWNORMAL);
 
 #ifdef __LIBVPINBALL__
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::CreatingPlayer, nullptr);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::CreatingPlayer, nullptr);
 #endif
 
    m_progressDialog.SetProgress("Creating Player..."s, 1);
@@ -205,10 +203,6 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
    for (unsigned int i = 0; i < MAX_TOUCHREGION; ++i)
       m_touchregion_pressed[i] = false;
 
-#ifdef __LIBVPINBALL__
-   m_liveUIOverride = g_pvp->m_settings.LoadValueWithDefault(Settings::Standalone, "LiveUIOverride"s, true);
-#endif
-
    PLOGI << "Creating main window"; // For profiling
    {
       #if defined(_MSC_VER) && !defined(__STANDALONE__)
@@ -310,23 +304,13 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
       throw hr;
    }
 
-#ifdef __LIBVPINBALL__
-   VPinballLib::WindowCreatedData windowCreatedData = {};
-#if (defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS))
-   SDL_PropertiesID props = SDL_GetWindowProperties(m_playfieldWnd->GetCore());
-   windowCreatedData.pWindow = (void*)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_UIKIT_WINDOW_POINTER, NULL);
-#endif
-   windowCreatedData.pTitle = SDL_GetWindowTitle(m_playfieldWnd->GetCore());
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::WindowCreated, &windowCreatedData);
-#endif
-
    #if defined(ENABLE_BGFX)
    if (m_vrDevice == nullptr) // Anciliary windows are not yet supported while in VR mode
    {
-      if (m_scoreviewOutput.GetMode() == VPX::RenderOutput::OM_WINDOW)
-         m_renderer->m_renderDevice->AddWindow(m_scoreviewOutput.GetWindow());
       if (m_backglassOutput.GetMode() == VPX::RenderOutput::OM_WINDOW)
          m_renderer->m_renderDevice->AddWindow(m_backglassOutput.GetWindow());
+      if (m_scoreViewOutput.GetMode() == VPX::RenderOutput::OM_WINDOW)
+         m_renderer->m_renderDevice->AddWindow(m_scoreViewOutput.GetWindow());
       if (m_topperOutput.GetMode() == VPX::RenderOutput::OM_WINDOW)
          m_renderer->m_renderDevice->AddWindow(m_topperOutput.GetWindow());
    }
@@ -719,7 +703,7 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
    PLOGI << "Startup done"; // For profiling
 
 #ifdef __LIBVPINBALL__
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::PlayerStarted, nullptr);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::PlayerStarted, nullptr);
 #endif
 
 #ifdef __STANDALONE__
@@ -753,20 +737,14 @@ Player::Player(PinTable *const editor_table, PinTable *const live_table, const i
 
    // Popup notification on startup
    if (m_renderer->m_stereo3D != STEREO_OFF && m_renderer->m_stereo3D != STEREO_VR && !m_renderer->m_stereo3Denabled)
-      m_liveUI->PushNotification("3D Stereo is enabled but currently toggled off, press F10 to toggle 3D Stereo on"s, 4000);
-#ifdef __LIBVPINBALL__
-   if (!m_liveUIOverride) {
-#endif
-      const int numberOfTimesToShowTouchMessage = g_pvp->m_settings.LoadValueWithDefault(Settings::Player, "NumberOfTimesToShowTouchMessage"s, 10);
-      if (m_supportsTouch && numberOfTimesToShowTouchMessage != 0) //!! visualize with real buttons or at least the areas?? Add extra buttons?
-      {
-         g_pvp->m_settings.SaveValue(Settings::Player, "NumberOfTimesToShowTouchMessage"s, max(numberOfTimesToShowTouchMessage - 1, 0));
-         m_liveUI->PushNotification("You can use Touch controls on this display: bottom left area to Start Game, bottom right area to use the Plunger\n"
-                                    "lower left/right for Flippers, upper left/right for Magna buttons, top left for Credits and (hold) top right to Exit"s, 12000);
-      }
-#ifdef __LIBVPINBALL__
+   m_liveUI->PushNotification("3D Stereo is enabled but currently toggled off, press F10 to toggle 3D Stereo on"s, 4000);
+   const int numberOfTimesToShowTouchMessage = g_pvp->m_settings.LoadValueWithDefault(Settings::Player, "NumberOfTimesToShowTouchMessage"s, 10);
+   if (m_supportsTouch && numberOfTimesToShowTouchMessage != 0) //!! visualize with real buttons or at least the areas?? Add extra buttons?
+   {
+      g_pvp->m_settings.SaveValue(Settings::Player, "NumberOfTimesToShowTouchMessage"s, max(numberOfTimesToShowTouchMessage - 1, 0));
+      m_liveUI->PushNotification("You can use Touch controls on this display: bottom left area to Start Game, bottom right area to use the Plunger\n"
+                                 "lower left/right for Flippers, upper left/right for Magna buttons, top left for Credits and (hold) top right to Exit"s, 12000);
    }
-#endif
 }
 
 Player::~Player()
@@ -779,7 +757,7 @@ Player::~Player()
    PLOGI << "Closing player...";
 
 #ifdef __LIBVPINBALL__
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::PlayerClosing, nullptr);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::PlayerClosing, nullptr);
 #endif
 
    // Signal plugins early since most fields will become invalid
@@ -1042,7 +1020,7 @@ Player::~Player()
    PLOGI << "Player closed.";
 
 #ifdef __LIBVPINBALL__
-   VPinballLib::VPinball::SendEvent(VPinballLib::Event::PlayerClosed, nullptr);
+   VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::PlayerClosed, nullptr);
 #endif
 }
 
@@ -1515,7 +1493,11 @@ void Player::ProcessOSMessages()
    bool isPFWnd = true;
    static Vertex2D dragStart;
    static int dragging = 0;
+#ifndef __LIBVPINBALL__
    while (SDL_PollEvent(&e) != 0)
+#else
+   while (VPinballLib::VPinball::GetInstance().GetQueuedEvent(e))
+#endif
    {
       switch (e.type)
       {
@@ -1557,8 +1539,6 @@ void Player::ProcessOSMessages()
          {
             // We scale motion data since SDL expects DPI scaled points coordinates on Apple device, while it uses pixel coordinates on other devices (see SDL_WINDOWS_DPI_SCALING)
             // For the time being, VPX always uses pixel coordinates, using setup obtained at window creation time.
-            e.motion.x *= SDL_GetWindowPixelDensity(m_playfieldWnd->GetCore());
-            e.motion.y *= SDL_GetWindowPixelDensity(m_playfieldWnd->GetCore());
             static float m_lastcursorx = FLT_MAX, m_lastcursory = FLT_MAX;
             if (m_lastcursorx != e.motion.x || m_lastcursory != e.motion.y)
             {
@@ -1572,8 +1552,8 @@ void Player::ProcessOSMessages()
             // Handle dragging of auxiliary windows
             SDL_Window *const sdlWnd = SDL_GetWindowFromID(e.motion.windowID);
             std::vector<VPX::Window *> windows = {
-               m_scoreviewOutput.GetWindow(),
                m_backglassOutput.GetWindow(),
+               m_scoreViewOutput.GetWindow(),
                m_topperOutput.GetWindow(),
             };
             for (VPX::Window *wnd : windows)
@@ -1661,17 +1641,16 @@ void Player::GameLoop()
       // Flush any pending frame
       m_renderer->m_renderDevice->m_frameReadySem.post();
 
-      #ifdef __ANDROID__
-         MultithreadedGameLoop(sync);
-      #else
-         #ifdef __LIBVPINBALL__
-            auto gameLoop = [this, sync]() {
-               MultithreadedGameLoop(sync);
-            };
-            VPinballLib::VPinball::GetInstance().SetGameLoop(gameLoop);
-         #else
+      m_renderer->m_renderDevice->m_frameMutex.unlock();
+      m_logicProfiler.SetThreadLock();
+
+      #ifdef __LIBVPINBALL__
+         auto gameLoop = [this, sync]() {
             MultithreadedGameLoop(sync);
-         #endif
+         };
+         VPinballLib::VPinball::GetInstance().SetGameLoop(gameLoop);
+      #else
+         MultithreadedGameLoop(sync);
       #endif
    #else
       delete m_renderProfiler;
@@ -1686,8 +1665,6 @@ void Player::GameLoop()
 void Player::MultithreadedGameLoop(const std::function<void()>& sync)
 {
 #ifdef ENABLE_BGFX
-   m_renderer->m_renderDevice->m_frameMutex.unlock();
-   m_logicProfiler.SetThreadLock();
    while (GetCloseState() == CS_PLAYING || GetCloseState() == CS_USER_INPUT)
    {
       // Continuously process input, synchronize with emulation and step physics to keep latency low
@@ -1703,6 +1680,7 @@ void Player::MultithreadedGameLoop(const std::function<void()>& sync)
          m_renderer->m_renderDevice->m_frameReadySem.post();
          m_renderer->m_renderDevice->m_frameMutex.unlock();
       }
+#ifndef __LIBVPINBALL__
       else
       {
          m_logicProfiler.EnterProfileSection(FrameProfiler::PROFILE_SLEEP);
@@ -1713,8 +1691,8 @@ void Player::MultithreadedGameLoop(const std::function<void()>& sync)
          // YieldProcessor();
          m_logicProfiler.ExitProfileSection();
       }
-#if (defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS))
-      // iOS has its own game loop so we need to break here
+#else
+      // Android and iOS use SDL main callbacks and use SDL_AppIterate
       break;
 #endif
    }
@@ -1969,18 +1947,12 @@ void Player::PrepareFrame(const std::function<void()>& sync)
    RenderTarget *playfieldRT = rd->GetCurrentRenderTarget();
 
    // Prepare anciliary windows (for the time being always embedded in playfield anciliary windows)
-   RenderTarget *scoreViewRT = RenderAnciliaryWindow(VPXAnciliaryWindow::VPXWINDOW_ScoreView, playfieldRT);
    RenderTarget *backglassRT = RenderAnciliaryWindow(VPXAnciliaryWindow::VPXWINDOW_Backglass, playfieldRT);
+   RenderTarget *scoreViewRT = RenderAnciliaryWindow(VPXAnciliaryWindow::VPXWINDOW_ScoreView, playfieldRT);
    RenderTarget *topperRT = RenderAnciliaryWindow(VPXAnciliaryWindow::VPXWINDOW_Topper, playfieldRT);
    
    // Apply screenspace transforms (MSAA, AO, AA, stereo, ball motion blur, tonemapping, dithering, bloom,...)
    m_renderer->PrepareVideoBuffers(m_renderer->m_renderDevice->GetOutputBackBuffer());
-
-   // UI hook
-   #ifdef __LIBVPINBALL__
-      if (m_liveUIOverride)
-         VPinballLib::VPinball::SendEvent(VPinballLib::Event::LiveUIUpdate, nullptr);
-   #endif
 
    m_physics->ResetPerFrameStats();
 
@@ -2067,14 +2039,7 @@ void Player::FinishFrame()
       if (g_pvp->m_disable_pause_menu || m_renderer->m_stereo3D == STEREO_VR)
          m_closing = CS_STOP_PLAY;
       else {
-#ifdef __LIBVPINBALL__
-         if (m_liveUIOverride)
-            VPinballLib::VPinball::SendEvent(VPinballLib::Event::LiveUIToggle, nullptr);
-         else
-            m_liveUI->OpenMainSplash();
-#else
          m_liveUI->OpenMainSplash();
-#endif
       }
    }
 
@@ -2176,7 +2141,7 @@ RenderTarget *Player::RenderAnciliaryWindow(VPXAnciliaryWindow window, RenderTar
    int m_outputX, m_outputY, m_outputW, m_outputH;
 
    VPX::RenderOutput &output = window == VPXAnciliaryWindow::VPXWINDOW_Backglass ? m_backglassOutput :
-                               window == VPXAnciliaryWindow::VPXWINDOW_ScoreView ? m_scoreviewOutput :
+                               window == VPXAnciliaryWindow::VPXWINDOW_ScoreView ? m_scoreViewOutput :
                                /*window == VPXAnciliaryWindow::VPXWINDOW_Topper ? */ m_topperOutput;
    const string renderPassName = window == VPXAnciliaryWindow::VPXWINDOW_Backglass ? "Backglass Render"s :
                                  window == VPXAnciliaryWindow::VPXWINDOW_ScoreView ? "ScoreView Render"s :
@@ -2265,11 +2230,31 @@ RenderTarget *Player::RenderAnciliaryWindow(VPXAnciliaryWindow window, RenderTar
       rd->SetRenderTarget(renderPassName, outputRT, true, true);
    }
 
-   // TODO Also handle clear for embedded window and 3D render
    if (output.GetMode() == VPX::RenderOutput::OM_WINDOW)
    {
       rd->ResetRenderState();
       rd->Clear(clearType::TARGET | clearType::ZBUFFER, 0x00000000);
+   }
+   else if (output.GetMode() == VPX::RenderOutput::OM_EMBEDDED)
+   {
+      rd->ResetRenderState();
+      rd->SetRenderState(RenderState::ZWRITEENABLE, RenderState::RS_FALSE);
+      rd->SetRenderState(RenderState::ZENABLE, RenderState::RS_FALSE);
+      rd->SetRenderState(RenderState::CULLMODE, RenderState::CULL_NONE);
+      rd->SetRenderState(RenderState::ALPHABLENDENABLE, RenderState::RS_FALSE);
+
+      rd->m_basicShader->SetVector(SHADER_cBase_Alpha, 0.0f, 0.0f, 0.0f, 1.0f);
+      rd->m_basicShader->SetTextureNull(SHADER_tex_base_color);
+      rd->m_basicShader->SetTechnique(SHADER_TECHNIQUE_bg_decal_with_texture);
+
+      Vertex3D_NoTex2 vertices[4] = {
+         { 1.0f, 0.0f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f },
+         { 0.0f, 0.0f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f },
+         { 1.0f, 1.0f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f },
+         { 0.0f, 1.0f, 0.f, 0.f, 0.f, 1.f, 0.f, 0.f }
+      };
+
+      rd->DrawTexturedQuad(rd->m_basicShader, vertices, true, 0.f);
    }
 
    struct PlayerRenderContext2D

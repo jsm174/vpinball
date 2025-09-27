@@ -141,15 +141,6 @@ fun SettingsScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                        SwitchRow(
-                            label = "Mobile LiveUI",
-                            isChecked = viewModel.liveUIOverride,
-                            onCheckedChange = { viewModel.handleLiveUIOverride(value = it) },
-                            description = "If disabled, use Visual Pinball's built-in LiveUI",
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
                         EnumMenuRow(
                             label = "Graphics Backend",
                             options = VPinballGfxBackend.entries.toList(),

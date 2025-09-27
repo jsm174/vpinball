@@ -7,7 +7,7 @@
 #include "ScanCodes.h"
 
 #ifdef __LIBVPINBALL__
-   #include "standalone/VPinballLib.h"
+   #include "standalone/lib/VPinballLib.h"
 #endif
 
 #ifdef _WIN32
@@ -443,7 +443,7 @@ void PinInput::PlayRumble(const float lowFrequencySpeed, const float highFrequen
          (uint16_t)(saturate(highFrequencySpeed) * 65535.f),
          (uint32_t)ms_duration
       };
-      VPinballLib::VPinball::SendEvent(VPinballLib::Event::Rumble, &rumbleData);
+      VPinballLib::VPinball::GetInstance().SendEvent(VPinballLib::Event::Rumble, &rumbleData);
    #endif
 }
 
