@@ -52,7 +52,7 @@ After downloading from the App Store, launch the app:
 <img src="img/quick-start-2.png" width="150" hspace="20">
 </p>
 
-On the *Table Selection* screen, tap the *+* button in the upper right and select the *exampleTable.vpx* option:
+On the *Table Selection* screen, tap the *+* button in the upper right and select the *blankTable.vpx* option:
 
 <p align="center">
 <img src="img/quick-start-3.png" width="150" hspace="20">

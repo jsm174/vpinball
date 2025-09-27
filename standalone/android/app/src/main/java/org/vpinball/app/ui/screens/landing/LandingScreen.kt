@@ -49,6 +49,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
@@ -81,7 +82,7 @@ import org.koin.compose.koinInject
 import org.vpinball.app.R
 import org.vpinball.app.TableListMode
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.ui.screens.common.ProgressOverlay
 import org.vpinball.app.ui.screens.settings.SettingsModalBottomSheet
 import org.vpinball.app.ui.theme.DarkBlack
@@ -91,8 +92,6 @@ import org.vpinball.app.ui.theme.VPinballTheme
 import org.vpinball.app.ui.theme.VpxDarkYellow
 import org.vpinball.app.ui.theme.VpxRed
 import org.vpinball.app.util.FileUtils
-import org.vpinball.app.util.hasScript
-import org.vpinball.app.util.scriptFile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -101,9 +100,9 @@ fun LandingScreen(
     progress: MutableState<Int>,
     status: MutableState<String>,
     onTableImported: (uuid: String, path: String) -> Unit,
-    onRenameTable: (table: PinTable, name: String) -> Unit,
-    onChangeTableArtwork: (table: PinTable) -> Unit,
-    onDeleteTable: (table: PinTable) -> Unit,
+    onRenameTable: (table: Table, name: String) -> Unit,
+    onChangeTableArtwork: (table: Table) -> Unit,
+    onDeleteTable: (table: Table) -> Unit,
     onViewFile: (file: File) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LandingScreenViewModel = koinInject(),
@@ -192,6 +191,11 @@ fun LandingScreen(
 
     LaunchedEffect(searchTextFieldState.text) { viewModel.search(searchTextFieldState.text.toString()) }
 
+    DisposableEffect(Unit) {
+        LandingScreenViewModel.setScrollToTableCallback { uuid -> scrollToTableUuid = uuid }
+        onDispose { LandingScreenViewModel.setScrollToTableCallback {} }
+    }
+
     LaunchedEffect(scrollToTableUuid, unfilteredTables) {
         val uuid = scrollToTableUuid
         if (uuid != null) {
@@ -273,10 +277,10 @@ fun LandingScreen(
 
                                         launcher.launch(arrayOf("*/*"))
                                     },
-                                    onExampleTable = {
+                                    onBlankTable = {
                                         showImportTableMenu = false
 
-                                        importUri = File(VPinballManager.getFilesDir(), "assets/exampleTable.vpx").toUri()
+                                        importUri = File(VPinballManager.getFilesDir(), "assets/blankTable.vpx").toUri()
                                         importFilename = FileUtils.filenameFromUri(context, importUri!!)
                                         showConfirmDialog = true
                                     },
@@ -395,8 +399,11 @@ fun LandingScreen(
                     onRename = onRenameTable,
                     onChangeArtwork = onChangeTableArtwork,
                     onViewScript = { table ->
-                        if (table.hasScript()) {
-                            onViewFile(table.scriptFile)
+                        if (table.hasScriptFile()) {
+                            val viewPath = VPinballManager.prepareFileForViewing(table.scriptPath)
+                            if (viewPath != null) {
+                                onViewFile(File(viewPath))
+                            }
                         } else {
                             title = table.name
                             progress.value = 0
@@ -407,7 +414,10 @@ fun LandingScreen(
                                 table,
                                 onComplete = {
                                     showProgress = false
-                                    onViewFile(table.scriptFile)
+                                    val viewPath = VPinballManager.prepareFileForViewing(table.scriptPath)
+                                    if (viewPath != null) {
+                                        onViewFile(File(viewPath))
+                                    }
                                 },
                                 onError = { showProgress = false },
                             )
@@ -469,7 +479,9 @@ fun LandingScreen(
                                 onComplete = { uuid, path ->
                                     showProgress = false
                                     onTableImported(uuid, path)
-                                    scrollToTableUuid = uuid
+                                    // Note: With the new import system, uuid is just a placeholder ("imported")
+                                    // The actual table list refresh happens in the background via VPinballScanTablesAsync
+                                    // so we don't scroll to a specific UUID anymore
                                 },
                                 onError = { showProgress = false },
                             )

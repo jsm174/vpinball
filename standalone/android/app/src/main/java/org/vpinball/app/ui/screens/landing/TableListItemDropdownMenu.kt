@@ -23,14 +23,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.DpOffset
 import androidx.compose.ui.unit.dp
 import org.vpinball.app.R
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.ui.theme.VpxRed
-import org.vpinball.app.util.hasIni
-import org.vpinball.app.util.hasScript
 
 @Composable
 fun TableListItemDropdownMenu(
-    table: PinTable,
+    table: Table,
     expanded: MutableState<Boolean>,
     onRename: () -> Unit,
     onChangeArtwork: () -> Unit,
@@ -49,8 +47,8 @@ fun TableListItemDropdownMenu(
     DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }, offset = offset) {
         LaunchedEffect(expanded.value) {
             if (expanded.value) {
-                scriptExists = table.hasScript()
-                iniExists = table.hasIni()
+                scriptExists = table.hasScriptFile()
+                iniExists = table.hasIniFile()
             }
         }
 

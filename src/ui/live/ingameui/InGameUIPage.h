@@ -22,20 +22,21 @@ public:
    virtual void Open();
    virtual void Close();
    virtual void Save();
-   void SaveGlobally();
-   void SaveTableOverride();
+   virtual void SaveGlobally();
+   virtual void SaveTableOverride();
    virtual void ResetToInitialValues();
    virtual void ResetToDefaults();
    bool IsResettingToDefaults() const { return m_resettingToDefaults; }
    bool IsResettingToInitialValues() const { return m_resettingToInitialValues; }
    bool IsResetting() const { return m_resettingToDefaults || m_resettingToInitialValues; }
    virtual void Render();
+
    void SelectNextItem();
    void SelectPrevItem();
    void AdjustItem(float direction, bool isInitialPress);
    bool IsAdjustable() const;
    virtual bool IsDefaults() const;
-   bool IsModified() const;
+   virtual bool IsModified() const;
 
    InGameUIItem* GetItem(const string& label) const;
 

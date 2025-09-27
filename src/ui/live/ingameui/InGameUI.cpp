@@ -14,6 +14,8 @@
 #include "NudgeSettingsPage.h"
 #include "PointOfViewSettingsPage.h"
 #include "VRSettingsPage.h"
+#include "BackglassPage.h"
+#include "ScoreViewPage.h"
 
 
 namespace VPX::InGameUI
@@ -32,6 +34,8 @@ InGameUI::InGameUI(LiveUI &liveUI)
    AddPage(std::make_unique<PointOfViewSettingsPage>());
    if (m_player->m_vrDevice)
       AddPage(std::make_unique<VRSettingsPage>());
+   AddPage(std::make_unique<BackglassPage>());
+   AddPage(std::make_unique<ScoreViewPage>());
 }
 
 void InGameUI::AddPage(std::unique_ptr<InGameUIPage> page) { m_pages[page->GetPath()] = std::move(page); }

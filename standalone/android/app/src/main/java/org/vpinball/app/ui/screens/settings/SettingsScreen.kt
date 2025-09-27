@@ -2,6 +2,9 @@ package org.vpinball.app.ui.screens.settings
 
 import android.content.Context
 import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
@@ -79,6 +82,7 @@ import org.vpinball.app.jni.VPinballDisplayText
 import org.vpinball.app.jni.VPinballExternalDMD
 import org.vpinball.app.jni.VPinballFXAA
 import org.vpinball.app.jni.VPinballGfxBackend
+import org.vpinball.app.jni.VPinballLogLevel
 import org.vpinball.app.jni.VPinballMSAASamples
 import org.vpinball.app.jni.VPinballMaxTexDimension
 import org.vpinball.app.jni.VPinballReflectionMode
@@ -101,6 +105,14 @@ fun SettingsScreen(
 
     var showResetDialog by remember { mutableStateOf(false) }
     val sheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+
+    // SAF folder picker for external storage
+    val folderPickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocumentTree()) { uri: Uri? ->
+            uri?.let {
+                viewModel.handleExternalStorageUri(it)
+            }
+        }
 
     LaunchedEffect(Unit) { viewModel.loadSettings() }
 
@@ -141,15 +153,6 @@ fun SettingsScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                        SwitchRow(
-                            label = "Mobile LiveUI",
-                            isChecked = viewModel.liveUIOverride,
-                            onCheckedChange = { viewModel.handleLiveUIOverride(value = it) },
-                            description = "If disabled, use Visual Pinball's built-in LiveUI",
-                        )
-
-                        HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-
                         EnumMenuRow(
                             label = "Graphics Backend",
                             options = VPinballGfxBackend.entries.toList(),
@@ -157,6 +160,45 @@ fun SettingsScreen(
                             onOptionChanged = { viewModel.handleGfxBackend(value = it) },
                         )
                     }
+                }
+
+                item {
+                    SectionHeader(title = "Storage")
+
+                    RoundedCard {
+                        SwitchRow(
+                            label = "Use External Storage",
+                            isChecked = viewModel.useExternalStorage,
+                            onCheckedChange = { enabled ->
+                                if (enabled) {
+                                    // Launch folder picker
+                                    folderPickerLauncher.launch(null)
+                                } else {
+                                    // Disable external storage
+                                    viewModel.handleClearExternalStorage()
+                                }
+                            },
+                            description = "Store tables on SD card or external storage via Storage Access Framework.",
+                        )
+
+                        if (viewModel.useExternalStorage) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                            ActionRow(
+                                label = "Change Folder",
+                                labelColor = Color.VpxRed,
+                                onClick = { folderPickerLauncher.launch(null) },
+                                showDisclosure = false,
+                            )
+                        }
+                    }
+
+                    Text(
+                        text = viewModel.currentTablesPath,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp, bottom = 8.dp),
+                    )
                 }
 
                 item {
@@ -470,7 +512,11 @@ fun SettingsScreen(
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
-                        SwitchRow(label = "B2SLegacy", isChecked = viewModel.pluginB2SLegacy, onCheckedChange = { viewModel.handlePluginB2SLegacy(value = it) })
+                        SwitchRow(
+                            label = "B2SLegacy",
+                            isChecked = viewModel.pluginB2SLegacy,
+                            onCheckedChange = { viewModel.handlePluginB2SLegacy(value = it) },
+                        )
 
                         HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 

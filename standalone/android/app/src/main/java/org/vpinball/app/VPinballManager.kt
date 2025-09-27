@@ -1,53 +1,29 @@
 package org.vpinball.app
 
 import android.content.Context
-import android.graphics.BitmapFactory
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.DocumentsContract
 import android.util.Log
 import android.util.Size
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.lifecycle.viewmodel.compose.viewModel
 import java.io.File
-import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import kotlinx.datetime.toLocalDateTime
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import org.json.JSONArray
 import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
-import org.vpinball.app.data.entity.PinTable
-import org.vpinball.app.data.repository.PinTableRepository
-import org.vpinball.app.jni.VPinballCaptureScreenshotData
-import org.vpinball.app.jni.VPinballCustomTableOption
-import org.vpinball.app.jni.VPinballEvent
-import org.vpinball.app.jni.VPinballJNI
-import org.vpinball.app.jni.VPinballLogLevel
-import org.vpinball.app.jni.VPinballProgressData
-import org.vpinball.app.jni.VPinballRumbleData
-import org.vpinball.app.jni.VPinballScriptErrorData
-import org.vpinball.app.jni.VPinballSettingsSection
+import org.vpinball.app.jni.*
 import org.vpinball.app.jni.VPinballSettingsSection.STANDALONE
-import org.vpinball.app.jni.VPinballStatus
-import org.vpinball.app.jni.VPinballTableEventData
-import org.vpinball.app.jni.VPinballTableInfo
-import org.vpinball.app.jni.VPinballTableOptions
-import org.vpinball.app.jni.VPinballTablesData
-import org.vpinball.app.jni.VPinballViewSetup
-import org.vpinball.app.jni.VPinballWebServerData
 import org.vpinball.app.util.FileUtils
-import org.vpinball.app.util.basePath
-import org.vpinball.app.util.deleteFiles
-import org.vpinball.app.util.hasImage
-import org.vpinball.app.util.imageFile
-import org.vpinball.app.util.loadImage
-import org.vpinball.app.util.tableFile
 
 object VPinballManager : KoinComponent {
     enum class ScreenshotMode(val value: Int) {
@@ -58,8 +34,7 @@ object VPinballManager : KoinComponent {
 
     private const val TAG = "VPinballManager"
 
-    private var vpinballJNI: VPinballJNI = VPinballJNI()
-    private val pinTableRepository: PinTableRepository by inject()
+    val vpinballJNI: VPinballJNI = VPinballJNI()
 
     private lateinit var activity: VPinballActivity
     private lateinit var filesDir: File
@@ -67,7 +42,7 @@ object VPinballManager : KoinComponent {
     private lateinit var displaySize: Size
     private lateinit var vibrator: Vibrator
 
-    private var activeTable: PinTable? = null
+    private var activeTable: Table? = null
     private var haptics = false
     private var error: String? = null
     private var screenshotMode: ScreenshotMode? = null
@@ -77,6 +52,8 @@ object VPinballManager : KoinComponent {
 
         filesDir = activity.filesDir
         cacheDir = activity.cacheDir
+
+        // Tables path is now set automatically by VPinballTableManager
 
         val displayMetrics = activity.resources.displayMetrics
         val width = displayMetrics.widthPixels
@@ -91,7 +68,7 @@ object VPinballManager : KoinComponent {
                 activity.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             }
 
-        vpinballJNI.VPinballInit { value, data ->
+        vpinballJNI.VPinballSetEventCallback { value, jsonData, rawData ->
             val viewModel = activity.viewModel
             val event = VPinballEvent.entries.find { it.ordinal == value }
             when (event) {
@@ -103,7 +80,16 @@ object VPinballManager : KoinComponent {
                 VPinballEvent.LOADING_FONTS,
                 VPinballEvent.LOADING_COLLECTIONS,
                 VPinballEvent.PRERENDERING -> {
-                    val progressData = data as? VPinballProgressData
+                    // Parse JSON progress data
+                    val progressData =
+                        jsonData?.let { jsonStr ->
+                            try {
+                                Json.decodeFromString<VPinballProgressData>(jsonStr)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to parse progress data JSON: $jsonStr", e)
+                                null
+                            }
+                        }
                     Log.v(TAG, "event=${event.name}, data=${progressData}")
                     progressData?.let {
                         CoroutineScope(Dispatchers.Main).launch {
@@ -126,35 +112,46 @@ object VPinballManager : KoinComponent {
                             viewModel.touchOverlay(true)
                         }
                     }
-                    vpinballJNI.VPinballSetWebServerUpdated()
                 }
                 VPinballEvent.RUMBLE -> {
                     if (haptics) {
-                        val rumbleData = data as? VPinballRumbleData
+                        val rumbleData =
+                            jsonData?.let { jsonStr ->
+                                try {
+                                    Json.decodeFromString<VPinballRumbleData>(jsonStr)
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Failed to parse rumble data JSON: $jsonStr", e)
+                                    null
+                                }
+                            }
                         rumbleData?.let { rumble(it) }
                     }
                 }
                 VPinballEvent.SCRIPT_ERROR -> {
                     if (error == null) {
-                        val scriptErrorData = data as? VPinballScriptErrorData
+                        val scriptErrorData =
+                            jsonData?.let { jsonStr ->
+                                try {
+                                    Json.decodeFromString<VPinballScriptErrorData>(jsonStr)
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "Failed to parse script error data JSON: $jsonStr", e)
+                                    null
+                                }
+                            }
                         error =
-                            scriptErrorData?.let { "${it.error.text} on line ${it.line}, position ${it.position}:\n\n${it.description}" }
-                                ?: "Script error."
+                            scriptErrorData?.let {
+                                val errorType = VPinballScriptErrorType.fromInt(it.error)
+                                "${errorType.text} on line ${it.line}, position ${it.position}:\n\n${it.description}"
+                            } ?: "Script error."
                     }
                 }
-                VPinballEvent.LIVE_UI_TOGGLE -> {
-                    log(VPinballLogLevel.INFO, "event=${event.name}")
-                    CoroutineScope(Dispatchers.Main).launch {
-                        viewModel.toggleLiveUI()
-                        setPlayState(!viewModel.isLiveUI())
-                    }
-                }
-                VPinballEvent.LIVE_UI_UPDATE -> {}
                 VPinballEvent.PLAYER_CLOSING -> {
                     log(VPinballLogLevel.INFO, "event=${event.name}")
                 }
                 VPinballEvent.PLAYER_CLOSED -> {
                     log(VPinballLogLevel.INFO, "event=${event.name}")
+                    activeTable = null
+                    CoroutineScope(Dispatchers.Main).launch { viewModel.playing(false) }
                 }
                 VPinballEvent.STOPPED -> {
                     log(VPinballLogLevel.INFO, "event=${event.name}")
@@ -166,38 +163,73 @@ object VPinballManager : KoinComponent {
                             showError(error)
                         }
                     }
-                    vpinballJNI.VPinballSetWebServerUpdated()
                 }
                 VPinballEvent.WEB_SERVER -> {
-                    val webServerData = data as? VPinballWebServerData
+                    val webServerData =
+                        jsonData?.let { jsonStr ->
+                            try {
+                                Json.decodeFromString<VPinballWebServerData>(jsonStr)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to parse web server data JSON: $jsonStr", e)
+                                null
+                            }
+                        }
                     log(VPinballLogLevel.INFO, "event=${event.name}, data=${webServerData}")
                     webServerData?.let { CoroutineScope(Dispatchers.Main).launch { viewModel.webServerURL = webServerData.url } }
                 }
                 VPinballEvent.CAPTURE_SCREENSHOT -> {
-                    val captureScreenshotData = data as? VPinballCaptureScreenshotData
+                    // TODO: Implement screenshot handling
+                    /*
+                    val captureScreenshotData =
+                        jsonData?.let { jsonStr ->
+                            try {
+                                Json.decodeFromString<VPinballCaptureScreenshotData>(jsonStr)
+                            } catch (e: Exception) {
+                                Log.w(TAG, "Failed to parse capture screenshot data JSON: $jsonStr", e)
+                                null
+                            }
+                        }
                     log(VPinballLogLevel.INFO, "event=${event.name}, data=$captureScreenshotData")
 
                     when (screenshotMode) {
                         ScreenshotMode.INSTRUCTIONS ->
                             viewModel.instructionsImage = BitmapFactory.decodeFile(File(cacheDir, "haze-bg.jpg").absolutePath)?.asImageBitmap()
 
-                        ScreenshotMode.ARTWORK -> viewModel.artworkImage = activeTable?.loadImage()
+                        ScreenshotMode.ARTWORK -> {
+                            activeTable?.let { table ->
+                                // Load image for Table
+                                viewModel.artworkImage = table.loadImage()
+                            }
+                        }
 
                         ScreenshotMode.QUIT -> stop()
                         else -> {}
                     }
+                    */
                 }
-                VPinballEvent.TABLE_LIST -> {
-                    return@VPinballInit handleTableList()
-                }
-                VPinballEvent.TABLE_IMPORT -> {
-                    handleTableImport(data)
-                }
-                VPinballEvent.TABLE_RENAME -> {
-                    handleTableRename(data)
-                }
-                VPinballEvent.TABLE_DELETE -> {
-                    handleTableDelete(data)
+                VPinballEvent.TABLE_LIST_UPDATED -> {
+                    log(VPinballLogLevel.INFO, "Received TABLE_LIST_UPDATED event - refreshing Android table list")
+
+                    // Check if there's a focusUuid in the JSON
+                    val focusUuid =
+                        jsonData?.let { jsonStr ->
+                            try {
+                                @Serializable data class TableListUpdatedData(val focusUuid: String? = null)
+                                val data = Json.decodeFromString<TableListUpdatedData>(jsonStr)
+                                data.focusUuid
+                            } catch (e: Exception) {
+                                null
+                            }
+                        }
+
+                    CoroutineScope(Dispatchers.Main).launch {
+                        viewModel.loading(false)
+                        // Trigger table list refresh in the landing screen
+                        org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
+
+                        // If there's a focusUuid, scroll to it
+                        focusUuid?.let { uuid -> org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerScrollToTable(uuid) }
+                    }
                 }
                 else -> {
                     log(VPinballLogLevel.WARN, "event=${event}")
@@ -206,7 +238,18 @@ object VPinballManager : KoinComponent {
         }
 
         CoroutineScope(Dispatchers.Main).launch {
-            delay(500)
+            delay(1000)
+
+            // Scan for tables on startup
+            CoroutineScope(Dispatchers.IO).launch {
+                val scanResult = vpinballJNI.VPinballRefreshTables()
+                if (scanResult == VPinballStatus.SUCCESS.value) {
+                    log(VPinballLogLevel.INFO, "Table scan completed successfully on startup")
+                } else {
+                    log(VPinballLogLevel.ERROR, "Table scan failed on startup")
+                }
+            }
+
             updateWebServer()
         }
     }
@@ -221,6 +264,16 @@ object VPinballManager : KoinComponent {
 
     fun log(level: VPinballLogLevel, message: String) {
         vpinballJNI.VPinballLog(level.value, message)
+    }
+
+    private fun sendCopyProgressEvent(current: Int, total: Int) {
+        val progressPercent = if (total > 0) (current * 100) / total else 0
+
+        // Update UI progress
+        activity.runOnUiThread {
+            activity.viewModel.progress(progressPercent)
+            activity.viewModel.status("Copying table files... ($current/$total)")
+        }
     }
 
     private fun rumble(data: VPinballRumbleData) {
@@ -238,7 +291,7 @@ object VPinballManager : KoinComponent {
     }
 
     fun updateWebServer() {
-        vpinballJNI.VPinballUpdateWebServer()
+        // TODO: Implement web server update
     }
 
     fun getVersionString(): String = vpinballJNI.VPinballGetVersionStringFull()
@@ -279,72 +332,8 @@ object VPinballManager : KoinComponent {
         vpinballJNI.VPinballToggleFPS()
     }
 
-    fun setPlayState(enable: Boolean) {
-        vpinballJNI.VPinballSetPlayState(if (enable) 1 else 0)
-    }
-
-    fun getCustomTableOptions(): List<VPinballCustomTableOption> {
-        val count = vpinballJNI.VPinballGetCustomTableOptionsCount()
-        val options = mutableListOf<VPinballCustomTableOption>()
-        for (i in 0 until count) {
-            val option = vpinballJNI.VPinballGetCustomTableOption(i)
-            if (option != null) {
-                options.add(option)
-            }
-        }
-        return options
-    }
-
-    fun setCustomTableOption(customTableOption: VPinballCustomTableOption) {
-        vpinballJNI.VPinballSetCustomTableOption(customTableOption)
-    }
-
-    fun resetCustomTableOptions() {
-        vpinballJNI.VPinballResetCustomTableOptions()
-    }
-
-    fun saveCustomTableOptions() {
-        vpinballJNI.VPinballSaveCustomTableOptions()
-    }
-
-    fun getTableOptions(): VPinballTableOptions {
-        return vpinballJNI.VPinballGetTableOptions()
-    }
-
-    fun setTableOptions(tableOptions: VPinballTableOptions) {
-        vpinballJNI.VPinballSetTableOptions(tableOptions)
-    }
-
-    fun resetTableOptions() {
-        vpinballJNI.VPinballResetTableOptions()
-    }
-
-    fun saveTableOptions() {
-        vpinballJNI.VPinballSaveTableOptions()
-    }
-
-    fun getViewSetup(): VPinballViewSetup {
-        return vpinballJNI.VPinballGetViewSetup()
-    }
-
-    fun setViewSetup(viewSetup: VPinballViewSetup) {
-        vpinballJNI.VPinballSetViewSetup(viewSetup)
-    }
-
-    fun setDefaultViewSetup() {
-        vpinballJNI.VPinballSetDefaultViewSetup()
-    }
-
-    fun resetViewSetup() {
-        vpinballJNI.VPinballResetViewSetup()
-    }
-
-    fun saveViewSetup() {
-        vpinballJNI.VPinballSaveViewSetup()
-    }
-
     fun hasScreenshot(): Boolean {
-        return activeTable?.hasImage() ?: false
+        return activeTable?.hasImage ?: false
     }
 
     fun captureScreenshot(mode: ScreenshotMode) {
@@ -353,9 +342,10 @@ object VPinballManager : KoinComponent {
             val path =
                 when (mode) {
                     ScreenshotMode.INSTRUCTIONS -> File(cacheDir, "haze-bg.jpg").absolutePath
-                    else -> table.imageFile.absolutePath
+                    else -> table.fullPath.substringBeforeLast('.') + ".jpg"
                 }
-            vpinballJNI.VPinballCaptureScreenshot(path)
+            // TODO: Implement screenshot capture
+            // vpinballJNI.VPinballCaptureScreenshot(path)
         }
     }
 
@@ -383,8 +373,11 @@ object VPinballManager : KoinComponent {
     ) {
         CoroutineScope(Dispatchers.IO).launch {
             try {
+                // Clean up cache directory
                 cacheDir.deleteRecursively()
                 cacheDir.mkdir()
+
+                // Get filename from URI
                 val filename = FileUtils.filenameFromUri(context, uri)
                 if (filename == null) {
                     log(VPinballLogLevel.ERROR, "Unable to get filename: uri=$uri")
@@ -394,74 +387,65 @@ object VPinballManager : KoinComponent {
                     }
                     return@launch
                 }
-                withContext(Dispatchers.Main) { onUpdate(0, "Staging") }
-                val outputFile = File(cacheDir, filename)
-                FileUtils.copyFile(context, uri, outputFile) { progress -> launch(Dispatchers.Main) { onUpdate(progress, "Copying") } }
-                if (!outputFile.extension.equals("vpx", ignoreCase = true)) {
-                    if (vpinballJNI.VPinballUncompress(outputFile.absolutePath) != VPinballStatus.SUCCESS.value) {
-                        log(VPinballLogLevel.ERROR, "Failed to uncompress file")
-                        withContext(Dispatchers.Main) {
-                            onError()
-                            showErrorAndReset("Unable to import table.")
-                        }
-                        return@launch
-                    }
-                    outputFile.delete()
+
+                withContext(Dispatchers.Main) { onUpdate(20, "Copying file") }
+
+                // Copy file to temp location for processing
+                val tempFile = File(cacheDir, filename)
+                FileUtils.copyFile(context, uri, tempFile) { progress ->
+                    launch(Dispatchers.Main) { onUpdate((20 + progress * 0.3).toInt(), "Copying file") }
                 }
-                val vpxFile = FileUtils.findFileByExtension(cacheDir, "vpx")
-                if (vpxFile == null) {
-                    log(VPinballLogLevel.ERROR, "Unable to find vpx file")
+
+                withContext(Dispatchers.Main) { onUpdate(60, "Importing table") }
+
+                // Use the new unified import method
+                val status = vpinballJNI.VPinballImportTable(tempFile.absolutePath)
+
+                // Clean up temp file
+                tempFile.delete()
+
+                if (status == VPinballStatus.SUCCESS.value) {
+                    log(VPinballLogLevel.INFO, "Successfully imported table: $filename")
+
+                    withContext(Dispatchers.Main) {
+                        onUpdate(100, "Import complete")
+                        onComplete("", filename)
+                    }
+                } else {
+                    log(VPinballLogLevel.ERROR, "Failed to import table: $filename")
                     withContext(Dispatchers.Main) {
                         onError()
                         showErrorAndReset("Unable to import table.")
                     }
-                    return@launch
                 }
-                val uuid = UUID.randomUUID().toString()
-                val uuidFolder = File(filesDir, uuid)
-                if (!uuidFolder.mkdir()) {
-                    log(VPinballLogLevel.ERROR, "Failed to create UUID folder")
-                    withContext(Dispatchers.Main) {
-                        onError()
-                        showErrorAndReset("Unable to import table.")
-                    }
-                    return@launch
-                }
-                FileUtils.copyDirectoryContents(vpxFile.parentFile!!, uuidFolder)
-                val newVpxFile = FileUtils.findFileByExtension(uuidFolder, "vpx")
-                if (newVpxFile == null) {
-                    log(VPinballLogLevel.ERROR, "Unable to find vpx file in UUID folder")
-                    withContext(Dispatchers.Main) {
-                        onError()
-                        showErrorAndReset("Unable to import table.")
-                    }
-                    return@launch
-                }
-                withContext(Dispatchers.Main) { onComplete(uuid, newVpxFile.name) }
             } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "An error occurred: ${e.message}")
+                log(VPinballLogLevel.ERROR, "Import error: ${e.message}")
                 withContext(Dispatchers.Main) {
                     onError()
-                    showErrorAndReset("Unable to import script.")
+                    showErrorAndReset("Unable to import table.")
                 }
             }
         }
     }
 
-    fun extractScript(table: PinTable, onComplete: () -> Unit, onError: () -> Unit) {
+    fun extractScript(table: Table, onComplete: () -> Unit, onError: () -> Unit) {
         if (activeTable != null) return
         activeTable = table
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
+            // Load the table - C++ side handles validation for both normal and SAF paths
+            val loadStatus = vpinballJNI.VPinballLoad(table.uuid)
+            if (loadStatus != VPinballStatus.SUCCESS.value) {
                 withContext(Dispatchers.Main) {
                     onError()
-                    showErrorAndReset("Unable to extract script.")
+                    showErrorAndReset("Unable to load table.")
+                    activeTable = null
                 }
                 return@launch
             }
-            val status = vpinballJNI.VPinballExtractScript(table.tableFile.absolutePath)
+            // Then extract script from the loaded table
+            val extractStatus = vpinballJNI.VPinballExtractScript()
             withContext(Dispatchers.Main) {
-                if (status == VPinballStatus.SUCCESS.value) {
+                if (extractStatus == VPinballStatus.SUCCESS.value) {
                     onComplete()
                 } else {
                     onError()
@@ -472,11 +456,11 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    fun share(table: PinTable, onComplete: (file: File) -> Unit, onError: () -> Unit) {
+    fun share(table: Table, onComplete: (file: File) -> Unit, onError: () -> Unit) {
         if (activeTable != null) return
         activeTable = table
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
+            if (!table.exists()) {
                 withContext(Dispatchers.Main) {
                     onError()
                     showErrorAndReset("Unable to share table.")
@@ -484,18 +468,15 @@ object VPinballManager : KoinComponent {
                 return@launch
             }
             try {
-                cacheDir.deleteRecursively()
-                cacheDir.mkdir()
-                val name = table.name.replace(Regex("[ ]"), "_")
-                val shareFile = File(cacheDir, "${name}.vpxz")
-                val status = vpinballJNI.VPinballCompress(table.basePath.absolutePath, shareFile.absolutePath)
+                val exportPath = vpinballJNI.VPinballExportTable(table.uuid)
                 withContext(Dispatchers.Main) {
-                    if (status == VPinballStatus.SUCCESS.value) {
-                        onComplete(shareFile)
+                    if (exportPath != null) {
+                        val exportFile = File(exportPath)
+                        onComplete(exportFile)
                         activeTable = null
                     } else {
                         onError()
-                        showErrorAndReset("Unable to share table.")
+                        showErrorAndReset("Failed to export table.")
                     }
                 }
             } catch (e: Exception) {
@@ -505,21 +486,18 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    fun play(table: PinTable) {
+    fun play(table: Table) {
         if (activeTable != null) return
         activeTable = table
         error = null
         CoroutineScope(Dispatchers.IO).launch {
-            if (!table.tableFile.exists()) {
-                showErrorAndReset("Unable to load table.")
-                return@launch
-            }
             if (loadValue(STANDALONE, "ResetLogOnPlay", true)) {
                 vpinballJNI.VPinballResetLog()
             }
             haptics = loadValue(STANDALONE, "Haptics", true)
             withContext(Dispatchers.Main) { activity.viewModel.loading(true, table) }
-            if (vpinballJNI.VPinballLoad(table.tableFile.absolutePath) == VPinballStatus.SUCCESS.value) {
+            // Load the table - C++ side handles validation for both normal and SAF paths
+            if (vpinballJNI.VPinballLoad(table.uuid) == VPinballStatus.SUCCESS.value) {
                 vpinballJNI.VPinballPlay()
             } else {
                 delay(500)
@@ -531,6 +509,14 @@ object VPinballManager : KoinComponent {
 
     fun stop() {
         vpinballJNI.VPinballStop()
+    }
+
+    fun fileExists(path: String): Boolean {
+        return vpinballJNI.VPinballFileExists(path)
+    }
+
+    fun prepareFileForViewing(path: String): String? {
+        return vpinballJNI.VPinballPrepareFileForViewing(path)
     }
 
     fun showError(message: String) {
@@ -545,120 +531,735 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    private fun handleTableList(): VPinballTablesData {
-        return try {
-            val tables = kotlinx.coroutines.runBlocking { pinTableRepository.getAllSorted(true).first() }
-            log(VPinballLogLevel.DEBUG, "handleTableList: Found ${tables.size} tables")
+    fun setWebLastUpdate() {
+        // Web server update removed
+    }
 
-            val tableInfoList = tables.map { table -> VPinballTableInfo(tableId = table.uuid, name = table.name) }
+    fun getTablesPath(): String {
+        return vpinballJNI.VPinballGetTablesPath()
+    }
 
-            VPinballTablesData(tables = tableInfoList, success = true)
-        } catch (e: Exception) {
-            log(VPinballLogLevel.ERROR, "handleTableList: Exception: ${e.message}")
-            VPinballTablesData(tables = emptyList(), success = false)
+    fun getCurrentTablesPath(): String {
+        return vpinballJNI.VPinballGetTablesPath()
+    }
+
+    fun isTablesPathSAF(): Boolean {
+        return getTablesPath().startsWith("content://")
+    }
+
+    fun logAvailableStoragePaths() {
+        log(VPinballLogLevel.INFO, "=== TESTING getExternalFilesDirs() ===")
+        val externalDirs = activity.getExternalFilesDirs(null)
+        log(VPinballLogLevel.INFO, "Found ${externalDirs.size} external storage locations:")
+        externalDirs.forEachIndexed { index, file ->
+            if (file != null) {
+                log(VPinballLogLevel.INFO, "  [$index] ${file.absolutePath}")
+                log(VPinballLogLevel.INFO, "       Exists: ${file.exists()}, CanWrite: ${file.canWrite()}")
+            } else {
+                log(VPinballLogLevel.INFO, "  [$index] null")
+            }
+        }
+        log(VPinballLogLevel.INFO, "=== END STORAGE TEST ===")
+    }
+
+    fun reloadTablesPath() {
+        log(VPinballLogLevel.INFO, "VPinballManager: reloadTablesPath() called")
+        CoroutineScope(Dispatchers.IO).launch {
+            val status = vpinballJNI.VPinballReloadTablesPath()
+            if (status == VPinballStatus.SUCCESS.value) {
+                log(VPinballLogLevel.INFO, "VPinballManager: Successfully reloaded tables path")
+            } else {
+                log(VPinballLogLevel.ERROR, "VPinballManager: Failed to reload tables path - status: $status")
+            }
         }
     }
 
-    private fun handleTableImport(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val filePath = eventData.path ?: ""
+    // ===== SAF (Storage Access Framework) Support =====
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
-            try {
-                val fileUri = Uri.fromFile(File(filePath))
-                var importSuccess = false
-                var importError = false
+    fun setExternalStorageUri(uri: Uri) {
+        log(VPinballLogLevel.INFO, "VPinballManager: setExternalStorageUri: $uri")
 
-                importUri(
-                    context = activity,
-                    uri = fileUri,
-                    onUpdate = { _, _ -> },
-                    onComplete = { uuid, path ->
-                        CoroutineScope(Dispatchers.IO).launch {
-                            try {
-                                val name = path.substringBeforeLast('.').replace(Regex("[_]"), " ")
-                                val now = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+        // Take persistent permission
+        try {
+            activity.contentResolver.takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            )
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "VPinballManager: Failed to take persistent permission: ${e.message}")
+            return
+        }
 
-                                val table = PinTable(uuid = uuid, name = name, path = path, createdAt = now, modifiedAt = now)
-                                pinTableRepository.insert(table)
+        // Save tree URI directly to TablesPath
+        saveValue(VPinballSettingsSection.STANDALONE, "TablesPath", uri.toString())
 
-                                withContext(Dispatchers.Main) {
-                                    importSuccess = true
-                                    vpinballJNI.VPinballSetWebServerUpdated()
-                                }
-                            } catch (e: Exception) {
-                                log(VPinballLogLevel.ERROR, "Failed to add imported table to database: ${e.message}")
-                                importError = true
-                            }
-                        }
-                    },
-                    onError = {
-                        log(VPinballLogLevel.ERROR, "Failed to import table from web server")
-                        importError = true
-                    },
-                )
+        log(VPinballLogLevel.INFO, "VPinballManager: External storage URI saved to TablesPath")
+    }
 
-                var attempts = 0
-                while (!importSuccess && !importError && attempts < 300) {
-                    delay(100)
-                    attempts++
+    fun getExternalStorageUri(): Uri? {
+        val tablesPath = getTablesPath()
+        return if (isTablesPathSAF()) {
+            Uri.parse(tablesPath).also {
+                log(VPinballLogLevel.INFO, "VPinballManager: External storage URI from TablesPath: $it")
+            }
+        } else {
+            null
+        }
+    }
+
+    fun clearExternalStorageUri() {
+        saveValue(VPinballSettingsSection.STANDALONE, "TablesPath", "")
+        log(VPinballLogLevel.INFO, "VPinballManager: Cleared TablesPath")
+    }
+
+    fun getExternalStorageDisplayPath(): String {
+        val uri = getExternalStorageUri() ?: return ""
+
+        try {
+            val docId = DocumentsContract.getTreeDocumentId(uri)
+            log(VPinballLogLevel.INFO, "VPinballManager: getExternalStorageDisplayPath - URI: $uri")
+            log(VPinballLogLevel.INFO, "VPinballManager: getExternalStorageDisplayPath - docId: $docId")
+
+            val split = docId.split(":")
+
+            if (split.size >= 2) {
+                val type = split[0]
+                val path = split[1]
+
+                val displayPath = when {
+                    type.equals("primary", ignoreCase = true) -> "/storage/emulated/0/$path"
+                    else -> "/storage/$type/$path"
                 }
 
-                eventData.success = importSuccess
-            } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to import table: ${e.message}")
-                eventData.success = false
+                log(VPinballLogLevel.INFO, "VPinballManager: getExternalStorageDisplayPath - result: $displayPath")
+                return displayPath
             }
+
+            log(VPinballLogLevel.WARN, "VPinballManager: getExternalStorageDisplayPath - returning docId: $docId")
+            return docId
+        } catch (e: Exception) {
+            log(VPinballLogLevel.WARN, "VPinballManager: Failed to parse URI: ${e.message}")
+            e.printStackTrace()
+            return uri.toString()
         }
     }
 
-    private fun handleTableRename(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val tableId = eventData.tableId ?: ""
-        val newName = eventData.newName ?: ""
+    // SAF file operations (called from C++ via JNI)
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
+    fun safWriteFile(relativePath: String, content: String): Boolean {
+        log(VPinballLogLevel.INFO, "SAF: writeFile: $relativePath (${content.length} bytes)")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: writeFile: No external storage URI set")
+            return false
+        }
+
+        return try {
+            val docUri = buildDocumentUri(uri, relativePath, createIfMissing = true)
+            if (docUri == null) {
+                log(VPinballLogLevel.ERROR, "SAF: writeFile: Failed to build document URI for: $relativePath")
+                return false
+            }
+
+            activity.contentResolver.openOutputStream(docUri, "wt")?.use { output ->
+                output.write(content.toByteArray())
+                output.flush()
+            }
+
+            log(VPinballLogLevel.INFO, "SAF: writeFile: Success")
+            true
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: writeFile: Exception: ${e.message}")
+            e.printStackTrace()
+            false
+        }
+    }
+
+    fun safReadFile(relativePath: String): String? {
+        log(VPinballLogLevel.INFO, "SAF: readFile: $relativePath")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: readFile: No external storage URI set")
+            return null
+        }
+
+        return try {
+            val docUri = buildDocumentUri(uri, relativePath)
+            if (docUri == null) {
+                log(VPinballLogLevel.WARN, "SAF: readFile: File not found: $relativePath")
+                return null
+            }
+
+            val content = activity.contentResolver.openInputStream(docUri)?.use { input ->
+                input.bufferedReader().readText()
+            }
+
+            log(VPinballLogLevel.INFO, "SAF: readFile: Read ${content?.length ?: 0} bytes")
+            content
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: readFile: Exception: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
+    fun safExists(relativePath: String): Boolean {
+        val uri = getExternalStorageUri() ?: return false
+        val docUri = buildDocumentUri(uri, relativePath)
+        val exists = docUri != null
+        log(VPinballLogLevel.INFO, "SAF: exists: $relativePath -> $exists")
+        return exists
+    }
+
+    fun safListFilesRecursive(extension: String): String {
+        log(VPinballLogLevel.INFO, "SAF: listFilesRecursive: extension=$extension")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: listFilesRecursive: No external storage URI set")
+            return "[]"
+        }
+
+        val results = mutableListOf<String>()
+
+        fun scanRecursive(docUri: Uri, currentPath: String = "") {
             try {
-                val table = pinTableRepository.getById(tableId).first()
-                val updatedTable =
-                    table.copy(
-                        name = newName,
-                        modifiedAt = kotlinx.datetime.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()),
+                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                    uri,
+                    DocumentsContract.getDocumentId(docUri)
+                )
+
+                activity.contentResolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE,
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID
+                    ),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val mimeIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                    val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(nameIndex)
+                        val mimeType = cursor.getString(mimeIndex)
+                        val documentId = cursor.getString(idIndex)
+
+                        if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                            // Recurse into subdirectory
+                            val childUri = DocumentsContract.buildDocumentUriUsingTree(uri, documentId)
+                            scanRecursive(childUri, "$currentPath$name/")
+                        } else if (name.endsWith(extension, ignoreCase = true)) {
+                            // Found matching file
+                            results.add("$currentPath$name")
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                log(VPinballLogLevel.ERROR, "SAF: scanRecursive: Exception in $currentPath: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+
+        // Start scanning from the root document URI
+        val treeDocumentId = DocumentsContract.getTreeDocumentId(uri)
+        val rootDocUri = DocumentsContract.buildDocumentUriUsingTree(uri, treeDocumentId)
+        scanRecursive(rootDocUri)
+
+        val jsonArray = JSONArray(results)
+        log(VPinballLogLevel.INFO, "SAF: listFilesRecursive: Found ${results.size} files")
+        return jsonArray.toString()
+    }
+
+    private fun buildDocumentUri(treeUri: Uri, relativePath: String, createIfMissing: Boolean = false): Uri? {
+        if (relativePath.isEmpty()) return treeUri
+
+        log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: path='$relativePath' create=$createIfMissing")
+
+        try {
+            // Start with the root document ID from the tree URI
+            val treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+            var currentUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocumentId)
+
+            val segments = relativePath.split("/").filter { it.isNotEmpty() }
+
+            log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: segments=${segments.joinToString("/")}")
+
+            for ((index, segment) in segments.withIndex()) {
+                val isLastSegment = (index == segments.size - 1)
+
+                // Query for this segment
+                val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                    treeUri,
+                    DocumentsContract.getDocumentId(currentUri)
+                )
+
+                var foundUri: Uri? = null
+
+                activity.contentResolver.query(
+                    childrenUri,
+                    arrayOf(
+                        DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                        DocumentsContract.Document.COLUMN_DOCUMENT_ID,
+                        DocumentsContract.Document.COLUMN_MIME_TYPE
+                    ),
+                    null,
+                    null,
+                    null
+                )?.use { cursor ->
+                    val nameIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+                    val idIndex = cursor.getColumnIndexOrThrow(DocumentsContract.Document.COLUMN_DOCUMENT_ID)
+
+                    while (cursor.moveToNext()) {
+                        val name = cursor.getString(nameIndex)
+                        if (name == segment) {
+                            val documentId = cursor.getString(idIndex)
+                            foundUri = DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+                            break
+                        }
+                    }
+                }
+
+                if (foundUri != null) {
+                    log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: Found segment '$segment'")
+                    currentUri = foundUri!!
+                } else if (createIfMissing) {
+                    // Create missing directory or file
+                    val mimeType = if (isLastSegment && segment.contains(".")) {
+                        "application/octet-stream" // File
+                    } else {
+                        DocumentsContract.Document.MIME_TYPE_DIR // Directory
+                    }
+
+                    log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: Creating '$segment' (type=$mimeType)")
+
+                    val newUri = DocumentsContract.createDocument(
+                        activity.contentResolver,
+                        currentUri,
+                        mimeType,
+                        segment
                     )
 
-                pinTableRepository.update(updatedTable)
-
-                eventData.success = true
-                vpinballJNI.VPinballSetWebServerUpdated()
-            } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to rename table: ${e.message}")
-                eventData.success = false
+                    if (newUri != null) {
+                        log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: Created '$segment' -> $newUri")
+                        currentUri = newUri
+                    } else {
+                        log(VPinballLogLevel.ERROR, "SAF: buildDocumentUri: Failed to create: $segment")
+                        return null
+                    }
+                } else {
+                    log(VPinballLogLevel.WARN, "SAF: buildDocumentUri: Segment '$segment' not found and create=false")
+                    return null
+                }
             }
+
+            log(VPinballLogLevel.INFO, "SAF: buildDocumentUri: Success -> $currentUri")
+            return currentUri
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: buildDocumentUri: Exception: ${e.message}")
+            e.printStackTrace()
+            return null
         }
     }
 
-    private fun handleTableDelete(data: Any?) {
-        val eventData = data as? VPinballTableEventData ?: return
-        val tableId = eventData.tableId ?: ""
+    fun safCopyFile(sourcePath: String, destPath: String): Boolean {
+        log(VPinballLogLevel.INFO, "SAF: copyFile: $sourcePath -> $destPath")
 
-        kotlinx.coroutines.runBlocking(Dispatchers.Main) {
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: copyFile: No external storage URI set")
+            return false
+        }
+
+        try {
+            val sourceUri = buildDocumentUri(uri, sourcePath, createIfMissing = false)
+            if (sourceUri == null) {
+                log(VPinballLogLevel.ERROR, "SAF: copyFile: Source not found: $sourcePath")
+                return false
+            }
+
+            val destUri = buildDocumentUri(uri, destPath, createIfMissing = true)
+            if (destUri == null) {
+                log(VPinballLogLevel.ERROR, "SAF: copyFile: Failed to create destination: $destPath")
+                return false
+            }
+
+            activity.contentResolver.openInputStream(sourceUri)?.use { input ->
+                activity.contentResolver.openOutputStream(destUri, "wt")?.use { output ->
+                    input.copyTo(output)
+                    return true
+                }
+            }
+
+            log(VPinballLogLevel.ERROR, "SAF: copyFile: Failed to open streams")
+            return false
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: copyFile: Exception: ${e.message}")
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun safCopySAFToFilesystem(safRelativePath: String, destPath: String): Boolean {
+        log(VPinballLogLevel.INFO, "SAF: copySAFToFilesystem: $safRelativePath -> $destPath")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: copySAFToFilesystem: No external storage URI")
+            return false
+        }
+
+        // Track progress
+        var totalFiles = 0
+        var copiedFiles = 0
+
+        // First pass: count total files
+        fun countFiles(srcRelPath: String): Int {
+            val srcUri = buildDocumentUri(uri, srcRelPath) ?: return 0
+            var count = 0
+
             try {
-                val table = pinTableRepository.getById(tableId).first()
+                activity.contentResolver.query(
+                    srcUri,
+                    arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE),
+                    null, null, null
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                        val mimeType = cursor.getString(mimeIndex)
 
-                table.deleteFiles()
+                        if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                                uri,
+                                DocumentsContract.getDocumentId(srcUri)
+                            )
 
-                pinTableRepository.delete(table)
+                            activity.contentResolver.query(
+                                childrenUri,
+                                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                                null, null, null
+                            )?.use { childCursor ->
+                                val nameIndex = childCursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
 
-                eventData.success = true
-                vpinballJNI.VPinballSetWebServerUpdated()
+                                while (childCursor.moveToNext()) {
+                                    val name = childCursor.getString(nameIndex)
+                                    val childPath = if (srcRelPath.isEmpty()) name else "$srcRelPath/$name"
+                                    count += countFiles(childPath)
+                                }
+                            }
+                        } else {
+                            count = 1
+                        }
+                    }
+                }
             } catch (e: Exception) {
-                log(VPinballLogLevel.ERROR, "Failed to delete table: ${e.message}")
-                eventData.success = false
+                log(VPinballLogLevel.ERROR, "SAF: countFiles: Exception: ${e.message}")
             }
+
+            return count
+        }
+
+        // Count total files first
+        totalFiles = countFiles(safRelativePath)
+        log(VPinballLogLevel.INFO, "SAF: copySAFToFilesystem: Total files to copy: $totalFiles")
+
+        // Send initial progress event
+        sendCopyProgressEvent(0, totalFiles)
+
+        fun copyRecursive(srcRelPath: String, dstPath: String): Boolean {
+            val srcUri = buildDocumentUri(uri, srcRelPath)
+            if (srcUri == null) {
+                log(VPinballLogLevel.ERROR, "SAF: copySAFToFilesystem: Source not found: $srcRelPath")
+                return false
+            }
+
+            try {
+                activity.contentResolver.query(
+                    srcUri,
+                    arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE),
+                    null, null, null
+                )?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                        val mimeType = cursor.getString(mimeIndex)
+
+                        if (mimeType == DocumentsContract.Document.MIME_TYPE_DIR) {
+                            java.io.File(dstPath).mkdirs()
+
+                            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                                uri,
+                                DocumentsContract.getDocumentId(srcUri)
+                            )
+
+                            activity.contentResolver.query(
+                                childrenUri,
+                                arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME),
+                                null, null, null
+                            )?.use { childCursor ->
+                                val nameIndex = childCursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+
+                                while (childCursor.moveToNext()) {
+                                    val name = childCursor.getString(nameIndex)
+                                    val childSrcPath = if (srcRelPath.isEmpty()) name else "$srcRelPath/$name"
+                                    val childDstPath = "$dstPath/$name"
+
+                                    if (!copyRecursive(childSrcPath, childDstPath)) {
+                                        return false
+                                    }
+                                }
+                            }
+
+                            return true
+                        } else {
+                            activity.contentResolver.openInputStream(srcUri)?.use { input ->
+                                java.io.FileOutputStream(dstPath).use { output ->
+                                    val bytes = input.copyTo(output)
+                                    log(VPinballLogLevel.INFO, "SAF: copySAFToFilesystem: Copied $bytes bytes: $srcRelPath -> $dstPath")
+                                }
+                            }
+                            copiedFiles++
+                            sendCopyProgressEvent(copiedFiles, totalFiles)
+                            return true
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                log(VPinballLogLevel.ERROR, "SAF: copySAFToFilesystem: Exception: ${e.message}")
+                return false
+            }
+
+            return false
+        }
+
+        val result = copyRecursive(safRelativePath, destPath)
+
+        // Send completion event
+        if (result) {
+            activity.runOnUiThread {
+                activity.viewModel.progress(100)
+                activity.viewModel.status("Copy complete!")
+            }
+        }
+
+        return result
+    }
+
+    fun safCopyDirectory(sourcePath: String, destPath: String): Boolean {
+        log(VPinballLogLevel.INFO, "SAF: copyDirectory: $sourcePath -> $destPath")
+
+        try {
+            val sourceFile = java.io.File(sourcePath)
+            if (!sourceFile.exists()) {
+                log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Source doesn't exist: $sourcePath")
+                return false
+            }
+
+            // Handle both files and directories
+            if (sourceFile.isFile) {
+                log(VPinballLogLevel.INFO, "SAF: copyDirectory: Source is a file, copying as single file")
+                val uri = getExternalStorageUri()
+                if (uri == null) {
+                    log(VPinballLogLevel.ERROR, "SAF: copyDirectory: No external storage URI")
+                    return false
+                }
+
+                val destUri = buildDocumentUri(uri, destPath, createIfMissing = true)
+                if (destUri == null) {
+                    log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Failed to create: $destPath")
+                    return false
+                }
+
+                try {
+                    val fileSize = sourceFile.length()
+                    log(VPinballLogLevel.INFO, "SAF: copyDirectory: Copying file (${fileSize} bytes)")
+
+                    java.io.FileInputStream(sourceFile).use { input ->
+                        activity.contentResolver.openOutputStream(destUri, "w")?.use { output ->
+                            val bytesCopied = input.copyTo(output)
+                            output.flush()
+                            log(VPinballLogLevel.INFO, "SAF: copyDirectory: Copied $bytesCopied bytes")
+                            if (bytesCopied != fileSize) {
+                                log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Size mismatch! Expected $fileSize, got $bytesCopied")
+                                return false
+                            }
+                        } ?: run {
+                            log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Failed to open output stream")
+                            return false
+                        }
+                    }
+                    log(VPinballLogLevel.INFO, "SAF: copyDirectory: Successfully copied file: $destPath")
+                    return true
+                } catch (e: Exception) {
+                    log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Failed to copy file: ${e.message}")
+                    e.printStackTrace()
+                    return false
+                }
+            }
+
+            if (!sourceFile.isDirectory) {
+                log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Source is neither file nor directory: $sourcePath")
+                return false
+            }
+
+            fun copyRecursive(srcFile: java.io.File, destRelativePath: String): Boolean {
+                if (srcFile.isDirectory) {
+                    val children = srcFile.listFiles() ?: emptyArray()
+                    for (child in children) {
+                        val childDestPath = if (destRelativePath.isEmpty()) {
+                            child.name
+                        } else {
+                            "$destRelativePath/${child.name}"
+                        }
+                        if (!copyRecursive(child, childDestPath)) {
+                            return false
+                        }
+                    }
+                    return true
+                } else {
+                    val uri = getExternalStorageUri()
+                    if (uri == null) {
+                        log(VPinballLogLevel.ERROR, "SAF: copyDirectory: No external storage URI")
+                        return false
+                    }
+
+                    val destUri = buildDocumentUri(uri, destRelativePath, createIfMissing = true)
+                    if (destUri == null) {
+                        log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Failed to create: $destRelativePath")
+                        return false
+                    }
+
+                    try {
+                        java.io.FileInputStream(srcFile).use { input ->
+                            activity.contentResolver.openOutputStream(destUri, "wt")?.use { output ->
+                                input.copyTo(output)
+                            } ?: return false
+                        }
+                        log(VPinballLogLevel.INFO, "SAF: copyDirectory: Copied file: $destRelativePath")
+                        return true
+                    } catch (e: Exception) {
+                        log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Failed to copy file: ${e.message}")
+                        return false
+                    }
+                }
+            }
+
+            return copyRecursive(sourceFile, destPath)
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: copyDirectory: Exception: ${e.message}")
+            e.printStackTrace()
+            return false
         }
     }
 
-    fun setWebLastUpdate() {
-        vpinballJNI.VPinballSetWebServerUpdated()
+    fun safDelete(relativePath: String): Boolean {
+        log(VPinballLogLevel.INFO, "SAF: delete: $relativePath")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: delete: No external storage URI")
+            return false
+        }
+
+        val docUri = buildDocumentUri(uri, relativePath)
+        if (docUri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: delete: Path not found: $relativePath")
+            return false
+        }
+
+        return try {
+            val deleted = DocumentsContract.deleteDocument(activity.contentResolver, docUri)
+            log(VPinballLogLevel.INFO, "SAF: delete: Result=$deleted for $relativePath")
+            deleted
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: delete: Exception: ${e.message}")
+            false
+        }
+    }
+
+    fun safIsDirectory(relativePath: String): Boolean {
+        val uri = getExternalStorageUri() ?: return false
+        val docUri = buildDocumentUri(uri, relativePath) ?: return false
+
+        return try {
+            activity.contentResolver.query(
+                docUri,
+                arrayOf(DocumentsContract.Document.COLUMN_MIME_TYPE),
+                null, null, null
+            )?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val mimeIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_MIME_TYPE)
+                    val mimeType = cursor.getString(mimeIndex)
+                    val isDir = mimeType == DocumentsContract.Document.MIME_TYPE_DIR
+                    log(VPinballLogLevel.INFO, "SAF: isDirectory: $relativePath -> $isDir (mime=$mimeType)")
+                    isDir
+                } else {
+                    log(VPinballLogLevel.ERROR, "SAF: isDirectory: No results for $relativePath")
+                    false
+                }
+            } ?: false
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: isDirectory: Exception: ${e.message}")
+            false
+        }
+    }
+
+    fun safListDirectory(relativePath: String): String {
+        log(VPinballLogLevel.INFO, "SAF: listDirectory: path=$relativePath")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: listDirectory: No external storage URI")
+            return "[]"
+        }
+
+        val docUri = if (relativePath.isEmpty()) {
+            val treeDocumentId = DocumentsContract.getTreeDocumentId(uri)
+            DocumentsContract.buildDocumentUriUsingTree(uri, treeDocumentId)
+        } else {
+            buildDocumentUri(uri, relativePath)
+        }
+
+        if (docUri == null) {
+            log(VPinballLogLevel.ERROR, "SAF: listDirectory: Path not found: $relativePath")
+            return "[]"
+        }
+
+        val results = mutableListOf<String>()
+
+        try {
+            val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(
+                uri,
+                DocumentsContract.getDocumentId(docUri)
+            )
+
+            activity.contentResolver.query(
+                childrenUri,
+                arrayOf(
+                    DocumentsContract.Document.COLUMN_DISPLAY_NAME,
+                    DocumentsContract.Document.COLUMN_MIME_TYPE
+                ),
+                null, null, null
+            )?.use { cursor ->
+                val nameIndex = cursor.getColumnIndex(DocumentsContract.Document.COLUMN_DISPLAY_NAME)
+
+                while (cursor.moveToNext()) {
+                    val name = cursor.getString(nameIndex)
+                    val childPath = if (relativePath.isEmpty()) name else "$relativePath/$name"
+                    results.add(childPath)
+                }
+            }
+
+            log(VPinballLogLevel.INFO, "SAF: listDirectory: Found ${results.size} entries")
+        } catch (e: Exception) {
+            log(VPinballLogLevel.ERROR, "SAF: listDirectory: Exception: ${e.message}")
+        }
+
+        return JSONArray(results).toString()
     }
 }

@@ -9,6 +9,11 @@
 
 #include <thread>
 
+#if defined(__APPLE__)
+#include <pthread.h>
+#include <sys/qos.h>
+#endif
+
 #if !defined(DISABLE_FORCE_NVIDIA_OPTIMUS) && defined(ENABLE_DX9)
 #include "nvapi/nvapi.h"
 #endif
@@ -45,7 +50,7 @@
 #endif
 
 #ifdef __LIBVPINBALL__
-#include "standalone/VPinballLib.h"
+#include "lib/src/VPinballLib.h"
 #endif
 
 
@@ -342,6 +347,12 @@ marker_series series;
 void RenderDevice::RenderThread(RenderDevice* rd, const bgfx::Init& initReq)
 {
    SetThreadName("RenderThread"s);
+
+#if defined(__APPLE__)
+   // Set render thread to User-interactive QoS to match main thread and prevent priority inversion
+   pthread_set_qos_class_self_np(QOS_CLASS_USER_INTERACTIVE, 0);
+#endif
+
    bgfx::Init init = initReq;
 
    // If using OpenGl on a WCG display, then create the OpenGL WCG context through SDL since BGFX does not support HDR10 under OpenGl
@@ -757,7 +768,7 @@ RenderDevice::RenderDevice(
    #elif BX_PLATFORM_OSX
    init.platformData.nwh = SDL_GetRenderMetalLayer(SDL_CreateRenderer(m_outputWnd[0]->GetCore(), "Metal"));
    #elif BX_PLATFORM_IOS
-   init.platformData.nwh = SDL_GetRenderMetalLayer(SDL_CreateRenderer(m_outputWnd[0]->GetCore(), "Metal"));
+   init.platformData.nwh = VPinballLib::VPinballLib::Instance().GetMetalLayer();
    #elif BX_PLATFORM_ANDROID
    init.platformData.nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(m_outputWnd[0]->GetCore()), SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, NULL);
    #elif BX_PLATFORM_WINDOWS
@@ -1438,7 +1449,7 @@ void RenderDevice::AddWindow(VPX::Window* wnd)
 #elif BX_PLATFORM_OSX
    nwh = SDL_GetRenderMetalLayer(SDL_CreateRenderer(sdlWnd, "Metal"));
 #elif BX_PLATFORM_IOS
-   nwh = SDL_GetRenderMetalLayer(SDL_CreateRenderer(sdlWnd, "Metal"));
+   nwh = VPinballLib::VPinballLib::Instance().GetMetalLayer();
 #elif BX_PLATFORM_ANDROID
    nwh = SDL_GetPointerProperty(SDL_GetWindowProperties(sdlWnd), SDL_PROP_WINDOW_ANDROID_WINDOW_POINTER, NULL);
 #elif BX_PLATFORM_WINDOWS

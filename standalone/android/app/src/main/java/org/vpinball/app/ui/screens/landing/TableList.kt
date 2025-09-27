@@ -45,7 +45,7 @@ import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import org.vpinball.app.TableListMode
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.jni.VPinballLogLevel
 import org.vpinball.app.ui.screens.common.RoundedCard
 import org.vpinball.app.ui.theme.VpxRed
@@ -57,21 +57,21 @@ import org.vpinball.app.util.updateImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TablesList(
-    tables: List<PinTable>,
+    tables: List<Table>,
     mode: TableListMode,
-    onPlay: (table: PinTable) -> Unit,
-    onRename: (table: PinTable, name: String) -> Unit,
-    onChangeArtwork: (table: PinTable) -> Unit,
-    onViewScript: (table: PinTable) -> Unit,
-    onShare: (table: PinTable) -> Unit,
-    onDelete: (table: PinTable) -> Unit,
+    onPlay: (table: Table) -> Unit,
+    onRename: (table: Table, name: String) -> Unit,
+    onChangeArtwork: (table: Table) -> Unit,
+    onViewScript: (table: Table) -> Unit,
+    onShare: (table: Table) -> Unit,
+    onDelete: (table: Table) -> Unit,
     modifier: Modifier = Modifier,
     lazyGridState: LazyGridState = rememberLazyGridState(),
     lazyListState: LazyListState = rememberLazyListState(),
 ) {
     val context = LocalContext.current
 
-    var currentTable by remember { mutableStateOf<PinTable?>(null) }
+    var currentTable by remember { mutableStateOf<Table?>(null) }
 
     var showRenameAlertDialog by remember { mutableStateOf(false) }
     var renameName by remember { mutableStateOf(TextFieldValue("")) }

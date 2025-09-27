@@ -9,21 +9,14 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlin.time.Duration.Companion.milliseconds
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.datetime.Clock
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import org.vpinball.app.data.entity.PinTable
-import org.vpinball.app.data.repository.PinTableRepository
+import org.vpinball.app.jni.Table
 
-class VPinballViewModel(private val repository: PinTableRepository) : ViewModel() {
+class VPinballViewModel : ViewModel() {
     private val _state = MutableStateFlow(VPinballUiState())
     val state: StateFlow<VPinballUiState> = _state.asStateFlow()
 
@@ -59,7 +52,7 @@ class VPinballViewModel(private val repository: PinTableRepository) : ViewModel(
         status.value = value ?: ""
     }
 
-    fun loading(isLoading: Boolean, table: PinTable? = state.value.table) {
+    fun loading(isLoading: Boolean, table: Table? = state.value.table) {
         _state.update { it.copy(loading = isLoading, table = table, title = table?.name ?: "", error = null) }
     }
 
@@ -76,15 +69,7 @@ class VPinballViewModel(private val repository: PinTableRepository) : ViewModel(
     }
 
     fun stopped() {
-        _state.update { it.copy(loading = false, playing = false, liveUI = false, table = null) }
-    }
-
-    fun toggleLiveUI() {
-        _state.update { it.copy(liveUI = !it.liveUI) }
-    }
-
-    fun isLiveUI(): Boolean {
-        return _state.value.liveUI
+        _state.update { it.copy(loading = false, playing = false, table = null) }
     }
 
     fun touchInstructions(isVisible: Boolean) {
@@ -93,54 +78,6 @@ class VPinballViewModel(private val repository: PinTableRepository) : ViewModel(
 
     fun touchOverlay(isVisible: Boolean) {
         _state.update { it.copy(touchOverlay = isVisible) }
-    }
-
-    fun saveImportTable(uuid: String, path: String): Flow<PinTable> {
-        return flow {
-            val existingTable = repository.getById(uuid).firstOrNull()
-            if (existingTable == null) {
-                val name = path.substringBeforeLast('.').replace(Regex("[_]"), " ")
-                val newTable = PinTable(uuid, name, path)
-                repository.insert(newTable)
-                emit(newTable)
-            } else {
-                emit(existingTable)
-            }
-        }
-    }
-
-    fun renameTable(table: PinTable, name: String): Flow<Boolean> {
-        return flow {
-            val result = runCatching {
-                repository.update(table.copy(name = name, modifiedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())))
-            }
-            emit(result.isSuccess)
-            if (result.isFailure) {
-                result.exceptionOrNull()?.printStackTrace()
-            }
-        }
-    }
-
-    fun markTableAsModified(table: PinTable): Flow<Boolean> {
-        return flow {
-            val result = runCatching {
-                repository.update(table.copy(modifiedAt = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())))
-            }
-            emit(result.isSuccess)
-            if (result.isFailure) {
-                result.exceptionOrNull()?.printStackTrace()
-            }
-        }
-    }
-
-    fun deleteTable(table: PinTable): Flow<Boolean> {
-        return flow {
-            val result = runCatching { repository.delete(table) }
-            emit(result.isSuccess)
-            if (result.isFailure) {
-                result.exceptionOrNull()?.printStackTrace()
-            }
-        }
     }
 
     companion object {

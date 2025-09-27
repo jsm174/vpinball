@@ -1,11 +1,11 @@
 package org.vpinball.app
 
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 
 data class VPinballUiState(
     val splash: Boolean = true,
     val loading: Boolean = false,
-    var table: PinTable? = null,
+    var table: Table? = null,
     var title: String? = null,
     var progress: Int = 0,
     var status: String? = null,
@@ -13,5 +13,4 @@ data class VPinballUiState(
     val playing: Boolean = false,
     var touchInstructions: Boolean = false,
     var touchOverlay: Boolean = false,
-    var liveUI: Boolean = false,
 )

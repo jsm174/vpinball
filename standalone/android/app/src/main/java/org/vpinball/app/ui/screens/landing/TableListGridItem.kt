@@ -46,21 +46,20 @@ import kotlinx.coroutines.withContext
 import org.vpinball.app.ArtworkState
 import org.vpinball.app.R
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.util.drawWithGradient
-import org.vpinball.app.util.hasImage
 import org.vpinball.app.util.loadImage
 
 @Composable
 fun TableListGridItem(
-    table: PinTable,
-    onPlay: (table: PinTable) -> Unit,
-    onRename: (table: PinTable) -> Unit,
-    onChangeArtwork: (table: PinTable) -> Unit,
-    onViewScript: (table: PinTable) -> Unit,
-    onShare: (table: PinTable) -> Unit,
-    onReset: (table: PinTable) -> Unit,
-    onDelete: (table: PinTable) -> Unit,
+    table: Table,
+    onPlay: (table: Table) -> Unit,
+    onRename: (table: Table) -> Unit,
+    onChangeArtwork: (table: Table) -> Unit,
+    onViewScript: (table: Table) -> Unit,
+    onShare: (table: Table) -> Unit,
+    onReset: (table: Table) -> Unit,
+    onDelete: (table: Table) -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
 
@@ -73,11 +72,7 @@ fun TableListGridItem(
             if (bitmap != null) {
                 ArtworkState.IMAGE_LOADED
             } else {
-                if (table.hasImage()) {
-                    ArtworkState.LOADING_IMAGE
-                } else {
-                    ArtworkState.NO_IMAGE
-                }
+                ArtworkState.NO_IMAGE
             }
         }
     }

@@ -19,10 +19,6 @@
 #include <locale>
 #include <codecvt>
 
-#ifdef __ANDROID__
-#include <SDL3/SDL_main.h>
-#endif
-
 #ifdef __STANDALONE__
 #include <SDL3_ttf/SDL_ttf.h>
 #include <filesystem>
@@ -235,20 +231,10 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, 
    SDL_Quit();
 
    PLOGI << "Closing VPX...\n\n";
-   #if (defined(__STANDALONE__) && (defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__))
-   exit(retval);
-   #endif
    return retval;
 }
 
-#ifdef __STANDALONE__
-#ifdef __ANDROID__
-int main(int argc, char** argv) {
-   while(true)
-      std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-   return 0;
-}
-#elif ((defined(__APPLE__) && defined(TARGET_OS_TV) && TARGET_OS_TV) || defined(__linux__))
+#if defined(__STANDALONE__) && defined(__linux__) && !defined(__ANDROID__)
 extern int g_argc;
 extern char **g_argv;
 int main(int argc, char** argv) {
@@ -256,5 +242,4 @@ int main(int argc, char** argv) {
    g_argv = argv;
    return WinMain(NULL, NULL, NULL, 0);
 }
-#endif
 #endif

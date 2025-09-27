@@ -6,12 +6,17 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.vpinball.app.VPinballManager
 import org.vpinball.app.jni.VPinballAAFactor
 import org.vpinball.app.jni.VPinballAO
 import org.vpinball.app.jni.VPinballExternalDMD
 import org.vpinball.app.jni.VPinballFXAA
 import org.vpinball.app.jni.VPinballGfxBackend
+import org.vpinball.app.jni.VPinballLogLevel
 import org.vpinball.app.jni.VPinballMSAASamples
 import org.vpinball.app.jni.VPinballMaxTexDimension
 import org.vpinball.app.jni.VPinballReflectionMode
@@ -42,10 +47,13 @@ class SettingsViewModel : ViewModel() {
     var renderingModeOverride by mutableStateOf(false)
         private set
 
-    var liveUIOverride by mutableStateOf(false)
+    var gfxBackend by mutableStateOf(VPinballGfxBackend.OPENGLES)
         private set
 
-    var gfxBackend by mutableStateOf(VPinballGfxBackend.OPENGLES)
+    var useExternalStorage by mutableStateOf(false)
+        private set
+
+    var currentTablesPath by mutableStateOf("")
         private set
 
     // External DMD
@@ -190,8 +198,22 @@ class SettingsViewModel : ViewModel() {
 
         haptics = VPinballManager.loadValue(STANDALONE, "Haptics", true)
         renderingModeOverride = (VPinballManager.loadValue(STANDALONE, "RenderingModeOverride", 2) == 2)
-        liveUIOverride = VPinballManager.loadValue(STANDALONE, "LiveUIOverride", true)
         gfxBackend = VPinballGfxBackend.fromString(VPinballManager.loadValue(PLAYER, "GfxBackend", VPinballGfxBackend.OPENGLES.value))
+
+        // Storage - check if external storage (SAF) is configured
+        VPinballManager.logAvailableStoragePaths()
+
+        val externalStorageUri = VPinballManager.getExternalStorageUri()
+        useExternalStorage = externalStorageUri != null
+
+        if (useExternalStorage) {
+            val displayPath = VPinballManager.getExternalStorageDisplayPath()
+            currentTablesPath = if (displayPath.isNotEmpty()) displayPath else "External Storage (SAF)"
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Using external storage: $currentTablesPath")
+        } else {
+            currentTablesPath = VPinballManager.getCurrentTablesPath()
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Using internal storage: $currentTablesPath")
+        }
 
         // External DMD
 
@@ -293,14 +315,48 @@ class SettingsViewModel : ViewModel() {
         VPinballManager.saveValue(STANDALONE, "RenderingModeOverride", if (renderingModeOverride) 2 else -1)
     }
 
-    fun handleLiveUIOverride(value: Boolean) {
-        liveUIOverride = value
-        VPinballManager.saveValue(STANDALONE, "LiveUIOverride", liveUIOverride)
-    }
-
     fun handleGfxBackend(value: VPinballGfxBackend) {
         gfxBackend = value
         VPinballManager.saveValue(PLAYER, "GfxBackend", value.value)
+    }
+
+    fun handleExternalStorageUri(uri: android.net.Uri) {
+        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: handleExternalStorageUri: $uri")
+
+        // Set the URI in VPinballManager (takes persistent permission and saves to INI)
+        VPinballManager.setExternalStorageUri(uri)
+        useExternalStorage = true
+
+        // Update display path immediately
+        val displayPath = VPinballManager.getExternalStorageDisplayPath()
+        currentTablesPath = if (displayPath.isNotEmpty()) displayPath else "External Storage (SAF)"
+        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: External storage path: $currentTablesPath")
+
+        // Reload tables from new location
+        CoroutineScope(Dispatchers.IO).launch {
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reloading tables from SAF location...")
+            val status = VPinballManager.vpinballJNI.VPinballReloadTablesPath()
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reload status: $status")
+        }
+    }
+
+    fun handleClearExternalStorage() {
+        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: handleClearExternalStorage")
+
+        VPinballManager.clearExternalStorageUri()
+        useExternalStorage = false
+
+        // Reload tables from internal storage
+        CoroutineScope(Dispatchers.IO).launch {
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reloading tables from internal storage...")
+            val status = VPinballManager.vpinballJNI.VPinballReloadTablesPath()
+            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reload status: $status")
+
+            withContext(Dispatchers.Main) {
+                currentTablesPath = VPinballManager.getCurrentTablesPath()
+                VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: External storage disabled, using: $currentTablesPath")
+            }
+        }
     }
 
     // External DMD

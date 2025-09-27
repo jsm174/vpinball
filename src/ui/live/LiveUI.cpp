@@ -65,7 +65,7 @@ static void SetupImGuiStyle(const float overall_alpha)
    style.ChildBorderSize = 1.0f;
    style.PopupRounding = 4.0f;
    style.PopupBorderSize = 1.0f;
-   style.FramePadding = ImVec2(4.0f, 3.0f);
+   style.FramePadding = ImVec2(4.0f, 4.0f);
    style.FrameRounding = 2.5f;
    style.FrameBorderSize = 0.0f;
    style.ItemSpacing = ImVec2(8.0f, 4.0f);
@@ -75,7 +75,7 @@ static void SetupImGuiStyle(const float overall_alpha)
    style.ColumnsMinSpacing = 6.0f;
    style.ScrollbarSize = 11.0f;
    style.ScrollbarRounding = 2.5f;
-   style.GrabMinSize = 10.0f;
+   style.GrabMinSize = 12.0f;
    style.GrabRounding = 2.0f;
    style.TabRounding = 3.5f;
    style.TabBorderSize = 0.0f;
@@ -86,9 +86,9 @@ static void SetupImGuiStyle(const float overall_alpha)
 
    style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
    style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.592f, 0.592f, 0.592f, overall_alpha);
-   style.Colors[ImGuiCol_WindowBg] = ImVec4(0.145f, 0.145f, 0.149f, overall_alpha);
+   style.Colors[ImGuiCol_WindowBg] = ImVec4(0.08f, 0.08f, 0.08f, overall_alpha);
    style.Colors[ImGuiCol_ChildBg] = ImVec4(0.145f, 0.145f, 0.149f, overall_alpha);
-   style.Colors[ImGuiCol_PopupBg] = ImVec4(0.145f, 0.145f, 0.149f, overall_alpha);
+   style.Colors[ImGuiCol_PopupBg] = ImVec4(0.08f, 0.08f, 0.08f, overall_alpha);
    style.Colors[ImGuiCol_Border] = ImVec4(0.306f, 0.306f, 0.306f, overall_alpha);
    style.Colors[ImGuiCol_BorderShadow] = ImVec4(0.306f, 0.306f, 0.306f, overall_alpha);
    style.Colors[ImGuiCol_FrameBg] = ImVec4(0.2f, 0.2f, 0.216f, overall_alpha);
@@ -103,8 +103,8 @@ static void SetupImGuiStyle(const float overall_alpha)
    style.Colors[ImGuiCol_ScrollbarGrabHovered] = ImVec4(0.353f, 0.353f, 0.373f, overall_alpha);
    style.Colors[ImGuiCol_ScrollbarGrabActive] = ImVec4(0.353f, 0.353f, 0.373f, overall_alpha);
    style.Colors[ImGuiCol_CheckMark] = ImVec4(0.0f, 0.467f, 0.784f, overall_alpha);
-   style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.114f, 0.592f, 0.925f, overall_alpha);
-   style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.0f, 0.467f, 0.784f, overall_alpha);
+   style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.8f, 0.8f, 0.8f, overall_alpha);
+   style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(1.0f, 1.0f, 1.0f, overall_alpha);
    style.Colors[ImGuiCol_Button] = ImVec4(0.2f, 0.2f, 0.216f, overall_alpha);
    style.Colors[ImGuiCol_ButtonHovered] = ImVec4(0.114f, 0.592f, 0.925f, overall_alpha);
    style.Colors[ImGuiCol_ButtonActive] = ImVec4(0.114f, 0.592f, 0.925f, overall_alpha);
@@ -177,7 +177,7 @@ LiveUI::LiveUI(RenderDevice *const rd)
       // On macOS/iOS, keep m_dpi at 1.0f. ImGui_ImplSDL3_NewFrame applies a 2.0f DisplayFramebufferScale
       // for SDL_WINDOW_HIGH_PIXEL_DENSITY windows. A m_dpi of 2.0 would cause the UI to scale at 400%.
       // See: https://wiki.libsdl.org/SDL3/README/highdpi
-      m_dpi = SDL_GetWindowDisplayScale(m_player->m_playfieldWnd->GetCore()) / SDL_GetWindowPixelDensity(m_player->m_playfieldWnd->GetCore());
+      m_dpi = (SDL_GetWindowDisplayScale(m_player->m_playfieldWnd->GetCore()) / SDL_GetWindowPixelDensity(m_player->m_playfieldWnd->GetCore())) * 1.5f;
    }
    m_dpi = min(m_dpi, 10.f); // To avoid texture size overflows
    m_perfUI.SetDPI(m_dpi);
@@ -558,11 +558,6 @@ void LiveUI::UpdateTouchUI()
 {
    if (!m_player->m_supportsTouch)
       return;
-
-#ifdef __LIBVPINBALL__
-   if (m_player->m_liveUIOverride)
-      return;
-#endif
 
    if (!g_pvp->m_settings.LoadValueWithDefault(Settings::Player, "TouchOverlay"s, false))
       return;

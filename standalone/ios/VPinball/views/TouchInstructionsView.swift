@@ -85,8 +85,6 @@ struct TouchInstructionsView: View {
     }
 
     func handleAppear() {
-        vpinballManager.sdlUIWindow?.isUserInteractionEnabled = false
-
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             let totalGroupDelay = Double(VPinballTouchAreas.count) * (scaleDuration + holdDuration + scaleDuration + scaleDuration)
 
@@ -114,8 +112,6 @@ struct TouchInstructionsView: View {
                 }
 
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    vpinballManager.sdlUIWindow?.isUserInteractionEnabled = true
-
                     withAnimation {
                         vpinballViewModel.showStatusHUD(icon: "arcade-button-svgrepo-com",
                                                         title: "Launch Ball !",

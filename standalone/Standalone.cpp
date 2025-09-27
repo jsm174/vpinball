@@ -4,7 +4,7 @@
 #include <csignal>
 
 #ifdef __LIBVPINBALL__
-#include "VPinballLib.h"
+#include "lib/src/VPinballLib.h"
 #endif
 
 void OnSignalHandler(int signum)

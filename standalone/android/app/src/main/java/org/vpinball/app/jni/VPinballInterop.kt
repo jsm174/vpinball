@@ -1,5 +1,9 @@
 package org.vpinball.app.jni
 
+import java.io.File
+import kotlinx.serialization.Serializable
+import org.vpinball.app.VPinballManager
+
 interface VPinballDisplayText {
     val text: String
 }
@@ -206,22 +210,16 @@ enum class VPinballEvent(val value: Int) {
     LOADING_COLLECTIONS(6),
     PLAY(7),
     CREATING_PLAYER(8),
-    WINDOW_CREATED(9),
-    PRERENDERING(10),
-    PLAYER_STARTED(11),
-    RUMBLE(12),
-    SCRIPT_ERROR(13),
-    LIVE_UI_TOGGLE(14),
-    LIVE_UI_UPDATE(15),
-    PLAYER_CLOSING(16),
-    PLAYER_CLOSED(17),
-    STOPPED(18),
-    WEB_SERVER(19),
-    CAPTURE_SCREENSHOT(20),
-    TABLE_LIST(21),
-    TABLE_IMPORT(22),
-    TABLE_RENAME(23),
-    TABLE_DELETE(24);
+    PRERENDERING(9),
+    PLAYER_STARTED(10),
+    RUMBLE(11),
+    SCRIPT_ERROR(12),
+    PLAYER_CLOSING(13),
+    PLAYER_CLOSED(14),
+    STOPPED(15),
+    WEB_SERVER(16),
+    CAPTURE_SCREENSHOT(17),
+    TABLE_LIST_UPDATED(18);
 
     val text: String?
         get() =
@@ -308,67 +306,123 @@ object VPinballUnitConverter {
     fun vpuToCM(vpu: Float): Float = vpu * (2.54f * 1.0625f / 50.0f)
 }
 
-// VPinball Callbacks
+// VPinball Callbacks (hybrid approach: JSON + void pointer)
 
 fun interface VPinballEventCallback {
-    fun onEvent(event: Int, data: Any?): Any?
+    fun onEvent(event: Int, jsonData: String?, rawData: Any?): Any?
 }
 
 // VPinball Objects
 
-data class VPinballProgressData(val progress: Int)
+// Event data structures using kotlinx.serialization
+@Serializable data class VPinballProgressData(val progress: Int)
 
-data class VPinballScriptErrorData(val error: VPinballScriptErrorType, val line: Int, val position: Int, val description: String)
+@Serializable data class VPinballRumbleData(val lowFrequencyRumble: Int, val highFrequencyRumble: Int, val durationMs: Int)
 
-data class VPinballRumbleData(val lowFrequencyRumble: Int, val highFrequencyRumble: Int, val durationMs: Int)
+@Serializable data class VPinballScriptErrorData(val error: Int, val line: Int, val position: Int, val description: String)
 
-data class VPinballWebServerData(val url: String)
+@Serializable data class ProgressEventData(val progress: Int)
 
-data class VPinballCaptureScreenshotData(val success: Boolean)
+@Serializable data class ScreenshotEventData(val success: Boolean)
 
-data class VPinballTableInfo(val tableId: String, val name: String)
+@Serializable data class TableEventData(val success: Boolean, val table: Table?)
 
-data class VPinballTablesData(var tables: List<VPinballTableInfo>, var success: Boolean)
-
-data class VPinballTableEventData(val tableId: String?, val newName: String?, val path: String?, var success: Boolean = false)
-
-data class VPinballCustomTableOption(
-    var sectionName: String,
-    var id: String,
-    var name: String,
-    var showMask: Int,
-    var minValue: Float,
-    var maxValue: Float,
-    var step: Float,
-    var defaultValue: Float,
-    var unit: VPinballOptionUnit,
-    var literals: String,
-    var value: Float,
+@Serializable
+data class TableScanEventData(
+    val tablesFound: Int? = null,
+    val tablesProcessed: Int? = null,
+    val scanComplete: Boolean? = null,
+    val currentTable: String? = null,
 )
 
-data class VPinballTableOptions(
-    var globalEmissionScale: Float,
-    var globalDifficulty: Float,
-    var exposure: Float,
-    var toneMapper: VPinballToneMapper,
-    var musicVolume: Int,
-    var soundVolume: Int,
-)
+@Serializable
+data class Table(val uuid: String, val name: String, val path: String, val artwork: String, val createdAt: Long, val modifiedAt: Long) {
+    val fileName: String
+        get() = File(path).name
 
-data class VPinballViewSetup(
-    var viewMode: VPinballViewLayoutMode,
-    var sceneScaleX: Float,
-    var sceneScaleY: Float,
-    var sceneScaleZ: Float,
-    var viewX: Float,
-    var viewY: Float,
-    var viewZ: Float,
-    var lookAt: Float,
-    var viewportRotation: Float,
-    var fov: Float,
-    var layback: Float,
-    var viewHOfs: Float,
-    var viewVOfs: Float,
-    var windowTopZOfs: Float,
-    var windowBottomZOfs: Float,
-)
+    val fullPath: String
+        get() {
+            val tablesPath = org.vpinball.app.VPinballManager.getTablesPath()
+            return if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                // Build content URI: tree URI + / + relative path
+                "$tablesPath/$path"
+            } else {
+                File(tablesPath, path).absolutePath
+            }
+        }
+
+    val baseURL: File
+        get() = if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+            File("")
+        } else {
+            File(fullPath).parentFile ?: File("")
+        }
+
+    val basePath: String
+        get() = if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+            fullPath.substringBeforeLast('/')
+        } else {
+            baseURL.absolutePath
+        }
+
+    val fullURL: File
+        get() = File(fullPath)
+
+    val scriptURL: File
+        get() = File(fullPath.substringBeforeLast('.') + ".vbs")
+
+    val scriptPath: String
+        get() = if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+            fullPath.substringBeforeLast('.') + ".vbs"
+        } else {
+            scriptURL.absolutePath
+        }
+
+    val iniURL: File
+        get() = File(fullPath.substringBeforeLast('.') + ".ini")
+
+    val iniPath: String
+        get() = if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+            fullPath.substringBeforeLast('.') + ".ini"
+        } else {
+            iniURL.absolutePath
+        }
+
+    val artworkPath: String
+        get() {
+            val tablesPath = org.vpinball.app.VPinballManager.getTablesPath()
+            return File(tablesPath, artwork).absolutePath
+        }
+
+    val imagePath: String
+        get() = artworkPath
+
+    // File size computed property
+    val fileSize: Long
+        get() = if (File(fullPath).exists()) File(fullPath).length() else 0L
+
+    // Boolean computed properties matching iOS implementation
+    fun exists(): Boolean = VPinballManager.fileExists(fullPath)
+
+    fun hasScriptFile(): Boolean = VPinballManager.fileExists(scriptPath)
+
+    fun hasIniFile(): Boolean = VPinballManager.fileExists(iniPath)
+
+    fun hasImageFile(): Boolean = File(artworkPath).exists()
+
+    // Legacy properties for backward compatibility
+    val hasScript: Boolean
+        get() = hasScriptFile()
+
+    val hasImage: Boolean
+        get() = hasImageFile()
+
+    val hasIni: Boolean
+        get() = hasIniFile()
+}
+
+@Serializable data class VPXTablesResponse(val success: Boolean, val tableCount: Int, val tables: List<Table>)
+
+@Serializable data class VPinballWebServerData(val url: String)
+
+@Serializable data class VPinballCaptureScreenshotData(val success: Boolean)
