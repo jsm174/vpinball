@@ -8,7 +8,7 @@ SDL2_IMAGE_VERSION=2.8.8
 SDL2_TTF_VERSION=2.24.0
 PINMAME_SHA=518ebdae4483a654eb7d292469e7d21d25ffacc9
 LIBALTSOUND_SHA=b8f397858cbc7a879f7392c14a509f00c8bdc7dd
-LIBDMDUTIL_SHA=178dd9dc284732f967217c86c6b21bb22e4445de
+LIBDMDUTIL_SHA=7aa30b108ceaaabdf061beee205f2b3987301f50
 LIBDOF_SHA=2711a23f7ec1085448f944145e0d63b7ab792033
 FFMPEG_SHA=db69d06eeeab4f46da15030a80d539efb4503ca8
 
@@ -233,7 +233,7 @@ cp ../${CACHE_DIR}/${CACHE_NAME}/lib/*.a ../external/lib
 CACHE_NAME="libdmdutil-${LIBDMDUTIL_SHA}"
 
 if [ ! -f "../${CACHE_DIR}/${CACHE_NAME}.cache" ]; then
-   curl -sL https://github.com/vpinball/libdmdutil/archive/${LIBDMDUTIL_SHA}.zip -o libdmdutil.zip
+   curl -sL https://github.com/jsm174/libdmdutil/archive/${LIBDMDUTIL_SHA}.zip -o libdmdutil.zip
    unzip libdmdutil.zip
    cd libdmdutil-$LIBDMDUTIL_SHA
    platforms/tvos/arm64/external.sh

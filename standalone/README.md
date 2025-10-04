@@ -507,7 +507,7 @@ The settings are decimal values based on DirectInput `DIK_` values found [here](
 
 MacOS and Linux builds have built in support for [ZeDMD](https://www.pincabpassion.net/t14796-zedmd-installation-english) and [Pixelcade](https://pixelcade.org/) devices.
 
-This feature is powered by [libdmdutil](https://github.com/vpinball/libdmdutil).
+This feature is powered by [libdmdutil](https://github.com/jsm174/libdmdutil).
 
 ## Paths
 
