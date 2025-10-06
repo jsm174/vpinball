@@ -1,17 +1,16 @@
 import Foundation
-import SwiftData
 import SwiftUI
 
-@main
-struct VPinballApp: App {
+struct VPinballAppView: View {
+    @ObservedObject var vpinballViewModel = VPinballViewModel.shared
+
     @State var showSplash = true
+    @State var showMainView = true
 
-    init() {
-        UISearchBar.appearance().overrideUserInterfaceStyle = .dark
-    }
+    var body: some View {
+        ZStack {
+            Color.clear
 
-    var body: some Scene {
-        WindowGroup {
             if showSplash {
                 SplashView()
                     .onAppear {
@@ -19,13 +18,20 @@ struct VPinballApp: App {
                     }
             } else {
                 MainView()
+                    .opacity(showMainView ? 1 : 0)
             }
         }
-        .environmentObject(VPinballViewModel.shared)
-        .modelContainer(for: PinTable.self)
+        .onChange(of: vpinballViewModel.isPlaying) {
+            showMainView = !vpinballViewModel.isPlaying
+
+            StatusBarManager.shared.setHidden(!showMainView,
+                                              animated: false)
+        }
     }
 
     func handleAppear() {
+        VPinballManager.shared.startup()
+
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             withAnimation {
                 showSplash = false

@@ -4,16 +4,15 @@ import android.content.Context
 import android.content.res.AssetManager
 import android.net.Uri
 import android.provider.OpenableColumns
-import android.util.Log
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.FileOutputStream
 import java.io.IOException
 import java.io.InputStream
+import org.vpinball.app.VPinballManager
+import org.vpinball.app.jni.VPinballLogLevel
 
 object FileUtils {
-    private const val TAG = "FileUtils"
-
     private const val MAX_BUF_SIZE = 8192
 
     @Throws(IOException::class)
@@ -27,15 +26,15 @@ object FileUtils {
 
             try {
                 assetManager.open(srcPath).use { inputStream ->
-                    Log.v(TAG, "Copying $srcPath to $dstFile")
+                    VPinballManager.log(VPinballLogLevel.INFO, "Copying $srcPath to $dstFile")
                     copyFile(inputStream, dstFile)
                 }
             } catch (e: FileNotFoundException) {
                 dstFile.mkdirs()
                 copyAssets(assetManager, srcPath, dstFile)
-                Log.v(TAG, "File not found. Making directories and copying assets.", e)
+                VPinballManager.log(VPinballLogLevel.INFO, "File not found. Making directories and copying assets. - ${e.message}")
             } catch (e: IOException) {
-                Log.e(TAG, "Unable to copy $srcPath to $dstFile", e)
+                VPinballManager.log(VPinballLogLevel.ERROR, "Unable to copy $srcPath to $dstFile - ${e.message}")
             }
         }
     }

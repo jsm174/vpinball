@@ -236,6 +236,12 @@ Liberation Sans
 - Version: ?
 - License: MIT
 
+### stduuid
+
+- Upstream: https://github.com/mariusbancila/stduuid
+- Version: 1.2.3
+- License: MIT
+
 ### win32xx
 
 - Upstream: https://sourceforge.net/projects/win32-framework/

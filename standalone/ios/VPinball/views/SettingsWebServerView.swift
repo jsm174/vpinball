@@ -1,8 +1,8 @@
 import SwiftUI
 
 struct SettingsWebServerView: View {
-    @EnvironmentObject var vpinballViewModel: VPinballViewModel
-    @EnvironmentObject var settingsModel: SettingsModel
+    @ObservedObject var settingsModel: SettingsModel
+    @ObservedObject var vpinballViewModel = VPinballViewModel.shared
 
     var showInput: (String, String, UIKeyboardType, @escaping (String) -> Void) -> Void
 
@@ -49,7 +49,9 @@ struct SettingsWebServerView: View {
 
     func handleWebServer() {
         vpinballManager.saveValue(.standalone, "WebServer", settingsModel.webServer)
-        vpinballManager.updateWebServer()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            vpinballManager.updateWebServer()
+        }
     }
 
     func handleShowWebServerPort() {
@@ -60,7 +62,7 @@ struct SettingsWebServerView: View {
     }
 
     func handleWebServerPortConfirm(value: String) {
-        if let webServerPort = Int(value), webServerPort >= 0 && webServerPort <= 65535 {
+        if let webServerPort = Int(value), webServerPort >= 0, webServerPort <= 65535 {
             settingsModel.webServerPort = webServerPort
         } else {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.01) {
@@ -77,8 +79,6 @@ struct SettingsWebServerView: View {
 
 #Preview {
     List {
-        SettingsView()
+        SettingsWebServerView(settingsModel: SettingsModel()) { _, _, _, _ in }
     }
-    .environmentObject(VPinballViewModel.shared)
-    .environmentObject(SettingsModel())
 }

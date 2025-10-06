@@ -85,7 +85,13 @@ void ExitSplashPage::BuildPage()
    if (!isStandalone)
       AddItem(std::make_unique<InGameUIItem>("Quit to Editor"s, ""s, [this]() { m_player->m_ptable->QuitPlayer(Player::CS_STOP_PLAY); }));
    else
-      AddItem(std::make_unique<InGameUIItem>("Quit"s, ""s, [this]() { m_player->m_ptable->QuitPlayer(Player::CS_CLOSE_APP); }));
+      AddItem(std::make_unique<InGameUIItem>("Quit"s, ""s, [this]() {
+#ifndef __LIBVPINBALL__
+         m_player->m_ptable->QuitPlayer(Player::CS_CLOSE_APP);
+#else
+         m_player->m_ptable->QuitPlayer(Player::CS_CLOSE_CAPTURE_SCREENSHOT);
+#endif
+      }));
 }
 
 

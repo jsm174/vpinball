@@ -556,6 +556,16 @@ void InGameUIPage::Render(float elapsedMs)
          }
          break;
 
+      case CustomRender:
+      {
+         ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(0.f, itemPadding.y));
+         if (item->m_customRender) {
+            item->m_customRender(i, item.get());
+         }
+         ImGui::SetCursorScreenPos(ImGui::GetCursorScreenPos() + ImVec2(0.f, itemPadding.y));
+         break;
+      }
+
       case Toggle:
       {
          ImGui::Text("%s", item->m_label.c_str());

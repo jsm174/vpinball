@@ -49,6 +49,7 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.derivedStateOf
@@ -77,11 +78,15 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import java.io.File
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.koin.compose.koinInject
 import org.vpinball.app.R
 import org.vpinball.app.TableListMode
+import org.vpinball.app.TableManager
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.ui.screens.common.ProgressOverlay
 import org.vpinball.app.ui.screens.settings.SettingsModalBottomSheet
 import org.vpinball.app.ui.theme.DarkBlack
@@ -91,8 +96,6 @@ import org.vpinball.app.ui.theme.VPinballTheme
 import org.vpinball.app.ui.theme.VpxDarkYellow
 import org.vpinball.app.ui.theme.VpxRed
 import org.vpinball.app.util.FileUtils
-import org.vpinball.app.util.hasScript
-import org.vpinball.app.util.scriptFile
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -101,9 +104,9 @@ fun LandingScreen(
     progress: MutableState<Int>,
     status: MutableState<String>,
     onTableImported: (uuid: String, path: String) -> Unit,
-    onRenameTable: (table: PinTable, name: String) -> Unit,
-    onChangeTableArtwork: (table: PinTable) -> Unit,
-    onDeleteTable: (table: PinTable) -> Unit,
+    onRenameTable: (table: Table, name: String) -> Unit,
+    onChangeTableImage: (table: Table) -> Unit,
+    onDeleteTable: (table: Table) -> Unit,
     onViewFile: (file: File) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LandingScreenViewModel = koinInject(),
@@ -192,6 +195,11 @@ fun LandingScreen(
 
     LaunchedEffect(searchTextFieldState.text) { viewModel.search(searchTextFieldState.text.toString()) }
 
+    DisposableEffect(Unit) {
+        LandingScreenViewModel.setScrollToTableCallback { uuid -> scrollToTableUuid = uuid }
+        onDispose { LandingScreenViewModel.setScrollToTableCallback {} }
+    }
+
     LaunchedEffect(scrollToTableUuid, unfilteredTables) {
         val uuid = scrollToTableUuid
         if (uuid != null) {
@@ -272,6 +280,13 @@ fun LandingScreen(
                                         showImportTableMenu = false
 
                                         launcher.launch(arrayOf("*/*"))
+                                    },
+                                    onBlankTable = {
+                                        showImportTableMenu = false
+
+                                        importUri = File(VPinballManager.getFilesDir(), "assets/blankTable.vpx").toUri()
+                                        importFilename = FileUtils.filenameFromUri(context, importUri!!)
+                                        showConfirmDialog = true
                                     },
                                     onExampleTable = {
                                         showImportTableMenu = false
@@ -393,24 +408,32 @@ fun LandingScreen(
                         VPinballManager.play(table)
                     },
                     onRename = onRenameTable,
-                    onChangeArtwork = onChangeTableArtwork,
+                    onChangeTableImage = onChangeTableImage,
                     onViewScript = { table ->
-                        if (table.hasScript()) {
-                            onViewFile(table.scriptFile)
+                        if (table.hasScriptFile()) {
+                            val viewPath = VPinballManager.stageFile(table.scriptPath)
+                            if (viewPath != null) {
+                                onViewFile(File(viewPath))
+                            }
                         } else {
                             title = table.name
                             progress.value = 0
                             status.value = ""
                             showProgress = true
 
-                            VPinballManager.extractScript(
-                                table,
-                                onComplete = {
-                                    showProgress = false
-                                    onViewFile(table.scriptFile)
-                                },
-                                onError = { showProgress = false },
-                            )
+                            CoroutineScope(Dispatchers.Main).launch {
+                                TableManager.extractTableScript(
+                                    table,
+                                    onComplete = {
+                                        showProgress = false
+                                        val viewPath = VPinballManager.stageFile(table.scriptPath)
+                                        if (viewPath != null) {
+                                            onViewFile(File(viewPath))
+                                        }
+                                    },
+                                    onError = { showProgress = false },
+                                )
+                            }
                         }
                     },
                     onShare = { table ->
@@ -419,23 +442,25 @@ fun LandingScreen(
                         status.value = ""
                         showProgress = true
 
-                        VPinballManager.share(
-                            table,
-                            onComplete = {
-                                showProgress = false
+                        CoroutineScope(Dispatchers.Main).launch {
+                            TableManager.shareTable(
+                                table,
+                                onComplete = {
+                                    showProgress = false
 
-                                val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", it)
-                                val shareIntent =
-                                    Intent(Intent.ACTION_SEND).apply {
-                                        type = "application/octet-stream"
-                                        putExtra(Intent.EXTRA_STREAM, fileUri)
-                                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                                    }
+                                    val fileUri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", it)
+                                    val shareIntent =
+                                        Intent(Intent.ACTION_SEND).apply {
+                                            type = "application/octet-stream"
+                                            putExtra(Intent.EXTRA_STREAM, fileUri)
+                                            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                                        }
 
-                                context.startActivity(Intent.createChooser(shareIntent, "Share File: $it"))
-                            },
-                            onError = { showProgress = false },
-                        )
+                                    context.startActivity(Intent.createChooser(shareIntent, "Share File: $it"))
+                                },
+                                onError = { showProgress = false },
+                            )
+                        }
                     },
                     onDelete = onDeleteTable,
                     modifier = Modifier.fillMaxWidth().padding(all = 5.dp).imePadding(),
@@ -457,22 +482,26 @@ fun LandingScreen(
                         showConfirmDialog = false
 
                         importUri?.let {
-                            VPinballManager.importUri(
-                                context = context,
-                                uri = it,
-                                onUpdate = { inProgress, inStatus ->
-                                    title = importFilename
-                                    progress.value = inProgress
-                                    status.value = inStatus
-                                    showProgress = true
-                                },
-                                onComplete = { uuid, path ->
-                                    showProgress = false
-                                    onTableImported(uuid, path)
-                                    scrollToTableUuid = uuid
-                                },
-                                onError = { showProgress = false },
-                            )
+                            CoroutineScope(Dispatchers.Main).launch {
+                                TableManager.importTable(
+                                    context = context,
+                                    uri = it,
+                                    onUpdate = { inProgress, inStatus ->
+                                        title = importFilename
+                                        progress.value = inProgress
+                                        status.value = inStatus
+                                        showProgress = true
+                                    },
+                                    onComplete = { uuid, path ->
+                                        showProgress = false
+                                        onTableImported(uuid, path)
+                                        // Note: With the new import system, uuid is just a placeholder ("imported")
+                                        // The actual table list refresh happens in the background via VPinballScanTablesAsync
+                                        // so we don't scroll to a specific UUID anymore
+                                    },
+                                    onError = { showProgress = false },
+                                )
+                            }
                         } ?: error("$importFilename was not found!")
                     }
                 ) {
@@ -516,7 +545,7 @@ private fun PreviewLandingScreen() {
             progress = progress,
             status = status,
             onRenameTable = { _, _ -> },
-            onChangeTableArtwork = {},
+            onChangeTableImage = {},
             onDeleteTable = {},
             onTableImported = { _, _ -> },
             onViewFile = { _ -> },
