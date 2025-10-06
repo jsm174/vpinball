@@ -7,7 +7,7 @@
 #include "ScanCodes.h"
 
 #ifdef __LIBVPINBALL__
-   #include "standalone/VPinballLib.h"
+   #include "lib/src/VPinballLib.h"
 #endif
 
 #include "input/SDLInputHandler.h"
@@ -580,6 +580,7 @@ void InputManager::PushTouchEvent(float relativeX, float relativeY, uint64_t tim
    POINT point;
    point.x = (int)((float)g_pplayer->m_playfieldWnd->GetWidth() * relativeX);
    point.y = (int)((float)g_pplayer->m_playfieldWnd->GetHeight() * relativeY);
+  
    for (auto& region : m_touchRegionMap)
    {
       if (const bool wasPressed = m_inputActions[region.actionId]->GetDirectState(region.directStateSlot); wasPressed == isPressed)
@@ -587,6 +588,7 @@ void InputManager::PushTouchEvent(float relativeX, float relativeY, uint64_t tim
       if (!Intersect(region.region, g_pplayer->m_playfieldWnd->GetWidth(), g_pplayer->m_playfieldWnd->GetHeight(), point,
              fmodf(g_pplayer->m_ptable->mViewSetups[g_pplayer->m_ptable->m_BG_current_set].mViewportRotation, 360.0f) != 0.f))
          continue;
+
       m_inputActions[region.actionId]->SetDirectState(region.directStateSlot, isPressed);
    }
 }
@@ -1172,7 +1174,7 @@ void InputManager::PlayRumble(const float lowFrequencySpeed, const float highFre
          (uint16_t)(saturate(highFrequencySpeed) * 65535.f),
          (uint32_t)ms_duration
       };
-      VPinballLib::VPinball::SendEvent(VPinballLib::Event::Rumble, &rumbleData);
+      VPinballLib::VPinballLib::SendEvent(VPINBALL_EVENT_RUMBLE, &rumbleData);
    #endif
 }
 

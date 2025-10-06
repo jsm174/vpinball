@@ -339,6 +339,10 @@ void LiveUI::UpdateDPI()
       {
          m_dpi = max(m_dpi, static_cast<float>(m_player->m_playfieldWnd->GetWidth()) / 750.f);
       }
+
+#ifdef __LIBVPINBALL__
+      m_dpi = max(m_dpi, 1.5f);
+#endif
    }
    m_dpi = min(m_dpi, 10.f); // To avoid texture size overflows
    if (m_dpi != prevDPI && prevDPI > 0)
@@ -428,7 +432,11 @@ void LiveUI::NewFrame()
 void LiveUI::Update()
 {
    // For the time being, the UI is only available inside a running player
-   if (m_player == nullptr || m_player->GetCloseState() != Player::CS_PLAYING || m_rd->GetCurrentPass() == nullptr)
+   if (m_player == nullptr || (m_player->GetCloseState() != Player::CS_PLAYING
+#ifdef __LIBVPINBALL__
+      && m_player->GetCloseState() != Player::CS_CLOSE_CAPTURE_SCREENSHOT
+#endif
+   ) || m_rd->GetCurrentPass() == nullptr)
       return;
 
    const int width = m_rd->GetCurrentPass()->m_rt->GetWidth();
@@ -570,11 +578,13 @@ void LiveUI::Update()
             vb[i].tv = cmd_list->VtxBuffer[i].uv.y;
          }
          m_meshBuffers[n]->m_vb->Unlock();
+         m_meshBuffers[n]->m_vb->Upload();
 
-         WORD *ib;
+         uint32_t *ib;
          m_meshBuffers[n]->m_ib->Lock(ib);
          memcpy(ib, cmd_list->IdxBuffer.begin(), numIndices * sizeof(ImDrawIdx));
          m_meshBuffers[n]->m_ib->Unlock();
+         m_meshBuffers[n]->m_ib->Upload();
       }
 
       for (const ImDrawCmd *cmd = cmd_list->CmdBuffer.begin(), *cmdEnd = cmd_list->CmdBuffer.end(); cmd != cmdEnd; cmd++)
@@ -595,11 +605,6 @@ void LiveUI::UpdateTouchUI()
 {
    if (!m_player->m_pininput.HasTouchInput())
       return;
-
-#ifdef __LIBVPINBALL__
-   if (m_player->m_liveUIOverride)
-      return;
-#endif
 
    if (!m_showTouchOverlay)
       return;

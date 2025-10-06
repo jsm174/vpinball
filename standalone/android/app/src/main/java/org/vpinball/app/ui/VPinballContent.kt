@@ -22,43 +22,53 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.io.File
-import kotlinx.coroutines.flow.last
-import kotlinx.coroutines.launch
 import org.vpinball.app.CodeLanguage
 import org.vpinball.app.Link
 import org.vpinball.app.VPinballManager
 import org.vpinball.app.VPinballViewModel
 import org.vpinball.app.ui.screens.common.CodeWebViewDialog
 import org.vpinball.app.ui.screens.landing.LandingScreen
-import org.vpinball.app.ui.screens.liveui.LiveUIOverlay
 import org.vpinball.app.ui.screens.loading.LoadingScreen
 import org.vpinball.app.ui.screens.splash.SplashScreen
-import org.vpinball.app.ui.screens.touch.TouchInstructionsScreen
-import org.vpinball.app.ui.screens.touch.TouchOverlayScreen
 import org.vpinball.app.ui.theme.VPinballTheme
 import org.vpinball.app.ui.theme.VpxRed
 import org.vpinball.app.ui.util.koinActivityViewModel
-import org.vpinball.app.util.deleteFiles
 import org.vpinball.app.util.getActivity
 
 @Composable
-fun VPinballContent(viewModel: VPinballViewModel = koinActivityViewModel()) {
+fun VPinballContent(isAppInit: Boolean = false, viewModel: VPinballViewModel = koinActivityViewModel()) {
     val context = LocalContext.current
     val activity = context.getActivity()
     val state by viewModel.state.collectAsStateWithLifecycle()
     var codeFile by remember { mutableStateOf<File?>(null) }
     val scope = rememberCoroutineScope()
 
-    LaunchedEffect(state.playing, state.table) {
-        if (state.playing) {
-            activity?.window?.decorView?.windowInsetsController?.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-        } else {
-            activity?.window?.decorView?.windowInsetsController?.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+    LaunchedEffect(state.playing, isAppInit) {
+        activity?.window?.decorView?.windowInsetsController?.let { controller ->
+            if (state.playing) {
+                controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+            } else {
+                controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
+                // Set light status bar content (white text) for dark backgrounds
+                controller.setSystemBarsAppearance(
+                    0, // Clear the light appearance flag to show dark icons/text becomes light icons/text
+                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(isAppInit) {
+        if (isAppInit && state.splash) {
+            VPinballManager.startup()
+            viewModel.startSplashTimer()
         }
     }
 
     VPinballTheme {
-        if (state.splash) {
+        if (!isAppInit) {
+            // Wait for SDL initialization
+        } else if (state.splash) {
             SplashScreen()
         } else {
             AnimatedVisibility(visible = !(state.playing || state.loading), modifier = Modifier.fillMaxSize()) {
@@ -67,46 +77,29 @@ fun VPinballContent(viewModel: VPinballViewModel = koinActivityViewModel()) {
                     progress = viewModel.progress,
                     status = viewModel.status,
                     onTableImported = { uuid, path ->
-                        scope.launch {
-                            viewModel.saveImportTable(uuid, path).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // With the new unified import system, the C++ library handles everything internally
+                        // Table list refresh happens automatically via TABLE_LIST_UPDATED event
                     },
                     onRenameTable = { table, name ->
-                        scope.launch {
-                            viewModel.renameTable(table, name).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // Use C++ library for table rename - it handles everything
+                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Renaming table ${table.uuid} to: $name")
+                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
+                        vpinballJNI.VPinballRenameTable(table.uuid, name)
+                        // Trigger UI refresh to update table list
+                        org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
                     },
-                    onChangeTableArtwork = { table -> scope.launch { viewModel.markTableAsModified(table).last() } },
+                    onChangeTableImage = { table ->
+                        // Table Image changes are handled by the UI directly
+                    },
                     onDeleteTable = { table ->
-                        table.deleteFiles()
-                        scope.launch {
-                            viewModel.deleteTable(table).last()
-                            VPinballManager.setWebLastUpdate()
-                        }
+                        // Use C++ library for table deletion - it handles filesystem and registry
+                        // and automatically sends TABLE_LIST_UPDATED event
+                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Deleting table: ${table.uuid}")
+                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
+                        vpinballJNI.VPinballDeleteTable(table.uuid)
                     },
                     onViewFile = { file -> codeFile = file },
                 )
-            }
-
-            if (state.playing) {
-                if (state.touchInstructions) {
-                    TouchInstructionsScreen()
-                } else {
-                    if (state.touchOverlay) {
-                        TouchOverlayScreen()
-                    }
-
-                    AnimatedVisibility(visible = state.liveUI, modifier = Modifier.fillMaxSize()) {
-                        LiveUIOverlay(
-                            onResume = {
-                                viewModel.toggleLiveUI()
-                                VPinballManager.setPlayState(true)
-                            }
-                        )
-                    }
-                }
             }
 
             if (state.loading) {

@@ -206,10 +206,19 @@ void Settings::Validate(const bool addDefaults)
    SettingInt(Section::Player, "Stereo3D"s, STEREO_OFF, STEREO_OFF, STEREO_ANAGLYPH_10, "Stereo rendering mode"s);
 
    //////////////////////////////////////////////////////////////////////////
+   // Plugin.AlphaDMD
+
+#ifdef __LIBVPINBALL__
+   SettingBool(GetSection("Plugin.AlphaDMD"s), "Enable"s, true, ""s);
+#endif
+
+   //////////////////////////////////////////////////////////////////////////
    // Plugin.B2SLegacy
 
 #ifdef __STANDALONE__
    SettingBool(GetSection("Plugin.B2SLegacy"s), "Enable"s, true, ""s);
+   SettingInt(GetSection("Plugin.B2SLegacy"s), "B2SBackglassWidth"s, 1024, 0, 5000, ""s);
+   SettingInt(GetSection("Plugin.B2SLegacy"s), "B2SBackglassHeight"s, 768, 0, 5000, ""s);
 #endif
 
    //////////////////////////////////////////////////////////////////////////
@@ -238,6 +247,13 @@ void Settings::Validate(const bool addDefaults)
 
 #ifdef __STANDALONE__
    SettingBool(GetSection("Plugin.ScoreView"s), "Enable"s, true, ""s);
+#endif
+
+   //////////////////////////////////////////////////////////////////////////
+   // Plugin.Serum
+
+#ifdef __STANDALONE__
+   SettingBool(GetSection("Plugin.Serum"s), "Enable"s, true, ""s);
 #endif
 
    //////////////////////////////////////////////////////////////////////////
@@ -282,9 +298,9 @@ void Settings::Validate(const bool addDefaults)
 #ifdef __LIBVPINBALL__
    SettingInt(Section::Backglass, "BackglassOutput"s, 1, 1, 1, ""s);
    SettingInt(Section::Backglass, "BackglassWndX"s, 0, 0, 3000, ""s);
-   SettingInt(Section::Backglass, "BackglassWndY"s, 160, 0, 3000, ""s);
-   SettingInt(Section::Backglass, "BackglassWidth"s, 640, 0, 3000, ""s);
-   SettingInt(Section::Backglass, "BackglassHeight"s, 480, 0, 3000, ""s);
+   SettingInt(Section::Backglass, "BackglassWndY"s, 0, 0, 3000, ""s);
+   SettingInt(Section::Backglass, "BackglassWidth"s, 0, 0, 3000, ""s);
+   SettingInt(Section::Backglass, "BackglassHeight"s, 0, 0, 3000, ""s);
 #endif
 
    //////////////////////////////////////////////////////////////////////////
@@ -294,8 +310,8 @@ void Settings::Validate(const bool addDefaults)
    SettingInt(Section::ScoreView, "ScoreViewOutput"s, 1, 1, 1, ""s);
    SettingInt(Section::ScoreView, "ScoreViewWndX"s, 0, 0, 3000, ""s);
    SettingInt(Section::ScoreView, "ScoreViewWndY"s, 0, 0, 3000, ""s);
-   SettingInt(Section::ScoreView, "ScoreViewWidth"s, 640, 0, 3000, ""s);
-   SettingInt(Section::ScoreView, "ScoreViewHeight"s, 160, 0, 3000, ""s);
+   SettingInt(Section::ScoreView, "ScoreViewWidth"s, 0, 0, 3000, ""s);
+   SettingInt(Section::ScoreView, "ScoreViewHeight"s, 0, 0, 3000, ""s);
 #endif
 
    //////////////////////////////////////////////////////////////////////////

@@ -1,5 +1,9 @@
 package org.vpinball.app.jni
 
+import java.io.File
+import kotlinx.serialization.Serializable
+import org.vpinball.app.VPinballManager
+
 interface VPinballDisplayText {
     val text: String
 }
@@ -20,26 +24,7 @@ enum class VPinballStatus(val value: Int) {
 
 enum class VPinballSettingsSection(val value: String) {
     STANDALONE("Standalone"),
-    PLAYER("Player"),
-    DMD("DMD"),
-    ALPHA("Alpha"),
-    BACKGLASS("Backglass"),
-    SCORE_VIEW("ScoreView"),
-    TOPPER("Topper"),
-    TABLE_OVERRIDE("TableOverride"),
-    TABLE_OPTION("TableOption"),
-    PLUGIN_ALPHA_DMD("Plugin.AlphaDMD"),
-    PLUGIN_B2S("Plugin.B2S"),
-    PLUGIN_B2S_LEGACY("Plugin.B2SLegacy"),
-    PLUGIN_DMD_UTIL("Plugin.DMDUtil"),
-    PLUGIN_DOF("Plugin.DOF"),
-    PLUGIN_FLEX_DMD("Plugin.FlexDMD"),
-    PLUGIN_PINMAME("Plugin.PinMAME"),
-    PLUGIN_PUP("Plugin.PUP"),
-    PLUGIN_REMOTE_CONTROL("Plugin.RemoteControl"),
-    PLUGIN_SCORE_VIEW("Plugin.ScoreView"),
-    PLUGIN_SERUM("Plugin.Serum"),
-    PLUGIN_WMP("Plugin.WMP");
+    PLAYER("Player");
 
     companion object {
         @JvmStatic
@@ -55,29 +40,6 @@ enum class VPinballViewMode(val value: Int, override val text: String) : VPinbal
 
     companion object {
         @JvmStatic fun fromInt(value: Int): VPinballViewMode = entries.firstOrNull { it.value == value } ?: DESKTOP_FSS
-    }
-}
-
-enum class VPinballAO(val value: Int, override val text: String) : VPinballDisplayText {
-    AO_DISABLE(0, "Disable AO"),
-    AO_STATIC(1, "Static AO"),
-    AO_DYNAMIC(2, "Dynamic AO");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballAO = entries.firstOrNull { it.value == value } ?: AO_DISABLE
-    }
-}
-
-enum class VPinballReflectionMode(val value: Int, override val text: String) : VPinballDisplayText {
-    REFL_NONE(0, "Disable Reflections"),
-    REFL_BALLS(1, "Balls Only"),
-    REFL_STATIC(2, "Static Only"),
-    REFL_STATIC_N_BALLS(3, "Static & Balls"),
-    REFL_STATIC_N_DYNAMIC(4, "Static & Unsynced Dynamic"),
-    REFL_DYNAMIC(5, "Dynamic");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballReflectionMode = entries.firstOrNull { it.value == value } ?: REFL_NONE
     }
 }
 
@@ -97,81 +59,6 @@ enum class VPinballMaxTexDimension(val value: Int, override val text: String) : 
 
     companion object {
         @JvmStatic fun fromInt(value: Int): VPinballMaxTexDimension = entries.firstOrNull { it.value == value } ?: UNLIMITED
-    }
-}
-
-enum class VPinballMSAASamples(val value: Int, override val text: String) : VPinballDisplayText {
-    DISABLED(1, "Disabled"),
-    SAMPLES_4(4, "4 Samples"),
-    SAMPLES_6(6, "6 Samples"),
-    SAMPLES_8(8, "8 Samples");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballMSAASamples = entries.firstOrNull { it.value == value } ?: DISABLED
-    }
-}
-
-enum class VPinballAAFactor(val value: Int, override val text: String) : VPinballDisplayText {
-    PCT_50(50, "50%"),
-    PCT_75(75, "75%"),
-    DISABLED(100, "Disabled"),
-    PCT_125(125, "125%"),
-    PCT_133(133, "133%"),
-    PCT_150(150, "150%"),
-    PCT_175(175, "175%"),
-    PCT_200(200, "200%");
-
-    val floatValue: Float
-        get() = value / 100.0f
-
-    companion object {
-        fun fromFloat(value: Float): VPinballAAFactor = entries.firstOrNull { it.value == (value * 100).toInt() } ?: DISABLED
-    }
-}
-
-enum class VPinballFXAA(val value: Int, override val text: String) : VPinballDisplayText {
-    DISABLED(0, "Disabled"),
-    FAST_FXAA(1, "Fast FXAA"),
-    STANDARD_FXAA(2, "Standard FXAA"),
-    QUALITY_FXAA(3, "Quality FXAA"),
-    FAST_NFAA(4, "Fast NFAA"),
-    STANDARD_DLAA(5, "Standard DLAA"),
-    QUALITY_SMAA(6, "Quality SMAA");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballFXAA = entries.firstOrNull { it.value == value } ?: DISABLED
-    }
-}
-
-enum class VPinballSharpen(val value: Int, override val text: String) : VPinballDisplayText {
-    DISABLED(0, "Disabled"),
-    CAS(1, "CAS"),
-    BILATERAL_CAS(2, "Bilateral CAS");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballSharpen = entries.firstOrNull { it.value == value } ?: DISABLED
-    }
-}
-
-enum class VPinballToneMapper(val value: Int, override val text: String) : VPinballDisplayText {
-    REINHARD(0, "Reinhard"),
-    AGX(1, "AgX"),
-    FILMIC(2, "Filmic"),
-    NEUTRAL(3, "Neutral"),
-    AGX_PUNCHY(4, "AgX Punchy");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballToneMapper = entries.firstOrNull { it.value == value } ?: REINHARD
-    }
-}
-
-enum class VPinballViewLayoutMode(val value: Int, override val text: String) : VPinballDisplayText {
-    LEGACY(0, "Legacy"),
-    CAMERA(1, "Camera"),
-    WINDOW(2, "Window");
-
-    companion object {
-        @JvmStatic fun fromInt(value: Int): VPinballViewLayoutMode = entries.firstOrNull { it.value == value } ?: LEGACY
     }
 }
 
@@ -204,24 +91,13 @@ enum class VPinballEvent(val value: Int) {
     LOADING_IMAGES(4),
     LOADING_FONTS(5),
     LOADING_COLLECTIONS(6),
-    PLAY(7),
-    CREATING_PLAYER(8),
-    WINDOW_CREATED(9),
-    PRERENDERING(10),
-    PLAYER_STARTED(11),
-    RUMBLE(12),
-    SCRIPT_ERROR(13),
-    LIVE_UI_TOGGLE(14),
-    LIVE_UI_UPDATE(15),
-    PLAYER_CLOSING(16),
-    PLAYER_CLOSED(17),
-    STOPPED(18),
-    WEB_SERVER(19),
-    CAPTURE_SCREENSHOT(20),
-    TABLE_LIST(21),
-    TABLE_IMPORT(22),
-    TABLE_RENAME(23),
-    TABLE_DELETE(24);
+    PRERENDERING(7),
+    PLAYER_STARTED(8),
+    RUMBLE(9),
+    SCRIPT_ERROR(10),
+    PLAYER_CLOSED(11),
+    WEB_SERVER(12),
+    TABLE_LIST_UPDATED(13);
 
     val text: String?
         get() =
@@ -257,24 +133,6 @@ enum class VPinballScriptErrorType(val value: Int) {
     }
 }
 
-enum class VPinballOptionUnit(val value: Int) {
-    NO_UNIT(0),
-    PERCENT(1);
-
-    fun formatValue(value: Float): String =
-        when (this) {
-            NO_UNIT -> String.format("%.1f", value)
-            PERCENT -> String.format("%.1f %%", value * 100.0f)
-        }
-
-    companion object {
-        @JvmStatic
-        fun fromInt(value: Int): VPinballOptionUnit {
-            return VPinballOptionUnit.entries.firstOrNull { it.value == value } ?: throw IllegalArgumentException("Unknown value: $value")
-        }
-    }
-}
-
 // VPinball Touch Areas
 
 data class VPinballTouchArea(val left: Float, val top: Float, val right: Float, val bottom: Float, val label: String)
@@ -300,75 +158,98 @@ val VPinballTouchAreas: List<List<VPinballTouchArea>> =
         listOf(VPinballTouchArea(left = 0f, top = 90f, right = 30f, bottom = 100f, label = "Start")),
     )
 
-// VPinball Unit Converter
-
-object VPinballUnitConverter {
-    fun cmToVPU(cm: Float): Float = cm * (50.0f / (2.54f * 1.0625f))
-
-    fun vpuToCM(vpu: Float): Float = vpu * (2.54f * 1.0625f / 50.0f)
-}
-
-// VPinball Callbacks
+// VPinball Callbacks (hybrid approach: JSON)
 
 fun interface VPinballEventCallback {
-    fun onEvent(event: Int, data: Any?): Any?
+    fun onEvent(event: Int, jsonData: String?)
 }
 
 // VPinball Objects
 
-data class VPinballProgressData(val progress: Int)
+@Serializable data class VPinballProgressData(val progress: Int)
 
-data class VPinballScriptErrorData(val error: VPinballScriptErrorType, val line: Int, val position: Int, val description: String)
+@Serializable data class VPinballRumbleData(val lowFrequencyRumble: Int, val highFrequencyRumble: Int, val durationMs: Int)
 
-data class VPinballRumbleData(val lowFrequencyRumble: Int, val highFrequencyRumble: Int, val durationMs: Int)
+@Serializable data class VPinballScriptErrorData(val error: Int, val line: Int, val position: Int, val description: String)
 
-data class VPinballWebServerData(val url: String)
+@Serializable
+data class Table(val uuid: String, val name: String, val path: String, val image: String, val createdAt: Long, val modifiedAt: Long) {
+    val fileName: String
+        get() = File(path).name
 
-data class VPinballCaptureScreenshotData(val success: Boolean)
+    val fullPath: String
+        get() {
+            val tablesPath = org.vpinball.app.VPinballManager.getTablesPath()
+            return if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                // Build content URI: tree URI + / + relative path
+                "$tablesPath/$path"
+            } else {
+                File(tablesPath, path).absolutePath
+            }
+        }
 
-data class VPinballTableInfo(val tableId: String, val name: String)
+    val baseURL: File
+        get() =
+            if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                File("")
+            } else {
+                File(fullPath).parentFile ?: File("")
+            }
 
-data class VPinballTablesData(var tables: List<VPinballTableInfo>, var success: Boolean)
+    val basePath: String
+        get() =
+            if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                fullPath.substringBeforeLast('/')
+            } else {
+                baseURL.absolutePath
+            }
 
-data class VPinballTableEventData(val tableId: String?, val newName: String?, val path: String?, var success: Boolean = false)
+    val fullURL: File
+        get() = File(fullPath)
 
-data class VPinballCustomTableOption(
-    var sectionName: String,
-    var id: String,
-    var name: String,
-    var showMask: Int,
-    var minValue: Float,
-    var maxValue: Float,
-    var step: Float,
-    var defaultValue: Float,
-    var unit: VPinballOptionUnit,
-    var literals: String,
-    var value: Float,
-)
+    val scriptURL: File
+        get() = File(fullPath.substringBeforeLast('.') + ".vbs")
 
-data class VPinballTableOptions(
-    var globalEmissionScale: Float,
-    var globalDifficulty: Float,
-    var exposure: Float,
-    var toneMapper: VPinballToneMapper,
-    var musicVolume: Int,
-    var soundVolume: Int,
-)
+    val scriptPath: String
+        get() =
+            if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                fullPath.substringBeforeLast('.') + ".vbs"
+            } else {
+                scriptURL.absolutePath
+            }
 
-data class VPinballViewSetup(
-    var viewMode: VPinballViewLayoutMode,
-    var sceneScaleX: Float,
-    var sceneScaleY: Float,
-    var sceneScaleZ: Float,
-    var viewX: Float,
-    var viewY: Float,
-    var viewZ: Float,
-    var lookAt: Float,
-    var viewportRotation: Float,
-    var fov: Float,
-    var layback: Float,
-    var viewHOfs: Float,
-    var viewVOfs: Float,
-    var windowTopZOfs: Float,
-    var windowBottomZOfs: Float,
-)
+    val iniURL: File
+        get() = File(fullPath.substringBeforeLast('.') + ".ini")
+
+    val iniPath: String
+        get() =
+            if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                fullPath.substringBeforeLast('.') + ".ini"
+            } else {
+                iniURL.absolutePath
+            }
+
+    val imagePath: String
+        get() {
+            val tablesPath = org.vpinball.app.VPinballManager.getTablesPath()
+            return if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
+                // SAF: Construct content:// URI
+                "$tablesPath/$image"
+            } else {
+                // Regular filesystem
+                File(tablesPath, image).absolutePath
+            }
+        }
+
+    fun exists(): Boolean = VPinballManager.fileExists(fullPath)
+
+    fun hasScriptFile(): Boolean = VPinballManager.fileExists(scriptPath)
+
+    fun hasIniFile(): Boolean = VPinballManager.fileExists(iniPath)
+
+    fun hasImageFile(): Boolean = image.isNotEmpty() && VPinballManager.fileExists(imagePath)
+}
+
+@Serializable data class VPXTablesResponse(val success: Boolean, val tableCount: Int, val tables: List<Table>)
+
+@Serializable data class VPinballWebServerData(val url: String)

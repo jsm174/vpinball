@@ -33,6 +33,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
@@ -43,9 +44,12 @@ import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.vpinball.app.TableListMode
 import org.vpinball.app.VPinballManager
-import org.vpinball.app.data.entity.PinTable
+import org.vpinball.app.jni.Table
 import org.vpinball.app.jni.VPinballLogLevel
 import org.vpinball.app.ui.screens.common.RoundedCard
 import org.vpinball.app.ui.theme.VpxRed
@@ -57,27 +61,28 @@ import org.vpinball.app.util.updateImage
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun TablesList(
-    tables: List<PinTable>,
+    tables: List<Table>,
     mode: TableListMode,
-    onPlay: (table: PinTable) -> Unit,
-    onRename: (table: PinTable, name: String) -> Unit,
-    onChangeArtwork: (table: PinTable) -> Unit,
-    onViewScript: (table: PinTable) -> Unit,
-    onShare: (table: PinTable) -> Unit,
-    onDelete: (table: PinTable) -> Unit,
+    onPlay: (table: Table) -> Unit,
+    onRename: (table: Table, name: String) -> Unit,
+    onChangeTableImage: (table: Table) -> Unit,
+    onViewScript: (table: Table) -> Unit,
+    onShare: (table: Table) -> Unit,
+    onDelete: (table: Table) -> Unit,
     modifier: Modifier = Modifier,
     lazyGridState: LazyGridState = rememberLazyGridState(),
     lazyListState: LazyListState = rememberLazyListState(),
 ) {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
-    var currentTable by remember { mutableStateOf<PinTable?>(null) }
+    var currentTable by remember { mutableStateOf<Table?>(null) }
 
     var showRenameAlertDialog by remember { mutableStateOf(false) }
     var renameName by remember { mutableStateOf(TextFieldValue("")) }
 
-    var showChangeArtworkSheet by remember { mutableStateOf(false) }
-    val changeArtworkSheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    var showChangeTableImageSheet by remember { mutableStateOf(false) }
+    val changeTableImageSheetState: SheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val focusRequester = remember { FocusRequester() }
 
@@ -94,10 +99,10 @@ fun TablesList(
                                 newWidth = VPinballManager.getDisplaySize().width,
                                 newHeight = VPinballManager.getDisplaySize().height,
                             )
-                        currentTable!!.updateImage(resizedBitmap)
-                        onChangeArtwork(currentTable!!)
+                        val tableToUpdate = currentTable!!
+                        coroutineScope.launch { withContext(Dispatchers.IO) { tableToUpdate.updateImage(resizedBitmap) } }
                     } catch (e: Exception) {
-                        VPinballManager.log(VPinballLogLevel.ERROR, "Unable to change artwork: ${e.message}")
+                        VPinballManager.log(VPinballLogLevel.ERROR, "Unable to change image: ${e.message}")
                     }
                 }
             },
@@ -122,9 +127,9 @@ fun TablesList(
                             renameName = renameName.copy(text = table.name)
                             showRenameAlertDialog = true
                         },
-                        onChangeArtwork = {
+                        onChangeTableImage = {
                             currentTable = table
-                            showChangeArtworkSheet = true
+                            showChangeTableImageSheet = true
                         },
                         onViewScript = { onViewScript(table) },
                         onShare = { onShare(table) },
@@ -153,9 +158,9 @@ fun TablesList(
                             renameName = renameName.copy(text = table.name)
                             showRenameAlertDialog = true
                         },
-                        onChangeArtwork = {
+                        onChangeTableImage = {
                             currentTable = table
-                            showChangeArtworkSheet = true
+                            showChangeTableImageSheet = true
                         },
                         onViewScript = { onViewScript(table) },
                         onShare = { onShare(table) },
@@ -183,9 +188,9 @@ fun TablesList(
                                 renameName = renameName.copy(text = table.name)
                                 showRenameAlertDialog = true
                             },
-                            onChangeArtwork = {
+                            onChangeTableImage = {
                                 currentTable = table
-                                showChangeArtworkSheet = true
+                                showChangeTableImageSheet = true
                             },
                             onViewScript = { onViewScript(table) },
                             onShare = { onShare(table) },
@@ -251,17 +256,17 @@ fun TablesList(
         )
     }
 
-    if (showChangeArtworkSheet) {
+    if (showChangeTableImageSheet) {
         ModalBottomSheet(
-            onDismissRequest = { showChangeArtworkSheet = false },
-            sheetState = changeArtworkSheetState,
+            onDismissRequest = { showChangeTableImageSheet = false },
+            sheetState = changeTableImageSheetState,
             containerColor = MaterialTheme.colorScheme.surface,
         ) {
             Column(modifier = Modifier.padding(16.dp)) {
                 RoundedCard {
                     TextButton(
                         onClick = {
-                            showChangeArtworkSheet = false
+                            showChangeTableImageSheet = false
                             photoPickerLauncher.launch("image/*")
                         },
                         modifier = Modifier.fillMaxWidth(),
@@ -273,9 +278,9 @@ fun TablesList(
 
                     TextButton(
                         onClick = {
-                            showChangeArtworkSheet = false
-                            currentTable!!.resetImage()
-                            onChangeArtwork(currentTable!!)
+                            showChangeTableImageSheet = false
+                            val tableToReset = currentTable!!
+                            coroutineScope.launch { withContext(Dispatchers.IO) { tableToReset.resetImage() } }
                         },
                         modifier = Modifier.fillMaxWidth(),
                     ) {
@@ -286,7 +291,7 @@ fun TablesList(
                 Spacer(modifier = Modifier.height(8.dp))
 
                 RoundedCard {
-                    TextButton(onClick = { showChangeArtworkSheet = false }, modifier = Modifier.fillMaxWidth()) {
+                    TextButton(onClick = { showChangeTableImageSheet = false }, modifier = Modifier.fillMaxWidth()) {
                         Text(text = "Cancel", color = Color.VpxRed, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
                     }
                 }

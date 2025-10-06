@@ -4,6 +4,10 @@
 
 #include "EscSplashModal.h"
 
+#ifdef __LIBVPINBALL__
+#include "lib/src/VPinballLib.h"
+#endif
+
 void EscSplashModal::Open()
 {
    if (IsOpened())
@@ -128,38 +132,46 @@ void EscSplashModal::Update()
       }
    #endif
    if (g_pvp->m_ptableActive->TournamentModePossible() && ImGui::Button("Generate Tournament File", size))
-   {
       g_pvp->GenerateTournamentFile();
-   }
+   #ifdef __LIBVPINBALL__
+      bool showTouchOverlay = g_pvp->m_settings.LoadValueBool(Settings::Player, "TouchOverlay"s);
+      if (ImGui::Button(showTouchOverlay ? "Disable Touch Overlay" : "Enable Touch Overlay", size))
+      {
+         showTouchOverlay = !showTouchOverlay;
+         g_pvp->m_settings.SaveValue(Settings::Player, "TouchOverlay"s, showTouchOverlay);
+         m_liveUI.ShowTouchOverlay(showTouchOverlay);
+
+         ImGui::GetIO().MousePos.x = 0;
+         ImGui::GetIO().MousePos.y = 0;
+      }
+      if (ImGui::Button(m_liveUI.m_perfUI.GetPerfMode() != PerfUI::PerfMode::PM_DISABLED ? "Disable FPS" : "Enable FPS", size))
+      {
+         if (m_liveUI.m_perfUI.GetPerfMode() != PerfUI::PerfMode::PM_DISABLED)
+            m_liveUI.m_perfUI.SetPerfMode(PerfUI::PerfMode::PM_DISABLED);
+         else
+         {
+            m_liveUI.m_perfUI.SetPerfMode(PerfUI::PerfMode::PM_FPS);
+            m_player->InitFPS();
+            m_player->m_logicProfiler.EnableWorstFrameLogging(true);
+         }
+
+         ImGui::GetIO().MousePos.x = 0;
+         ImGui::GetIO().MousePos.y = 0;
+      }
+   #endif
    #ifndef __STANDALONE__
-      // Quit: click on the button
       if (ImGui::Button("Quit to Editor", size))
          m_table->QuitPlayer(Player::CS_STOP_PLAY);
    #else
-      #if ((defined(__APPLE__) && (defined(TARGET_OS_IOS) && TARGET_OS_IOS)) || defined(__ANDROID__))
-         bool showTouchOverlay = g_pvp->m_settings.LoadValueBool(Settings::Player, "TouchOverlay"s);
-         if (ImGui::Button(showTouchOverlay ? "Disable Touch Overlay" : "Enable Touch Overlay", size))
-         {
-            showTouchOverlay = !showTouchOverlay;
-            g_pvp->m_settings.SaveValue(Settings::Player, "TouchOverlay"s, showTouchOverlay);
-            m_liveUI.ShowTouchOverlay(showTouchOverlay);
-
-            ImGui::GetIO().MousePos.x = 0;
-            ImGui::GetIO().MousePos.y = 0;
-         }
-      #endif
-      #if (defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__)
-         if (ImGui::Button(m_liveUI.m_perfUI.GetPerfMode() != PerfUI::PerfMode::PM_DISABLED ? "Disable FPS" : "Enable FPS", size))
-         {
-            m_liveUI.m_perfUI.SetPerfMode(m_liveUI.m_perfUI.GetPerfMode() != PerfUI::PerfMode::PM_DISABLED ? PerfUI::PerfMode::PM_FPS : PerfUI::PerfMode::PM_DISABLED);
-            ImGui::GetIO().MousePos.x = 0;
-            ImGui::GetIO().MousePos.y = 0;
-         }
-      #endif
       if (ImGui::Button("Quit", size))
       {
          ImGui::CloseCurrentPopup();
-         m_table->QuitPlayer(Player::CS_CLOSE_APP);
+#ifdef __LIBVPINBALL__
+         if (VPinballLib::VPinballLib::Instance().ShouldCaptureTableImage())
+            m_player->SetCloseState(Player::CS_CLOSE_CAPTURE_SCREENSHOT);
+         else
+#endif
+            m_table->QuitPlayer(Player::CS_CLOSE_APP);
       }
    #endif
    const ImVec2 pos = ImGui::GetWindowPos();
