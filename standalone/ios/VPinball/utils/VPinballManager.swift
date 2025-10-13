@@ -89,6 +89,14 @@ class VPinballManager {
                 }
             case .playerClosed:
                 vpinballViewModel.isPlaying = false
+
+                if let table = vpinballManager.activeTable {
+                    Task {
+                        await TableManager.shared.cleanupLoadedTable(uuid: table.uuid)
+                        await TableManager.shared.loadTables()
+                    }
+                }
+
                 vpinballManager.activeTable = nil
 
                 if vpinballViewModel.scriptError != nil {
@@ -113,37 +121,6 @@ class VPinballManager {
                 } else {
                     DispatchQueue.main.async {
                         vpinballViewModel.webServerURL = nil
-                    }
-                }
-            case .tableListUpdated:
-                var focusUuid: String?
-                if let data = data {
-                    let json = String(cString: UnsafePointer<CChar>(data))
-                    if let jsonData = json.data(using: .utf8) {
-                        struct TableListUpdatedData: Codable {
-                            let focusUuid: String?
-                        }
-                        if let data = try? JSONDecoder().decode(TableListUpdatedData.self,
-                                                                from: jsonData),
-                            let uuidString = data.focusUuid
-                        {
-                            focusUuid = uuidString
-                        }
-                    }
-                }
-
-                DispatchQueue.main.async {
-                    vpinballManager.activeTable = nil
-                    vpinballViewModel.isPlaying = false
-                    vpinballViewModel.hideHUD()
-
-                    Task {
-                        await TableManager.shared.loadTables()
-
-                        if let uuid = focusUuid {
-                            try? await Task.sleep(nanoseconds: 100_000_000)
-                            vpinballViewModel.scrollToTableId = uuid
-                        }
                     }
                 }
             default:
@@ -235,10 +212,20 @@ class VPinballManager {
 
         var success = true
 
+        guard let tablePath = await TableManager.shared.stageTable(uuid: table.uuid) else {
+            try? await Task.sleep(nanoseconds: 500_000_000)
+            activeTable = nil
+            await MainActor.run {
+                vpinballViewModel.hideHUD()
+            }
+            VPinballManager.log(.error, "unable to stage table")
+            return false
+        }
+
         if await Task.detached(
             priority: .userInitiated,
-            operation: { [table] in
-                VPinballStatus(rawValue: VPinballLoadTable(table.uuid.cstring))
+            operation: { [tablePath] in
+                VPinballStatus(rawValue: VPinballLoadTable(tablePath.cstring))
             }
         ).value == .success {
             if await MainActor.run(body: { VPinballStatus(rawValue: VPinballPlay()) }) != .success {
@@ -268,6 +255,11 @@ class VPinballManager {
     }
 
     func stop() {
+        if let table = activeTable {
+            Task {
+                await TableManager.shared.cleanupLoadedTable(uuid: table.uuid)
+            }
+        }
         VPinballStop()
     }
 

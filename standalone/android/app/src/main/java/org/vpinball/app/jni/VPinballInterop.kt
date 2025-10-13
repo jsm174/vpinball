@@ -213,7 +213,7 @@ data class Table(val uuid: String, val name: String, val path: String, val image
     val scriptPath: String
         get() =
             if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
-                fullPath.substringBeforeLast('.') + ".vbs"
+                path.substringBeforeLast('.') + ".vbs"
             } else {
                 scriptURL.absolutePath
             }
@@ -224,7 +224,7 @@ data class Table(val uuid: String, val name: String, val path: String, val image
     val iniPath: String
         get() =
             if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
-                fullPath.substringBeforeLast('.') + ".ini"
+                path.substringBeforeLast('.') + ".ini"
             } else {
                 iniURL.absolutePath
             }
@@ -233,21 +233,11 @@ data class Table(val uuid: String, val name: String, val path: String, val image
         get() {
             val tablesPath = org.vpinball.app.VPinballManager.getTablesPath()
             return if (org.vpinball.app.VPinballManager.isTablesPathSAF()) {
-                // SAF: Construct content:// URI
                 "$tablesPath/$image"
             } else {
-                // Regular filesystem
                 File(tablesPath, image).absolutePath
             }
         }
-
-    fun exists(): Boolean = VPinballManager.fileExists(fullPath)
-
-    fun hasScriptFile(): Boolean = VPinballManager.fileExists(scriptPath)
-
-    fun hasIniFile(): Boolean = VPinballManager.fileExists(iniPath)
-
-    fun hasImageFile(): Boolean = image.isNotEmpty() && VPinballManager.fileExists(imagePath)
 }
 
 @Serializable data class VPXTablesResponse(val tableCount: Int, val tables: List<Table>)

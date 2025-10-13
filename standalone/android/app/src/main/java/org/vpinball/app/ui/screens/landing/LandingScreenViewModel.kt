@@ -55,6 +55,15 @@ class LandingScreenViewModel : ViewModel() {
     private val _search = MutableStateFlow("")
     val search: StateFlow<String> = _search
 
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _loadingProgress = MutableStateFlow(0)
+    val loadingProgress: StateFlow<Int> = _loadingProgress
+
+    private val _loadingStatus = MutableStateFlow("")
+    val loadingStatus: StateFlow<String> = _loadingStatus
+
     init {
         loadSettings()
         fetchTables()
@@ -92,8 +101,16 @@ class LandingScreenViewModel : ViewModel() {
         tableJob =
             viewModelScope.launch {
                 try {
-                    // Use TableManager to load tables
-                    val tables = TableManager.loadTables()
+                    _isLoading.update { true }
+                    _loadingProgress.update { 0 }
+                    _loadingStatus.update { "" }
+
+                    // Use TableManager to load tables with progress
+                    val tables =
+                        TableManager.loadTables { progress, status ->
+                            _loadingProgress.update { progress }
+                            _loadingStatus.update { status }
+                        }
                     VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "fetchTables: Loaded ${tables.size} tables")
 
                     // Sort tables based on current sort order and deduplicate by UUID
@@ -115,6 +132,8 @@ class LandingScreenViewModel : ViewModel() {
                         _unfilteredTables.update { emptyList() }
                         _filteredTables.update { emptyList() }
                     }
+                } finally {
+                    _isLoading.update { false }
                 }
             }
     }

@@ -33,6 +33,9 @@ object VPinballManager : KoinComponent {
     private var activeTable: Table? = null
     private var error: String? = null
 
+    private var lastProgressEvent: VPinballEvent? = null
+    private var lastProgress: Int? = null
+
     fun initialize(activity: VPinballActivity) {
         this.activity = activity
         this.safFileSystem = SAFFileSystem()
@@ -78,21 +81,31 @@ object VPinballManager : KoinComponent {
                                 null
                             }
                         }
-                    log(VPinballLogLevel.INFO, "event=${event.name}, data=${progressData}")
-                    progressData?.let {
-                        CoroutineScope(Dispatchers.Main).launch {
-                            viewModel.title(activeTable?.name ?: "")
-                            viewModel.progress(progressData.progress)
-                            viewModel.status(event.text)
+
+                    // Only update if event or progress changed
+                    val shouldUpdate = lastProgressEvent != event || lastProgress != progressData?.progress
+                    if (shouldUpdate) {
+                        log(VPinballLogLevel.INFO, "event=${event.name}, data=${progressData}")
+                        lastProgressEvent = event
+                        lastProgress = progressData?.progress
+
+                        progressData?.let {
+                            CoroutineScope(Dispatchers.Main).launch {
+                                viewModel.title(activeTable?.name ?: "")
+                                viewModel.progress(progressData.progress)
+                                viewModel.status(event.text)
+                            }
                         }
                     }
                 }
                 VPinballEvent.PLAYER_STARTED -> {
-                    log(VPinballLogLevel.INFO, "event=${event.name}")
+                    lastProgressEvent = null
+                    lastProgress = null
                     CoroutineScope(Dispatchers.Main).launch {
                         viewModel.playing(true)
                         delay(500)
                         viewModel.loading(false)
+                        activity.setComposeAlpha(0f)
                     }
                 }
                 VPinballEvent.RUMBLE -> {
@@ -110,7 +123,6 @@ object VPinballManager : KoinComponent {
                     }
                 }
                 VPinballEvent.SCRIPT_ERROR -> {
-                    log(VPinballLogLevel.INFO, "event=${event.name}, error=$error, jsonData=$jsonData")
                     if (error == null) {
                         val scriptErrorData =
                             jsonData?.let { jsonStr ->
@@ -126,22 +138,52 @@ object VPinballManager : KoinComponent {
                                 val errorType = VPinballScriptErrorType.fromInt(it.error)
                                 "${errorType.text} on line ${it.line}, position ${it.position}:\n\n${it.description}"
                             } ?: "Script error."
-                        log(VPinballLogLevel.INFO, "SCRIPT_ERROR: set error to: $error")
-                    } else {
-                        log(VPinballLogLevel.INFO, "SCRIPT_ERROR: error already set, ignoring")
                     }
                 }
                 VPinballEvent.PLAYER_CLOSED -> {
-                    log(VPinballLogLevel.INFO, "event=${event.name}")
+                    val tableToCleanup = activeTable
                     activeTable = null
                     CoroutineScope(Dispatchers.Main).launch {
                         viewModel.playing(false)
-                        viewModel.stopped()
+                        activity.setComposeAlpha(1f)
+
                         error?.let { error ->
-                            log(VPinballLogLevel.INFO, "STOPPED: showing error: $error")
                             delay(500)
                             showError(error)
-                        } ?: log(VPinballLogLevel.INFO, "STOPPED: no error to show")
+                        }
+
+                        viewModel.stopped()
+                        delay(100)
+
+                        tableToCleanup?.let { table ->
+                            if (isTablesPathSAF()) {
+                                viewModel.loading(true, null)
+                                viewModel.title(table.name)
+                                viewModel.progress(0)
+                                viewModel.status("Saving changes...")
+                                delay(50)
+
+                                withContext(Dispatchers.IO) {
+                                    TableManager.getInstance().cleanupLoadedTable(table.uuid) { progress, status ->
+                                        CoroutineScope(Dispatchers.Main).launch {
+                                            viewModel.progress(progress)
+                                            viewModel.status(status)
+                                        }
+                                    }
+                                }
+
+                                viewModel.loading(false)
+                            } else {
+                                withContext(Dispatchers.IO) {
+                                    TableManager.getInstance().cleanupLoadedTable(table.uuid)
+                                }
+                            }
+                        }
+
+                        withContext(Dispatchers.IO) {
+                            TableManager.getInstance().refresh()
+                        }
+                        LandingScreenViewModel.triggerRefresh()
                     }
                 }
                 VPinballEvent.WEB_SERVER -> {
@@ -153,7 +195,6 @@ object VPinballManager : KoinComponent {
                                 null
                             }
                         }
-                    log(VPinballLogLevel.INFO, "event=${event.name}, data=${webServerData}")
                     webServerData?.let { CoroutineScope(Dispatchers.Main).launch { viewModel.webServerURL = webServerData.url } }
                 }
                 VPinballEvent.TABLE_LIST_UPDATED -> {
@@ -263,13 +304,43 @@ object VPinballManager : KoinComponent {
             if (loadValue(STANDALONE, "ResetLogOnPlay", true)) {
                 vpinballJNI.VPinballResetLog()
             }
-            withContext(Dispatchers.Main) { activity.viewModel.loading(true, table) }
-            if (vpinballJNI.VPinballLoadTable(table.uuid) == VPinballStatus.SUCCESS.value) {
+
+            val viewModel = activity.viewModel
+            if (isTablesPathSAF()) {
+                withContext(Dispatchers.Main) {
+                    viewModel.loading(true, table)
+                    viewModel.title(table.name)
+                    viewModel.progress(0)
+                    viewModel.status("")
+                }
+            }
+
+            // Stage the table first to get actual file path
+            val tablePath =
+                TableManager.getInstance().stageTable(table.uuid) { progress, status ->
+                    CoroutineScope(Dispatchers.Main).launch {
+                        viewModel.progress(progress)
+                        viewModel.status(status)
+                    }
+                }
+            if (tablePath == null) {
+                log(VPinballLogLevel.ERROR, "Unable to stage table: ${table.uuid}")
+                delay(500)
+                withContext(Dispatchers.Main) {
+                    viewModel.stopped()
+                    showError("Unable to stage table.")
+                    activeTable = null
+                }
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) { viewModel.loading(true, table) }
+            if (vpinballJNI.VPinballLoadTable(tablePath) == VPinballStatus.SUCCESS.value) {
                 vpinballJNI.VPinballPlay()
             } else {
                 delay(500)
                 withContext(Dispatchers.Main) {
-                    activity.viewModel.stopped()
+                    viewModel.stopped()
                     showError("Unable to load table.")
                     activeTable = null
                 }
@@ -281,14 +352,6 @@ object VPinballManager : KoinComponent {
         vpinballJNI.VPinballStop()
     }
 
-    fun fileExists(path: String): Boolean {
-        return vpinballJNI.VPinballFileExists(path)
-    }
-
-    fun stageFile(path: String): String? {
-        return vpinballJNI.VPinballStageFile(path)
-    }
-
     fun showError(message: String) {
         CoroutineScope(Dispatchers.Main).launch {
             delay(250)
@@ -297,41 +360,39 @@ object VPinballManager : KoinComponent {
     }
 
     fun getTablesPath(): String {
-        return vpinballJNI.VPinballGetTablesPath()
+        val customPath = loadValue(STANDALONE, "TablesPath", "")
+        return if (customPath.isNotEmpty()) {
+            customPath
+        } else {
+            File(activity.filesDir, "tables").absolutePath
+        }
     }
 
     fun getCurrentTablesPath(): String {
-        return vpinballJNI.VPinballGetTablesPath()
+        return getTablesPath()
     }
 
     fun isTablesPathSAF(): Boolean {
         return getTablesPath().startsWith("content://")
     }
 
-    fun logAvailableStoragePaths() {
-        log(VPinballLogLevel.INFO, "=== TESTING getExternalFilesDirs() ===")
-        val externalDirs = activity.getExternalFilesDirs(null)
-        log(VPinballLogLevel.INFO, "Found ${externalDirs.size} external storage locations:")
-        externalDirs.forEachIndexed { index, file ->
-            if (file != null) {
-                log(VPinballLogLevel.INFO, "  [$index] ${file.absolutePath}")
-                log(VPinballLogLevel.INFO, "       Exists: ${file.exists()}, CanWrite: ${file.canWrite()}")
-            } else {
-                log(VPinballLogLevel.INFO, "  [$index] null")
-            }
-        }
-        log(VPinballLogLevel.INFO, "=== END STORAGE TEST ===")
-    }
 
     fun RefreshTables() {
-        log(VPinballLogLevel.INFO, "VPinballManager: RefreshTables() called")
-        CoroutineScope(Dispatchers.IO).launch {
-            val status = vpinballJNI.VPinballRefreshTables()
-            if (status == VPinballStatus.SUCCESS.value) {
-                log(VPinballLogLevel.INFO, "VPinballManager: Successfully reloaded tables path")
-            } else {
-                log(VPinballLogLevel.ERROR, "VPinballManager: Failed to reload tables path - status: $status")
+        CoroutineScope(Dispatchers.Main).launch {
+            val viewModel = activity.viewModel
+            viewModel.loading(true, null)
+            viewModel.title("Loading Tables")
+            viewModel.status("")
+
+            TableManager.getInstance().refresh { progress, status ->
+                CoroutineScope(Dispatchers.Main).launch {
+                    viewModel.progress(progress)
+                    viewModel.status(status)
+                }
             }
+
+            viewModel.loading(false)
+            LandingScreenViewModel.triggerRefresh()
         }
     }
 }

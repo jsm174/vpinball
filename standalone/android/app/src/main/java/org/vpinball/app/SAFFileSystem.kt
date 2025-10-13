@@ -169,6 +169,30 @@ class SAFFileSystem {
         }
     }
 
+    fun openOutputStream(relativePath: String): java.io.OutputStream? {
+        VPinballManager.log(VPinballLogLevel.INFO, "SAF: openOutputStream: $relativePath")
+
+        val uri = getExternalStorageUri()
+        if (uri == null) {
+            VPinballManager.log(VPinballLogLevel.ERROR, "SAF: openOutputStream: No external storage URI set")
+            return null
+        }
+
+        return try {
+            val docUri = buildDocumentUri(uri, relativePath, createIfMissing = true)
+            if (docUri == null) {
+                VPinballManager.log(VPinballLogLevel.WARN, "SAF: openOutputStream: Failed to create: $relativePath")
+                return null
+            }
+
+            activity.contentResolver.openOutputStream(docUri, "wt")
+        } catch (e: Exception) {
+            VPinballManager.log(VPinballLogLevel.ERROR, "SAF: openOutputStream: Exception: ${e.message}")
+            e.printStackTrace()
+            null
+        }
+    }
+
     fun exists(relativePath: String): Boolean {
         val uri = getExternalStorageUri() ?: return false
         val docUri = buildDocumentUri(uri, relativePath)

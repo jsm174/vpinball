@@ -435,7 +435,7 @@ struct MainView: View {
     func handleRenameTable() {
         if let selectedTable = selectedTable {
             Task {
-                await tableManager.renameTable(selectedTable,
+                await tableManager.renameTable(uuid: selectedTable.uuid,
                                                newName: renameTableName)
                 tableListScrollToTableId = selectedTable.uuid
             }
@@ -463,12 +463,11 @@ struct MainView: View {
                                                                                             height: 2556))
                             {
                                 Task {
-                                    await tableManager.updateTableImage(selectedTable,
-                                                                        image: resizedImage)
+                                    await self.saveAndSetTableImage(table: selectedTable, image: resizedImage)
                                 }
                             } else {
                                 Task {
-                                    await tableManager.resetTableImage(selectedTable)
+                                    await tableManager.setTableImage(uuid: selectedTable.uuid, imagePath: "")
                                 }
                             }
                         }
@@ -484,7 +483,7 @@ struct MainView: View {
         if let selectedTable = selectedTable {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 Task {
-                    await tableManager.resetTableImage(selectedTable)
+                    await tableManager.setTableImage(uuid: selectedTable.uuid, imagePath: "")
                 }
             }
         }
@@ -496,8 +495,7 @@ struct MainView: View {
                 showScript = true
             } else {
                 Task {
-                    if await tableManager.extractTableScript(selectedTable) == true {
-                        tableManager.updateTable(selectedTable)
+                    if await tableManager.extractTableScript(uuid: selectedTable.uuid) {
                         showScript = true
                     } else {
                         handleShowError(message: "Unable to extract script")
@@ -510,7 +508,7 @@ struct MainView: View {
     func handleShareTable() {
         if let selectedTable = selectedTable {
             Task {
-                if let url = await tableManager.shareTable(selectedTable) {
+                if let url = await tableManager.exportTable(uuid: selectedTable.uuid) {
                     shareItems = [url]
                     showShare = true
                 }
@@ -521,7 +519,6 @@ struct MainView: View {
     func handleResetTable() {
         if let selectedTable = selectedTable {
             _ = VPinballDeleteFile(selectedTable.iniPath.cstring)
-            tableManager.updateTable(selectedTable)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
                 tableListScrollToTableId = selectedTable.uuid
             }
@@ -531,7 +528,7 @@ struct MainView: View {
     func handleDeleteTable() {
         if let selectedTable = selectedTable {
             Task {
-                await tableManager.deleteTable(selectedTable)
+                await tableManager.deleteTable(uuid: selectedTable.uuid)
             }
         }
     }
@@ -560,6 +557,25 @@ struct MainView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             errorMessage = message
             showError = true
+        }
+    }
+
+    func saveAndSetTableImage(table: Table, image: UIImage) async {
+        let tablesPath = String(cString: VPinballGetTablesPath())
+        let fullPath = (tablesPath as NSString).appendingPathComponent(table.path)
+        let tableDir = (fullPath as NSString).deletingLastPathComponent
+        let baseName = (fullPath as NSString).deletingPathExtension.components(separatedBy: "/").last ?? ""
+        let imagePath = (tableDir as NSString).appendingPathComponent(baseName + ".png")
+
+        if let imageData = image.pngData() {
+            let imageURL = URL(fileURLWithPath: imagePath)
+            do {
+                try imageData.write(to: imageURL)
+                VPinballManager.log(.info, "Saved table image: \(imagePath)")
+                await tableManager.loadTables()
+            } catch {
+                VPinballManager.log(.error, "Failed to save table image: \(error.localizedDescription)")
+            }
         }
     }
 }

@@ -20,18 +20,6 @@ public class VPinballJNI {
     public native int VPinballPlay();
     public native void VPinballStop();
     public native String VPinballExportTable(String uuid);
-    public native boolean VPinballFileExists(String path);
-    public native boolean VPinballDeleteFile(String path);
-    public native boolean VPinballCopyFile(String sourcePath, String destPath);
-    public native String VPinballStageFile(String path);
-
-    public native int VPinballRefreshTables();
-    public native String VPinballGetTables();
-    public native int VPinballDeleteTable(String uuid);
-    public native int VPinballRenameTable(String uuid, String newName);
-    public native int VPinballImportTable(String sourceFile);
-    public native int VPinballSetTableImage(String uuid, String imagePath);
-    public native String VPinballGetTablesPath();
 
     public static boolean SAFWriteFile(String relativePath, String content) {
         return VPinballManager.safFileSystem.writeFile(relativePath, content);

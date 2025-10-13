@@ -65,7 +65,7 @@ fun TableListGridItem(
 
     val contextMenuExpanded = remember { mutableStateOf(false) }
     var globalTouchOffset by remember { mutableStateOf(Offset.Zero) }
-    val bitmap by produceState<ImageBitmap?>(null, table) { value = withContext(Dispatchers.IO) { table.loadImage() } }
+    val bitmap by produceState<ImageBitmap?>(null, table.uuid, table.image) { value = withContext(Dispatchers.IO) { table.loadImage() } }
 
     val imageState by remember {
         derivedStateOf {

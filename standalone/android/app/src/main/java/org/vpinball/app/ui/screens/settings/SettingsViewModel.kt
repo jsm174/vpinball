@@ -8,7 +8,6 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import org.vpinball.app.VPinballManager
 import org.vpinball.app.jni.VPinballExternalDMD
 import org.vpinball.app.jni.VPinballGfxBackend
@@ -76,6 +75,9 @@ class SettingsViewModel : ViewModel() {
     var resetLogOnPlay by mutableStateOf(false)
         private set
 
+    var needsTableReload by mutableStateOf(false)
+        private set
+
     fun loadSettings() {
         // General
 
@@ -83,19 +85,14 @@ class SettingsViewModel : ViewModel() {
         renderingModeOverride = (VPinballManager.loadValue(STANDALONE, "RenderingModeOverride", 2) == 2)
         gfxBackend = VPinballGfxBackend.fromString(VPinballManager.loadValue(PLAYER, "GfxBackend", VPinballGfxBackend.OPENGLES.value))
 
-        // Storage - check if external storage (SAF) is configured
-        VPinballManager.logAvailableStoragePaths()
-
         val externalStorageUri = VPinballManager.safFileSystem.getExternalStorageUri()
         useExternalStorage = externalStorageUri != null
 
         if (useExternalStorage) {
             val displayPath = VPinballManager.safFileSystem.getExternalStorageDisplayPath()
             currentTablesPath = if (displayPath.isNotEmpty()) displayPath else "External Storage (SAF)"
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Using external storage: $currentTablesPath")
         } else {
             currentTablesPath = VPinballManager.getCurrentTablesPath()
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Using internal storage: $currentTablesPath")
         }
 
         // Display
@@ -151,40 +148,28 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun handleExternalStorageUri(uri: android.net.Uri) {
-        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: handleExternalStorageUri: $uri")
-
-        // Set the URI in SAFFileSystem (takes persistent permission and saves to INI)
         VPinballManager.safFileSystem.setExternalStorageUri(uri)
         useExternalStorage = true
 
-        // Update display path immediately
         val displayPath = VPinballManager.safFileSystem.getExternalStorageDisplayPath()
         currentTablesPath = if (displayPath.isNotEmpty()) displayPath else "External Storage (SAF)"
-        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: External storage path: $currentTablesPath")
 
-        // Reload tables from new location
-        CoroutineScope(Dispatchers.IO).launch {
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reloading tables from SAF location...")
-            val status = VPinballManager.vpinballJNI.VPinballRefreshTables()
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reload status: $status")
-        }
+        needsTableReload = true
     }
 
     fun handleClearExternalStorage() {
-        VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: handleClearExternalStorage")
-
         VPinballManager.safFileSystem.clearExternalStorageUri()
         useExternalStorage = false
+        currentTablesPath = VPinballManager.getCurrentTablesPath()
 
-        // Reload tables from internal storage
-        CoroutineScope(Dispatchers.IO).launch {
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reloading tables from internal storage...")
-            val status = VPinballManager.vpinballJNI.VPinballRefreshTables()
-            VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: Reload status: $status")
+        needsTableReload = true
+    }
 
-            withContext(Dispatchers.Main) {
-                currentTablesPath = VPinballManager.getCurrentTablesPath()
-                VPinballManager.log(VPinballLogLevel.INFO, "SettingsViewModel: External storage disabled, using: $currentTablesPath")
+    fun triggerTableReloadIfNeeded() {
+        if (needsTableReload) {
+            needsTableReload = false
+            CoroutineScope(Dispatchers.Main).launch {
+                org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
             }
         }
     }

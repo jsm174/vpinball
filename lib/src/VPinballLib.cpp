@@ -4,8 +4,6 @@
 #include "core/VPXPluginAPIImpl.h"
 #include "core/extern.h"
 #include "VPinballLib.h"
-#include "TableManager.h"
-#include "FileSystem.h"
 #include "VPXProgress.h"
 #include "WebServer.h"
 
@@ -52,8 +50,6 @@ MSGPI_EXPORT void MSGPIAPI WMPPluginUnload();
 #ifdef __APPLE__
 #include "VPinballLib_iOS.h"
 #endif
-
-// Main Library
 
 namespace VPinballLib {
 
@@ -124,33 +120,33 @@ void VPinballLib::AppIterate()
          || g_pplayer->GetCloseState() == Player::CS_USER_INPUT))
          return;
 
+      CComObject<PinTable>* pActiveTable = g_pvp->GetActiveTable();
+
       if (g_pplayer->GetCloseState() == Player::CS_CLOSE_CAPTURE_SCREENSHOT) {
          if (m_captureInProgress)
             return;
 
-         if (!m_tableManager.GetTableImagePath(m_loadedTableUuid).empty()) {
-            m_tableManager.CleanupLoadedTable(m_loadedTableUuid);
-            m_loadedTableUuid.clear();
+         std::filesystem::path tablePath(pActiveTable->m_filename);
+         string imageFilename = tablePath.stem().string() + ".jpg";
+         string imagePath = tablePath.parent_path().string() + PATH_SEPARATOR_CHAR + imageFilename;
+
+         if (std::filesystem::exists(imagePath)) {
             g_pplayer->SetCloseState(Player::CS_CLOSE_APP);
             return;
          }
 
          m_captureInProgress = true;
 
-         string tempPath = string(g_pvp->m_myPrefPath) + "temp_screenshot.jpg";
-
-         g_pplayer->m_renderer->m_renderDevice->CaptureScreenshot(tempPath,
-            [this, tempPath](bool success) {
+         g_pplayer->m_renderer->m_renderDevice->CaptureScreenshot(imagePath,
+            [this, imagePath](bool success) {
                m_captureInProgress = false;
 
                if (success) {
-                  m_tableManager.SetTableImage(m_loadedTableUuid, tempPath);
-                  FileSystem::Delete(tempPath, "");
+                  PLOGI.printf("Screenshot saved: %s", imagePath.c_str());
+               } 
+               else {
+                  PLOGE.printf("Failed to save screenshot: %s", imagePath.c_str());
                }
-
-               SendTableListUpdated(m_loadedTableUuid);
-               m_tableManager.CleanupLoadedTable(m_loadedTableUuid);
-               m_loadedTableUuid.clear();
 
                g_pplayer->SetCloseState(Player::CS_CLOSE_APP);
             });
@@ -165,14 +161,7 @@ void VPinballLib::AppIterate()
       delete g_pplayer;
       g_pplayer = nullptr;
 
-      CComObject<PinTable>* pActiveTable = g_pvp->GetActiveTable();
-      if (pActiveTable)
-         g_pvp->CloseTable(pActiveTable);
-
-      if (!m_loadedTableUuid.empty()) {
-         m_tableManager.CleanupLoadedTable(m_loadedTableUuid);
-         m_loadedTableUuid.clear();
-      }
+      g_pvp->CloseTable(pActiveTable);
    }
 }
 
@@ -228,9 +217,7 @@ void VPinballLib::Init(VPinballEventCallback callback)
 
       VPinballLib& lib = VPinballLib::Instance();
       lib.LoadPlugins();
-      lib.m_tableManager.Init();
       lib.UpdateWebServer();
-      lib.m_tableManager.CleanupCaches();
    }, nullptr, true);
 }
 
@@ -282,10 +269,6 @@ void VPinballLib::SetEventCallback(VPinballEventCallback callback)
                j["url"] = webServerData->url ? webServerData->url : "";
                jsonString = j.dump();
                jsonData = jsonString.c_str();
-               break;
-            }
-            case VPINBALL_EVENT_TABLE_LIST_UPDATED: {
-               jsonData = (const char*)data;
                break;
             }
             default:
@@ -430,48 +413,25 @@ void VPinballLib::UpdateWebServer()
       m_webServer.Start();
 }
 
-string VPinballLib::GetTables()
-{
-   return m_tableManager.GetTables();
-}
-
 string VPinballLib::GetTablesPath()
 {
-   return m_tableManager.GetTablesPath();
+   string tablesPath = g_pvp->m_settings.LoadValueWithDefault(Settings::Standalone, "TablesPath"s, ""s);
+
+   if (tablesPath.empty())
+      return string(g_pvp->m_myPrefPath) + "tables" + PATH_SEPARATOR_CHAR;
+
+   if (!tablesPath.ends_with(PATH_SEPARATOR_CHAR))
+      tablesPath += PATH_SEPARATOR_CHAR;
+
+   return tablesPath;
 }
 
-VPINBALL_STATUS VPinballLib::RefreshTables()
+VPINBALL_STATUS VPinballLib::LoadTable(const string& tablePath)
 {
-   m_tableManager.Reset();
-   SendTableListUpdated();
-   return VPINBALL_STATUS_SUCCESS;
-}
-
-void VPinballLib::SendTableListUpdated(const string& focusUuid)
-{
-   if (focusUuid.empty())
-      SendEvent(VPINBALL_EVENT_TABLE_LIST_UPDATED, nullptr);
-   else {
-      thread_local string jsonData;
-      jsonData = "{\"focusUuid\":\"" + focusUuid + "\"}";
-      SendEvent(VPINBALL_EVENT_TABLE_LIST_UPDATED, (void*)jsonData.c_str());
-   }
-}
-
-VPINBALL_STATUS VPinballLib::LoadTable(const string& uuid)
-{
-   m_loadedTableUuid = uuid;
-
-   string loadPath = m_tableManager.StageTable(uuid);
-   if (loadPath.empty()) {
-      m_loadedTableUuid.clear();
-      return VPINBALL_STATUS_FAILURE;
-   }
-
-   PLOGI.printf("VPinballLib::LoadTable: Loading from: %s", loadPath.c_str());
+   PLOGI.printf("VPinballLib::LoadTable: Loading from: %s", tablePath.c_str());
 
    VPXProgress progress;
-   g_pvp->LoadFileName(loadPath, true, &progress);
+   g_pvp->LoadFileName(tablePath, true, &progress);
 
    bool success = g_pvp->GetActiveTable() != nullptr;
    PLOGI.printf("VPinballLib::LoadTable: Result: %s", success ? "SUCCESS" : "FAILURE");
@@ -491,12 +451,21 @@ VPINBALL_STATUS VPinballLib::ExtractTableScript()
    std::filesystem::path tablePath(pActiveTable->m_filename);
    string vbsFilename = tablePath.stem().string() + ".vbs";
 
-   bool success = m_tableManager.SaveTableFile(m_loadedTableUuid, vbsFilename, tempPath);
+   string destPath = tablePath.parent_path().string() + PATH_SEPARATOR_CHAR + vbsFilename;
 
-   FileSystem::Delete(tempPath, "");
+   try {
+      std::filesystem::copy_file(tempPath, destPath, std::filesystem::copy_options::overwrite_existing);
+      std::filesystem::remove(tempPath);
+   } catch (const std::exception& e) {
+      PLOGE.printf("Failed to save script file: %s", e.what());
+      std::filesystem::remove(tempPath);
+      g_pvp->CloseTable(pActiveTable);
+      return VPINBALL_STATUS_FAILURE;
+   }
+
    g_pvp->CloseTable(pActiveTable);
 
-   return success ? VPINBALL_STATUS_SUCCESS : VPINBALL_STATUS_FAILURE;
+   return VPINBALL_STATUS_SUCCESS;
 }
 
 VPINBALL_STATUS VPinballLib::Play()
@@ -527,102 +496,8 @@ VPINBALL_STATUS VPinballLib::Stop()
    return VPINBALL_STATUS_SUCCESS;
 }
 
-bool VPinballLib::FileExists(const string& path)
-{
-   bool exists = FileSystem::Exists(path);
-   PLOGI.printf("VPinballLib::FileExists: path='%s' exists=%d", path.c_str(), exists);
-   return exists;
-}
-
-bool VPinballLib::DeleteFile(const string& path)
-{
-   bool deleted = FileSystem::Delete(path, "");
-   PLOGI.printf("VPinballLib::DeleteFile: path='%s' deleted=%d", path.c_str(), deleted);
-   return deleted;
-}
-
-string VPinballLib::StageFile(const string& path)
-{
-   PLOGI.printf("VPinballLib::StageFile: Called with path: %s", path.c_str());
-
-   // If not a SAF path, return as-is
-   if (!FileSystem::IsSAFUri(path)) {
-      PLOGI.printf("VPinballLib::StageFile: Not SAF, returning as-is: %s", path.c_str());
-      return path;
-   }
-
-   PLOGI.printf("VPinballLib::StageFile: Staging required, copying to cache: %s", path.c_str());
-
-   string tablesPath = m_tableManager.GetTablesPath();
-   string relativePath = FileSystem::ExtractRelativePath(path, tablesPath);
-
-   // Create cache path with full directory structure
-   string cachePath = string(g_pvp->m_myPrefPath) + "staging_cache";
-   string cachedFilePath = cachePath + "/" + relativePath;
-
-   // Create parent directories if needed
-   std::filesystem::path cachedFilePathObj(cachedFilePath);
-   std::filesystem::path parentDir = cachedFilePathObj.parent_path();
-   if (!std::filesystem::exists(parentDir)) {
-      std::filesystem::create_directories(parentDir);
-   }
-
-   // Copy file from SAF to cache
-   if (!FileSystem::CopyFile(path, cachedFilePath, tablesPath)) {
-      PLOGE.printf("VPinballLib::StageFile: Failed to copy SAF file to cache");
-      return "";
-   }
-
-   PLOGI.printf("VPinballLib::StageFile: File staged at: %s", cachedFilePath.c_str());
-   return cachedFilePath;
-}
 
 
-
-VPINBALL_STATUS VPinballLib::ImportTable(const string& sourceFile)
-{
-   if (m_tableManager.ImportTable(sourceFile)) {
-      SendTableListUpdated();
-      return VPINBALL_STATUS_SUCCESS;
-   }
-
-   return VPINBALL_STATUS_FAILURE;
-}
-
-VPINBALL_STATUS VPinballLib::SetTableImage(const string& uuid, const string& imagePath)
-{
-   if (m_tableManager.SetTableImage(uuid, imagePath)) {
-      SendTableListUpdated(uuid);
-      return VPINBALL_STATUS_SUCCESS;
-   }
-
-   return VPINBALL_STATUS_FAILURE;
-}
-
-string VPinballLib::ExportTable(const string& uuid)
-{
-   return m_tableManager.ExportTable(uuid);
-}
-
-VPINBALL_STATUS VPinballLib::RenameTable(const string& uuid, const string& newName)
-{
-   if (m_tableManager.RenameTable(uuid, newName)) {
-      SendTableListUpdated(uuid);
-      return VPINBALL_STATUS_SUCCESS;
-   }
-
-   return VPINBALL_STATUS_FAILURE;
-}
-
-VPINBALL_STATUS VPinballLib::DeleteTable(const string& uuid)
-{
-   if (m_tableManager.DeleteTable(uuid)) {
-      SendTableListUpdated();
-      return VPINBALL_STATUS_SUCCESS;
-   }
-
-   return VPINBALL_STATUS_FAILURE;
-}
 
 
 }

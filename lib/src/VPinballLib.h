@@ -6,7 +6,6 @@
 #include <mutex>
 #include "../include/vpinball/VPinballLib_C.h"
 #include "WebServer.h"
-#include "TableManager.h"
 #include "core/vpversion.h"
 
 namespace VPinballLib {
@@ -66,28 +65,12 @@ public:
    void SaveValueString(const string& sectionName, const string& key, const string& value);
    VPINBALL_STATUS ResetIni();
    void UpdateWebServer();
-   string GetTables();
    string GetTablesPath();
-   VPINBALL_STATUS RefreshTables();
-   void SendTableListUpdated(const string& focusUuid = "");
-   VPINBALL_STATUS ImportTable(const string& sourceFile);
-   string ExportTable(const string& uuid);
-   VPINBALL_STATUS RenameTable(const string& uuid, const string& newName);
-    VPINBALL_STATUS SetTableImage(const string& uuid, const string& imagePath);
-   VPINBALL_STATUS DeleteTable(const string& uuid);
-   VPINBALL_STATUS LoadTable(const string& uuid);
+   VPINBALL_STATUS LoadTable(const string& tablePath);
    VPINBALL_STATUS ExtractTableScript();
    VPINBALL_STATUS Play();
    VPINBALL_STATUS Stop();
-
-
-   bool FileExists(const string& path);
-   bool DeleteFile(const string& path);
-   string StageFile(const string& path);
    void SetGameLoop(std::function<void()> gameLoop) { m_gameLoop = gameLoop; }
-
-  
-   TableManager m_tableManager;
 
 private:
    VPinballLib();
@@ -106,10 +89,8 @@ private:
    vector<std::shared_ptr<MsgPI::MsgPlugin>> m_plugins;
    std::function<void*(VPINBALL_EVENT, void*)> m_eventCallback = nullptr;
    std::function<void()> m_gameLoop = nullptr;
-   bool m_scanningTables;
    std::queue<SDL_Event> m_eventQueue;
    std::mutex m_eventMutex;
-   string m_loadedTableUuid;
    bool m_captureInProgress = false;
 };
 

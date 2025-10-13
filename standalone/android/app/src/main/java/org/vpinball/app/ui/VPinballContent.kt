@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.core.content.FileProvider
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import java.io.File
+import kotlinx.coroutines.launch
 import org.vpinball.app.CodeLanguage
 import org.vpinball.app.Link
 import org.vpinball.app.VPinballManager
@@ -42,6 +43,7 @@ fun VPinballContent(isAppInit: Boolean = false, viewModel: VPinballViewModel = k
     val state by viewModel.state.collectAsStateWithLifecycle()
     var codeFile by remember { mutableStateOf<File?>(null) }
     val scope = rememberCoroutineScope()
+    var showSplash by remember { mutableStateOf(false) }
 
     LaunchedEffect(state.playing, isAppInit) {
         activity?.window?.decorView?.windowInsetsController?.let { controller ->
@@ -49,25 +51,24 @@ fun VPinballContent(isAppInit: Boolean = false, viewModel: VPinballViewModel = k
                 controller.hide(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
             } else {
                 controller.show(WindowInsets.Type.statusBars() or WindowInsets.Type.navigationBars())
-                // Set light status bar content (white text) for dark backgrounds
-                controller.setSystemBarsAppearance(
-                    0, // Clear the light appearance flag to show dark icons/text becomes light icons/text
-                    android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS,
-                )
+                controller.setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)
             }
         }
     }
 
     LaunchedEffect(isAppInit) {
         if (isAppInit && state.splash) {
+            kotlinx.coroutines.delay(150)
+            showSplash = true
             VPinballManager.startup()
+            org.vpinball.app.TableManager.initialize(context.applicationContext)
             viewModel.startSplashTimer()
         }
     }
 
     VPinballTheme {
-        if (!isAppInit) {
-            // Wait for SDL initialization
+        if (!isAppInit || !showSplash) {
+            // Wait for SDL initialization and status bar to settle
         } else if (state.splash) {
             SplashScreen()
         } else {
@@ -81,29 +82,30 @@ fun VPinballContent(isAppInit: Boolean = false, viewModel: VPinballViewModel = k
                         // Table list refresh happens automatically via TABLE_LIST_UPDATED event
                     },
                     onRenameTable = { table, name ->
-                        // Use C++ library for table rename - it handles everything
                         VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Renaming table ${table.uuid} to: $name")
-                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
-                        vpinballJNI.VPinballRenameTable(table.uuid, name)
-                        // Trigger UI refresh to update table list
-                        org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
+                        scope.launch {
+                            org.vpinball.app.TableManager.getInstance().renameTable(table.uuid, name)
+                            org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
+                        }
                     },
                     onChangeTableImage = { table ->
                         // Table Image changes are handled by the UI directly
                     },
                     onDeleteTable = { table ->
-                        // Use C++ library for table deletion - it handles filesystem and registry
-                        // and automatically sends TABLE_LIST_UPDATED event
                         VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Deleting table: ${table.uuid}")
-                        val vpinballJNI = org.vpinball.app.jni.VPinballJNI()
-                        vpinballJNI.VPinballDeleteTable(table.uuid)
+                        scope.launch {
+                            org.vpinball.app.TableManager.getInstance().deleteTable(table.uuid)
+                            org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
+                        }
                     },
                     onViewFile = { file -> codeFile = file },
                 )
             }
 
-            if (state.loading) {
-                LoadingScreen(state.table!!, state.progress, state.status)
+            state.table?.let { table ->
+                if (state.loading) {
+                    LoadingScreen(table, state.progress, state.status)
+                }
             }
 
             if (state.error != null) {

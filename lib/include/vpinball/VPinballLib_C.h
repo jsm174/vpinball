@@ -40,9 +40,7 @@ typedef enum {
    VPINBALL_EVENT_RUMBLE,
    VPINBALL_EVENT_SCRIPT_ERROR,
    VPINBALL_EVENT_PLAYER_CLOSED,
-   VPINBALL_EVENT_WEB_SERVER,
-   VPINBALL_EVENT_TABLE_LIST_UPDATED,
-   VPINBALL_EVENT_COPYING_TABLE
+   VPINBALL_EVENT_WEB_SERVER
 } VPINBALL_EVENT;
 
 // Callbacks
@@ -70,27 +68,9 @@ VPINBALLAPI VPINBALL_STATUS VPinballResetIni();
 
 VPINBALLAPI void VPinballUpdateWebServer();
 
-// Table Management
-
-VPINBALLAPI const char* VPinballGetTables();
-VPINBALLAPI const char* VPinballGetTablesPath();
-VPINBALLAPI VPINBALL_STATUS VPinballRefreshTables();
-VPINBALLAPI VPINBALL_STATUS VPinballImportTable(const char* pSourceFile);
-VPINBALLAPI const char* VPinballExportTable(const char* pUuid);
-VPINBALLAPI VPINBALL_STATUS VPinballRenameTable(const char* pUuid, const char* pNewName);
-VPINBALLAPI VPINBALL_STATUS VPinballSetTableImage(const char* pUuid, const char* pImagePath);
-VPINBALLAPI VPINBALL_STATUS VPinballDeleteTable(const char* pUuid);
-
 // Player
 
-VPINBALLAPI VPINBALL_STATUS VPinballLoadTable(const char* pUuid);
+VPINBALLAPI VPINBALL_STATUS VPinballLoadTable(const char* pPath);
 VPINBALLAPI VPINBALL_STATUS VPinballExtractTableScript();
 VPINBALLAPI VPINBALL_STATUS VPinballPlay();
 VPINBALLAPI VPINBALL_STATUS VPinballStop();
-
-// File Management
-
-VPINBALLAPI bool VPinballFileExists(const char* pPath);
-VPINBALLAPI bool VPinballDeleteFile(const char* pPath);
-VPINBALLAPI bool VPinballCopyFile(const char* pSourcePath, const char* pDestPath);
-VPINBALLAPI const char* VPinballStageFile(const char* pPath);

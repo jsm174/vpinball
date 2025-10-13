@@ -22,7 +22,12 @@ val Table.tableFile: File
     get() = File(fullPath)
 
 fun Table.resetIni() {
-    VPinballManager.vpinballJNI.VPinballDeleteFile(iniPath)
+    val iniRelativePath = path.substringBeforeLast('.') + ".ini"
+    if (VPinballManager.isTablesPathSAF()) {
+        VPinballManager.safFileSystem.delete(iniRelativePath)
+    } else {
+        File(iniPath).delete()
+    }
 }
 
 fun Table.deleteFiles() {
@@ -30,15 +35,13 @@ fun Table.deleteFiles() {
 }
 
 fun Table.loadImage(): ImageBitmap? {
-    if (!hasImageFile()) return null
+    if (image.isEmpty()) return null
 
     try {
         if (VPinballManager.isTablesPathSAF()) {
-            // SAF: Use InputStream
             val inputStream = VPinballManager.safFileSystem.openInputStream(image) ?: return null
             return inputStream.use { stream -> BitmapFactory.decodeStream(stream)?.asImageBitmap() }
         } else {
-            // Regular filesystem
             return BitmapFactory.decodeFile(imagePath)?.asImageBitmap()
         }
     } catch (e: Exception) {
@@ -47,69 +50,33 @@ fun Table.loadImage(): ImageBitmap? {
     }
 }
 
-fun Table.updateImage(bitmap: Bitmap) {
+suspend fun Table.updateImage(bitmap: Bitmap) {
     val imageFileName = "${baseFilename}.jpg"
 
-    val finalRelativePath: String
+    val finalImagePath: String
 
     if (VPinballManager.isTablesPathSAF()) {
-        // SAF: Save to cache first, then copy to SAF
         val cacheDir = VPinballManager.getCacheDir()
         val tempFile = File(cacheDir, "temp_image_${uuid}.jpg")
 
         try {
-            // Save bitmap to temp file
             FileOutputStream(tempFile).use { outputStream -> bitmap.compress(Bitmap.CompressFormat.JPEG, MAX_IMAGE_QUALITY, outputStream) }
-
-            // Build SAF destination path
-            val parentPath = if (path.isNotEmpty()) File(path).parent else null
-            val safRelativePath =
-                if (parentPath != null && parentPath.isNotEmpty()) {
-                    "$parentPath/$imageFileName"
-                } else {
-                    imageFileName
-                }
-
-            val tablesPath = VPinballManager.getTablesPath()
-            val safImagePath = "$tablesPath/$safRelativePath"
-
-            // Copy from cache to SAF using FileSystem
-            val copySuccess = VPinballManager.vpinballJNI.VPinballCopyFile(tempFile.absolutePath, safImagePath)
-
-            if (!copySuccess) {
-                throw Exception("Failed to copy image to SAF storage")
-            }
-
-            // Clean up temp file
-            tempFile.delete()
-
-            finalRelativePath = safRelativePath
+            finalImagePath = tempFile.absolutePath
         } catch (e: Exception) {
             tempFile.delete()
             throw e
         }
     } else {
-        // Regular filesystem
         val imageFile = File(File(basePath), imageFileName)
-
         FileOutputStream(imageFile).use { outputStream -> bitmap.compress(Bitmap.CompressFormat.JPEG, MAX_IMAGE_QUALITY, outputStream) }
-
-        finalRelativePath =
-            if (path.isNotEmpty()) {
-                val parentPath = File(path).parent
-                if (parentPath != null && parentPath.isNotEmpty()) {
-                    "$parentPath/$imageFileName"
-                } else {
-                    imageFileName
-                }
-            } else {
-                imageFileName
-            }
+        finalImagePath = imageFile.absolutePath
     }
 
-    VPinballManager.vpinballJNI.VPinballSetTableImage(uuid, finalRelativePath)
+    org.vpinball.app.TableManager.getInstance().setTableImage(uuid, finalImagePath)
+    org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
 }
 
-fun Table.resetImage() {
-    VPinballManager.vpinballJNI.VPinballSetTableImage(uuid, "")
+suspend fun Table.resetImage() {
+    org.vpinball.app.TableManager.getInstance().setTableImage(uuid, "")
+    org.vpinball.app.ui.screens.landing.LandingScreenViewModel.triggerRefresh()
 }

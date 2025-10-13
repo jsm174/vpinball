@@ -42,13 +42,6 @@ set(VPINBALL_SOURCES
 
    lib/src/VPinballLib.h
    lib/src/VPinballLib.cpp
-   lib/src/TableManager.h
-   lib/src/TableManager.cpp
-   lib/src/FileSystem.h
-   lib/src/FileSystem.cpp
-   lib/src/IFileSystemProvider.h
-   lib/src/FileSystemProvider.h
-   lib/src/FileSystemProvider.cpp
    lib/src/WebServer.h
    lib/src/WebServer.cpp
    lib/include/vpinball/VPinballLib_C.h
@@ -72,8 +65,6 @@ endif()
 if(PLATFORM STREQUAL "android")
    list(APPEND VPINBALL_SOURCES
       lib/bindings/java/jni/VPinballLib_JNI.cpp
-      lib/src/SAFFileSystemProvider.h
-      lib/src/SAFFileSystemProvider.cpp
    )
 endif()
 

@@ -6,7 +6,6 @@
 
 #include "../include/vpinball/VPinballLib_C.h"
 #include "VPinballLib.h"
-#include "FileSystem.h"
 
 SDL_AppResult SDL_AppInit(void **appstate, int argc, char **argv)
 {
@@ -112,12 +111,12 @@ VPINBALLAPI void VPinballUpdateWebServer()
    VPinballLib::VPinballLib::Instance().UpdateWebServer();
 }
 
-VPINBALLAPI VPINBALL_STATUS VPinballLoadTable(const char* pUuid)
+VPINBALLAPI VPINBALL_STATUS VPinballLoadTable(const char* pPath)
 {
-   if (pUuid == nullptr)
+   if (pPath == nullptr)
       return VPINBALL_STATUS_FAILURE;
 
-   return VPinballLib::VPinballLib::Instance().LoadTable(pUuid);
+   return VPinballLib::VPinballLib::Instance().LoadTable(pPath);
 }
 
 VPINBALLAPI VPINBALL_STATUS VPinballExtractTableScript()
@@ -133,100 +132,4 @@ VPINBALLAPI VPINBALL_STATUS VPinballPlay()
 VPINBALLAPI VPINBALL_STATUS VPinballStop()
 {
    return VPinballLib::VPinballLib::Instance().Stop();
-}
-
-VPINBALLAPI bool VPinballFileExists(const char* pPath)
-{
-   if (pPath == nullptr)
-      return false;
-
-   return VPinballLib::VPinballLib::Instance().FileExists(pPath);
-}
-
-VPINBALLAPI bool VPinballDeleteFile(const char* pPath)
-{
-   if (pPath == nullptr)
-      return false;
-
-   return VPinballLib::VPinballLib::Instance().DeleteFile(pPath);
-}
-
-VPINBALLAPI bool VPinballCopyFile(const char* pSourcePath, const char* pDestPath)
-{
-   if (pSourcePath == nullptr || pDestPath == nullptr)
-      return false;
-
-   return VPinballLib::FileSystem::CopyFile(pSourcePath, pDestPath, "");
-}
-
-VPINBALLAPI const char* VPinballStageFile(const char* pPath)
-{
-   if (pPath == nullptr)
-      return nullptr;
-
-   thread_local string stagedPath;
-   string path(pPath);
-   stagedPath = VPinballLib::VPinballLib::Instance().StageFile(path);
-   return stagedPath.c_str();
-}
-
-VPINBALLAPI const char* VPinballGetTables()
-{
-   thread_local string jsonStr;
-   jsonStr = VPinballLib::VPinballLib::Instance().GetTables();
-   return jsonStr.c_str();
-}
-
-VPINBALLAPI VPINBALL_STATUS VPinballRefreshTables()
-{
-   return VPinballLib::VPinballLib::Instance().RefreshTables();
-}
-
-VPINBALLAPI const char* VPinballGetTablesPath()
-{
-   thread_local string tablesPath;
-   tablesPath = VPinballLib::VPinballLib::Instance().GetTablesPath();
-   return tablesPath.c_str();
-}
-
-VPINBALLAPI VPINBALL_STATUS VPinballRenameTable(const char* pUuid, const char* pNewName)
-{
-   if (pUuid == nullptr || pNewName == nullptr)
-      return VPINBALL_STATUS_FAILURE;
-
-   return VPinballLib::VPinballLib::Instance().RenameTable(pUuid, pNewName);
-}
-
-VPINBALLAPI VPINBALL_STATUS VPinballDeleteTable(const char* pUuid)
-{
-   if (pUuid == nullptr)
-      return VPINBALL_STATUS_FAILURE;
-
-   return VPinballLib::VPinballLib::Instance().DeleteTable(pUuid);
-}
-
-VPINBALLAPI VPINBALL_STATUS VPinballImportTable(const char* pSourceFile)
-{
-   if (pSourceFile == nullptr)
-      return VPINBALL_STATUS_FAILURE;
-
-   return VPinballLib::VPinballLib::Instance().ImportTable(pSourceFile);
-}
-
-VPINBALLAPI VPINBALL_STATUS VPinballSetTableImage(const char* pUuid, const char* pPath)
-{
-   if (pUuid == nullptr)
-      return VPINBALL_STATUS_FAILURE;
-
-   return VPinballLib::VPinballLib::Instance().SetTableImage(pUuid, pPath != nullptr ? pPath : string(""));
-}
-
-VPINBALLAPI const char* VPinballExportTable(const char* pUuid)
-{
-   if (pUuid == nullptr)
-      return nullptr;
-
-   thread_local string exportPath;
-   exportPath = VPinballLib::VPinballLib::Instance().ExportTable(pUuid);
-   return !exportPath.empty() ? exportPath.c_str() : nullptr;
 }

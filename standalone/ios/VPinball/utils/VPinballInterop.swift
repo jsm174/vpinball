@@ -109,7 +109,6 @@ enum VPinballEvent: CInt {
     case scriptError
     case playerClosed
     case webServer
-    case tableListUpdated
 
     var name: String? {
         switch self {

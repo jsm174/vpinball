@@ -100,9 +100,14 @@ fun TablesList(
                                 newHeight = VPinballManager.getDisplaySize().height,
                             )
                         val tableToUpdate = currentTable!!
-                        coroutineScope.launch { withContext(Dispatchers.IO) { tableToUpdate.updateImage(resizedBitmap) } }
+                        coroutineScope.launch {
+                            withContext(Dispatchers.IO) {
+                                tableToUpdate.updateImage(resizedBitmap)
+                            }
+                        }
                     } catch (e: Exception) {
                         VPinballManager.log(VPinballLogLevel.ERROR, "Unable to change image: ${e.message}")
+                        e.printStackTrace()
                     }
                 }
             },

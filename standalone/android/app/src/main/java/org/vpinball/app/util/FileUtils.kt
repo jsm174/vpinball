@@ -26,13 +26,11 @@ object FileUtils {
 
             try {
                 assetManager.open(srcPath).use { inputStream ->
-                    VPinballManager.log(VPinballLogLevel.INFO, "Copying $srcPath to $dstFile")
                     copyFile(inputStream, dstFile)
                 }
             } catch (e: FileNotFoundException) {
                 dstFile.mkdirs()
                 copyAssets(assetManager, srcPath, dstFile)
-                VPinballManager.log(VPinballLogLevel.INFO, "File not found. Making directories and copying assets. - ${e.message}")
             } catch (e: IOException) {
                 VPinballManager.log(VPinballLogLevel.ERROR, "Unable to copy $srcPath to $dstFile - ${e.message}")
             }

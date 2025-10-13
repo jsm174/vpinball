@@ -701,9 +701,8 @@ void WebServer::TableImport(struct mg_connection *c, struct mg_http_message* hm)
       std::filesystem::path fullPath = tempDir / file;
 
       if (std::filesystem::exists(fullPath)) {
-         // Use the new ImportTable function which handles both VPX and VPXZ files
-         // and organizes them into proper folder structure
-         VPINBALL_STATUS status = VPinballLib::VPinballLib::Instance().ImportTable(fullPath.string());
+         // TODO: Table import now handled by platform-specific code (Swift/Kotlin)
+         VPINBALL_STATUS status = VPINBALL_STATUS_FAILURE;
 
          // Send response
          if (status == VPINBALL_STATUS_SUCCESS) {
@@ -787,7 +786,8 @@ void WebServer::TableRename(struct mg_connection *c, struct mg_http_message* hm)
    if (!ValidatePathParameter(c, hm, "name", newName))
       return;
 
-   VPINBALL_STATUS status = VPinballLib::VPinballLib::Instance().RenameTable(table, newName);
+   // TODO: Table rename now handled by platform-specific code (Swift/Kotlin)
+   VPINBALL_STATUS status = VPINBALL_STATUS_FAILURE;
 
    if (status == VPINBALL_STATUS_SUCCESS) {
       char* json = mg_mprintf("{%m:%s}", MG_ESC("success"), "true");

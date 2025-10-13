@@ -78,6 +78,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.haze
 import java.io.File
+import java.io.FileOutputStream
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -133,6 +134,10 @@ fun LandingScreen(
 
     val filteredTables by viewModel.filteredTables.collectAsStateWithLifecycle()
     val unfilteredTables by viewModel.unfilteredTables.collectAsStateWithLifecycle()
+
+    val isViewModelLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val viewModelLoadingProgress by viewModel.loadingProgress.collectAsStateWithLifecycle()
+    val viewModelLoadingStatus by viewModel.loadingStatus.collectAsStateWithLifecycle()
 
     var scrollToTableUuid by remember { mutableStateOf<String?>(null) }
 
@@ -283,17 +288,68 @@ fun LandingScreen(
                                     },
                                     onBlankTable = {
                                         showImportTableMenu = false
+                                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Blank table clicked")
 
-                                        importUri = File(VPinballManager.getFilesDir(), "assets/blankTable.vpx").toUri()
-                                        importFilename = FileUtils.filenameFromUri(context, importUri!!)
-                                        showConfirmDialog = true
+                                        try {
+                                            val assetFile = File(context.cacheDir, "blankTable.vpx")
+                                            VPinballManager.log(
+                                                org.vpinball.app.jni.VPinballLogLevel.INFO,
+                                                "Opening asset: assets/blankTable.vpx, cache dir: ${context.cacheDir}",
+                                            )
+                                            context.assets.open("assets/blankTable.vpx").use { input ->
+                                                VPinballManager.log(
+                                                    org.vpinball.app.jni.VPinballLogLevel.INFO,
+                                                    "Copying to: ${assetFile.absolutePath}",
+                                                )
+                                                FileOutputStream(assetFile).use { output ->
+                                                    val bytes = input.copyTo(output)
+                                                    VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Copied $bytes bytes")
+                                                }
+                                            }
+
+                                            if (!assetFile.exists()) {
+                                                VPinballManager.log(
+                                                    org.vpinball.app.jni.VPinballLogLevel.ERROR,
+                                                    "Asset file does not exist after copying!",
+                                                )
+                                                VPinballManager.showError("Failed to copy blank table from assets")
+                                                return@ImportTableDropdownMenu
+                                            }
+
+                                            VPinballManager.log(
+                                                org.vpinball.app.jni.VPinballLogLevel.INFO,
+                                                "Asset file exists: ${assetFile.exists()}, size: ${assetFile.length()}",
+                                            )
+                                            importUri = assetFile.toUri()
+                                            importFilename = "blankTable.vpx"
+                                            VPinballManager.log(
+                                                org.vpinball.app.jni.VPinballLogLevel.INFO,
+                                                "Showing confirm dialog for blank table, URI: $importUri",
+                                            )
+                                            showConfirmDialog = true
+                                        } catch (e: Exception) {
+                                            VPinballManager.log(
+                                                org.vpinball.app.jni.VPinballLogLevel.ERROR,
+                                                "Failed to load blank table: ${e.message}",
+                                            )
+                                            e.printStackTrace()
+                                            VPinballManager.showError("Failed to load blank table: ${e.message}")
+                                        }
                                     },
                                     onExampleTable = {
                                         showImportTableMenu = false
 
-                                        importUri = File(VPinballManager.getFilesDir(), "assets/exampleTable.vpx").toUri()
-                                        importFilename = FileUtils.filenameFromUri(context, importUri!!)
-                                        showConfirmDialog = true
+                                        try {
+                                            val assetFile = File(context.cacheDir, "exampleTable.vpx")
+                                            context.assets.open("assets/exampleTable.vpx").use { input ->
+                                                FileOutputStream(assetFile).use { output -> input.copyTo(output) }
+                                            }
+                                            importUri = assetFile.toUri()
+                                            importFilename = "exampleTable.vpx"
+                                            showConfirmDialog = true
+                                        } catch (e: Exception) {
+                                            VPinballManager.showError("Failed to load example table: ${e.message}")
+                                        }
                                     },
                                 )
                             }
@@ -410,11 +466,25 @@ fun LandingScreen(
                     onRename = onRenameTable,
                     onChangeTableImage = onChangeTableImage,
                     onViewScript = { table ->
-                        if (table.hasScriptFile()) {
-                            val viewPath = VPinballManager.stageFile(table.scriptPath)
-                            if (viewPath != null) {
-                                onViewFile(File(viewPath))
-                            }
+                        val viewScriptFile: () -> Unit = {
+                            val file =
+                                if (VPinballManager.isTablesPathSAF()) {
+                                    val tempFile = File(context.cacheDir, "view_script_${table.uuid}.vbs")
+                                    val inputStream = VPinballManager.safFileSystem.openInputStream(table.scriptPath)
+                                    if (inputStream != null) {
+                                        FileOutputStream(tempFile).use { output -> inputStream.use { input -> input.copyTo(output) } }
+                                        tempFile
+                                    } else {
+                                        null
+                                    }
+                                } else {
+                                    table.scriptURL
+                                }
+                            file?.let { onViewFile(it) }
+                        }
+
+                        if (TableManager.getInstance().hasScriptFile(table)) {
+                            viewScriptFile()
                         } else {
                             title = table.name
                             progress.value = 0
@@ -424,12 +494,13 @@ fun LandingScreen(
                             CoroutineScope(Dispatchers.Main).launch {
                                 TableManager.extractTableScript(
                                     table,
+                                    onProgress = { inProgress, inStatus ->
+                                        progress.value = inProgress
+                                        status.value = inStatus
+                                    },
                                     onComplete = {
                                         showProgress = false
-                                        val viewPath = VPinballManager.stageFile(table.scriptPath)
-                                        if (viewPath != null) {
-                                            onViewFile(File(viewPath))
-                                        }
+                                        viewScriptFile()
                                     },
                                     onError = { showProgress = false },
                                 )
@@ -480,29 +551,38 @@ fun LandingScreen(
                 TextButton(
                     onClick = {
                         showConfirmDialog = false
+                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Import confirmed for: $importFilename")
 
-                        importUri?.let {
+                        importUri?.let { uri ->
+                            VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Starting import from URI: $uri")
                             CoroutineScope(Dispatchers.Main).launch {
                                 TableManager.importTable(
                                     context = context,
-                                    uri = it,
+                                    uri = uri,
                                     onUpdate = { inProgress, inStatus ->
+                                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Import progress: $inProgress%, $inStatus")
                                         title = importFilename
                                         progress.value = inProgress
                                         status.value = inStatus
                                         showProgress = true
                                     },
                                     onComplete = { uuid, path ->
+                                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.INFO, "Import complete: uuid=$uuid, path=$path")
                                         showProgress = false
                                         onTableImported(uuid, path)
-                                        // Note: With the new import system, uuid is just a placeholder ("imported")
-                                        // The actual table list refresh happens in the background via VPinballScanTablesAsync
-                                        // so we don't scroll to a specific UUID anymore
+                                        viewModel.refreshTables()
                                     },
-                                    onError = { showProgress = false },
+                                    onError = {
+                                        VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.ERROR, "Import failed")
+                                        showProgress = false
+                                    },
                                 )
                             }
-                        } ?: error("$importFilename was not found!")
+                        }
+                            ?: run {
+                                VPinballManager.log(org.vpinball.app.jni.VPinballLogLevel.ERROR, "importUri is null!")
+                                error("$importFilename was not found!")
+                            }
                     }
                 ) {
                     Text(
@@ -526,10 +606,14 @@ fun LandingScreen(
         )
     }
 
-    if (showProgress) {
+    if (showProgress || isViewModelLoading) {
         Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.1f)).pointerInput(Unit) {})
 
-        ProgressOverlay(title = title, progress = progress.value, status = status.value, hazeState = hazeState)
+        val displayTitle = if (isViewModelLoading) "Loading Tables" else title
+        val displayProgress = if (isViewModelLoading) viewModelLoadingProgress else progress.value
+        val displayStatus = if (isViewModelLoading) viewModelLoadingStatus else status.value
+
+        ProgressOverlay(title = displayTitle, progress = displayProgress, status = displayStatus, hazeState = hazeState)
     }
 }
 

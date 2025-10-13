@@ -19,6 +19,7 @@ class VPinballActivity : SDLActivity() {
     val viewModel: VPinballViewModel by viewModel<VPinballViewModel>()
 
     private var isAppInit by mutableStateOf(false)
+    private var composeView: ComposeView? = null
 
     companion object {
         const val COMMAND_APP_INIT_COMPLETED = 0x8001
@@ -26,6 +27,10 @@ class VPinballActivity : SDLActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        window.decorView.windowInsetsController?.show(android.view.WindowInsets.Type.statusBars() or android.view.WindowInsets.Type.navigationBars())
+
+        window.decorView.windowInsetsController?.setSystemBarsAppearance(0, android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS)
 
         VPinballManager.initialize(this)
 
@@ -44,7 +49,7 @@ class VPinballActivity : SDLActivity() {
     private fun initCompose() {
         val layoutParams = RelativeLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
 
-        val composeView = ComposeView(this).apply { setContent { VPinballContent(isAppInit = isAppInit) } }
+        composeView = ComposeView(this).apply { setContent { VPinballContent(isAppInit = isAppInit) } }
 
         val relativeLayout = getContentView() as? RelativeLayout
         relativeLayout?.apply {
@@ -52,6 +57,12 @@ class VPinballActivity : SDLActivity() {
             setViewTreeLifecycleOwner(this@VPinballActivity)
             setViewTreeSavedStateRegistryOwner(this@VPinballActivity)
             addView(composeView, layoutParams)
+        }
+    }
+
+    fun setComposeAlpha(alpha: Float) {
+        runOnUiThread {
+            composeView?.alpha = alpha
         }
     }
 

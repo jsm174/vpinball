@@ -47,8 +47,9 @@ fun TableListItemDropdownMenu(
     DropdownMenu(expanded = expanded.value, onDismissRequest = { expanded.value = false }, offset = offset) {
         LaunchedEffect(expanded.value) {
             if (expanded.value) {
-                scriptExists = table.hasScriptFile()
-                iniExists = table.hasIniFile()
+                val tableManager = org.vpinball.app.TableManager.getInstance()
+                scriptExists = tableManager.hasScriptFile(table)
+                iniExists = tableManager.hasIniFile(table)
             }
         }
 
