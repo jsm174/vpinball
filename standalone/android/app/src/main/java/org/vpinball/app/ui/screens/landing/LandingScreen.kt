@@ -90,6 +90,7 @@ fun LandingScreen(
     onTableImage: (table: Table) -> Unit,
     onDeleteTable: (table: Table) -> Unit,
     onViewFile: (file: File) -> Unit,
+    onPlayTable: (table: Table) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: LandingScreenViewModel = koinViewModel(),
 ) {
@@ -341,8 +342,7 @@ fun LandingScreen(
                     mode = tableListMode,
                     onPlay = { table ->
                         focusManager.clearFocus()
-
-                        VPinballManager.play(table)
+                        onPlayTable(table)
                     },
                     onRename = onRenameTable,
                     onViewScript = { table ->
@@ -500,6 +500,7 @@ private fun PreviewLandingScreen() {
             onDeleteTable = {},
             onTableImported = { _, _ -> },
             onViewFile = { _ -> },
+            onPlayTable = { _ -> },
             modifier = Modifier,
         )
     }
