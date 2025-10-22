@@ -88,11 +88,9 @@ int VPinballLib::AppInit(int argc, char** argv)
    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
       return 0;
 
+#ifdef __APPLE__
    SDL_PropertiesID props = SDL_CreateProperties();
    SDL_SetStringProperty(props, SDL_PROP_WINDOW_CREATE_TITLE_STRING, "Visual Pinball Player");
-   #if defined(__ANDROID__)
-      SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
-   #endif
    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, SDL_WINDOW_FULLSCREEN | SDL_WINDOW_HIGH_PIXEL_DENSITY);
    m_pWindow = SDL_CreateWindowWithProperties(props);
    SDL_DestroyProperties(props);
@@ -100,7 +98,6 @@ int VPinballLib::AppInit(int argc, char** argv)
    if (!m_pWindow)
       return 0;
 
-#ifdef __APPLE__
    if (!InitIOS(m_pWindow))
       return 0;
 #endif
@@ -217,7 +214,6 @@ void VPinballLib::Init(VPinballEventCallback callback)
       }
 
       VPinballLib& lib = VPinballLib::Instance();
-      lib.LoadPlugins();
       lib.UpdateWebServer();
    }, nullptr, true);
 }
@@ -468,6 +464,9 @@ VPINBALL_STATUS VPinballLib::Play()
       return VPINBALL_STATUS_FAILURE;
 
    if (!SDL_RunOnMainThread([](void*) {
+      VPinballLib& lib = VPinballLib::Instance();
+      lib.LoadPlugins();
+
       g_pvp->DoPlay(0);
    }, nullptr, true))
       return VPINBALL_STATUS_FAILURE;
