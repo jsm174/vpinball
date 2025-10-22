@@ -174,13 +174,13 @@ Window::Window(const string& title, const Settings& settings, VPXWindowId window
       m_refreshrate = 60;
    }
    SDL_PropertiesID props;
-   if (g_isMobile)
-   {
-#ifdef __LIBVPINBALL__
-      m_nwnd = VPinballLib::VPinballLib::Instance().GetWindow();
-#endif
-   }
-   else
+//   if (g_isMobile)
+//   {
+//#ifdef __LIBVPINBALL__
+//      m_nwnd = VPinballLib::VPinballLib::Instance().GetWindow();
+//#endif
+//   }
+//   else
    {
       uint32_t wnd_flags = 0;
       #if defined(ENABLE_OPENGL)
@@ -215,6 +215,9 @@ Window::Window(const string& title, const Settings& settings, VPXWindowId window
       SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_width);
       SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_height);
       SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, wnd_flags);
+#ifdef __ANDROID__
+      SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
+#endif
       m_nwnd = SDL_CreateWindowWithProperties(props);
       SDL_DestroyProperties(props);
    }
