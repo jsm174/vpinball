@@ -162,7 +162,7 @@ Window::Window(const string &title, const Settings& settings, const Settings::Se
 
    SDL_PropertiesID props;
 
-#ifndef __LIBVPINBALL__
+//#ifndef __LIBVPINBALL__
    uint32_t wnd_flags = 0;
    #if defined(ENABLE_OPENGL)
       wnd_flags |= SDL_WINDOW_OPENGL; // Leads to read OpenGL context hint (swapchain backbuffer format, ...)
@@ -195,12 +195,15 @@ Window::Window(const string &title, const Settings& settings, const Settings::Se
    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_Y_NUMBER, wnd_y);
    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_WIDTH_NUMBER, m_width);
    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_HEIGHT_NUMBER, m_height);
+#ifdef __ANDROID__
+   SDL_SetBooleanProperty(props, SDL_PROP_WINDOW_CREATE_EXTERNAL_GRAPHICS_CONTEXT_BOOLEAN, true);
+#endif
    SDL_SetNumberProperty(props, SDL_PROP_WINDOW_CREATE_FLAGS_NUMBER, wnd_flags);
    m_nwnd = SDL_CreateWindowWithProperties(props);
    SDL_DestroyProperties(props);
-#else
-   m_nwnd = VPinballLib::VPinballLib::Instance().GetWindow();
-#endif
+//#else
+//   m_nwnd = VPinballLib::VPinballLib::Instance().GetWindow();
+//#endif
 
    props = SDL_GetWindowProperties(m_nwnd);
    m_wcgDisplay = SDL_GetBooleanProperty(props, SDL_PROP_WINDOW_HDR_ENABLED_BOOLEAN, false);
