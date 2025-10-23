@@ -11,6 +11,8 @@ class VPinballPlayerActivity : SDLActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        VPinballManager.vpinballJNI.VPinballInitOpenXR(this)
+
         VPinballManager.setPlayerActivity(this)
 
         CoroutineScope(Dispatchers.Main).launch {
@@ -34,6 +36,7 @@ class VPinballPlayerActivity : SDLActivity() {
 
     override fun finish() {
         super.finish()
+        finishAffinity()
         overridePendingTransition(android.R.anim.fade_in, android.R.anim.fade_out)
     }
 

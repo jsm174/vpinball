@@ -8,6 +8,12 @@
 #include <SDL3/SDL_system.h>
 #include <jni.h>
 
+#ifdef ENABLE_XR
+#define XR_USE_PLATFORM_ANDROID
+#include <openxr/openxr.h>
+#include <openxr/openxr_platform.h>
+#endif
+
 using namespace VPinballLib;
 
 static jobject gJNICallbackObject = nullptr;
@@ -171,6 +177,30 @@ JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballPlay(JNIEnv
 JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballStop(JNIEnv* env, jobject obj)
 {
    return VPinballStop();
+}
+
+JNIEXPORT jboolean JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballInitOpenXR(JNIEnv* env, jobject obj, jobject activity)
+{
+#ifdef ENABLE_XR
+   JavaVM* vm;
+   env->GetJavaVM(&vm);
+
+   jobject globalActivity = env->NewGlobalRef(activity);
+
+   XrLoaderInitInfoAndroidKHR loaderInitInfo = {XR_TYPE_LOADER_INIT_INFO_ANDROID_KHR};
+   loaderInitInfo.applicationVM = vm;
+   loaderInitInfo.applicationContext = globalActivity;
+
+   PFN_xrInitializeLoaderKHR xrInitializeLoaderKHR;
+   xrGetInstanceProcAddr(XR_NULL_HANDLE, "xrInitializeLoaderKHR", (PFN_xrVoidFunction*)&xrInitializeLoaderKHR);
+
+   if (xrInitializeLoaderKHR != nullptr)
+   {
+      XrResult result = xrInitializeLoaderKHR((const XrLoaderInitInfoBaseHeaderKHR*)&loaderInitInfo);
+      return result == XR_SUCCESS;
+   }
+#endif
+   return false;
 }
 
 }

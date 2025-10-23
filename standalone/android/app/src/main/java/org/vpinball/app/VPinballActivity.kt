@@ -53,4 +53,13 @@ class VPinballActivity : ComponentActivity() {
         VPinballManager.setMainActivity(null)
         super.onDestroy()
     }
+
+    override fun finish() {
+        super.finish()
+        finishAffinity()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+    }
 }

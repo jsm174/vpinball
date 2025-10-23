@@ -64,6 +64,10 @@ VPinballLib::~VPinballLib()
 
 int VPinballLib::AppInit(int argc, char** argv)
 {
+#ifdef __ANDROID__
+   SDL_SetHint(SDL_HINT_ANDROID_ALLOW_RECREATE_ACTIVITY, "1");
+   MsgPI::MsgPluginManager::GetInstance().UpdateAPIThread();
+#endif
    if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS))
       return 0;
 
@@ -120,7 +124,7 @@ void VPinballLib::AppIterate()
 
                if (success) {
                   PLOGI.printf("Screenshot saved: %s", imagePath.c_str());
-               } 
+               }
                else {
                   PLOGE.printf("Failed to save screenshot: %s", imagePath.c_str());
                }
@@ -301,6 +305,11 @@ void VPinballLib::SendEvent(VPINBALL_EVENT event, void* data)
 
 void VPinballLib::LoadPlugins()
 {
+   static bool pluginsLoaded = false;
+   if (pluginsLoaded)
+      return;
+   pluginsLoaded = true;
+
    static constexpr struct {
       const char* id;
       void (*load)(uint32_t, const MsgPluginAPI*);
