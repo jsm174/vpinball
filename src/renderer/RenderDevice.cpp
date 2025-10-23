@@ -27,6 +27,7 @@
 #include "renderer/AreaTex.h"
 #include "renderer/SearchTex.h"
 
+
 #if defined(ENABLE_BGFX)
 #ifdef __STANDALONE__
 #pragma push_macro("_WIN64")
@@ -400,10 +401,17 @@ void RenderDevice::RenderThread(RenderDevice* rd, const bgfx::Init& initReq)
    if (g_pplayer->m_vrDevice)
    {
       assert((init.resolution.reset & BGFX_RESET_VSYNC) == 0); // Display VSync must be disabled as we are synced by OpenXR on the headset display
-      init.type = bgfx::RendererType::Direct3D11; // TODO support other backends
+      #if BX_PLATFORM_WINDOWS
+         init.type = bgfx::RendererType::Direct3D11;
+         init.platformData.context = g_pplayer->m_vrDevice->GetGraphicContext();
+      #elif BX_PLATFORM_ANDROID
+         init.type = bgfx::RendererType::Vulkan;
+         init.platformData.context = g_pplayer->m_vrDevice->GetGraphicContext();
+         PLOGI << "Using Vulkan backend for OpenXR on Android (passing OpenXR's Vulkan instance to BGFX)";
+         PLOGI << "  platformData.context = " << init.platformData.context;
+      #endif
       init.resolution.width = max(init.resolution.width, static_cast<uint32_t>(g_pplayer->m_vrDevice->GetEyeWidth())); // Needed for bgfx::clear to work
       init.resolution.height = max(init.resolution.height, static_cast<uint32_t>(g_pplayer->m_vrDevice->GetEyeHeight())); // Needed for bgfx::clear to work
-      init.platformData.context = g_pplayer->m_vrDevice->GetGraphicContext(); // Use the context selected by OpenXR
    }
    #endif
 
@@ -431,7 +439,20 @@ void RenderDevice::RenderThread(RenderDevice* rd, const bgfx::Init& initReq)
    
    #ifdef ENABLE_XR
    if (g_pplayer->m_vrDevice)
+   {
+      #ifdef __ANDROID__
+      // On Android, ensure the GL context is current before OpenXR creates swapchains
+      SDL_GLContext context = SDL_GL_GetCurrentContext();
+      if (context != nullptr)
+      {
+         SDL_Window* window = SDL_GL_GetCurrentWindow();
+         if (window != nullptr)
+            SDL_GL_MakeCurrent(window, context);
+      }
+      #endif
+
       g_pplayer->m_vrDevice->CreateSession();
+   }
    #endif
 
    // Enable HDR10 rendering if supported (so far, only DirectX 11 & 12 through DXGI)
@@ -747,6 +768,10 @@ RenderDevice::RenderDevice(
    #ifndef _DEBUG // Disable Direct3D12 in release builds as it is not yet fully supported
    if (init.type == bgfx::RendererType::Direct3D12)
       init.type = bgfx::RendererType::Count;
+   #endif
+   #ifdef ENABLE_XR
+   // Let BGFX use whatever backend is configured (Vulkan has initialization issues on Quest)
+   // The shader compilation error with OpenGL ES multiview will be addressed separately
    #endif
    PLOGI << "Using graphics backend: " << bgfxRendererNames[init.type] << " (available: " << supportedRendererLog << ')';
 

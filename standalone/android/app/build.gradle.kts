@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.ktfmt)
     alias(libs.plugins.kotlinx.serialization)
+    alias(libs.plugins.meta.spatial.plugin)
 }
 
 fun parseVersion(versionName: String): List<Int> {
@@ -42,7 +43,10 @@ tasks {
     val copyLibs by registering(Copy::class) {
         val destinationDir = file("$projectDir/src/main/jniLibs/arm64-v8a")
         destinationDir.listFiles()?.forEach { it.deleteRecursively() }
-        from("${layout.buildDirectory}/../../../../build/android-arm64-v8a") { include("**.so") }
+        from("${layout.buildDirectory}/../../../../build/android-arm64-v8a") {
+            include("**.so")
+            exclude("libopenxr_loader.so")
+        }
         into(destinationDir)
     }
 
@@ -75,7 +79,7 @@ android {
 
     defaultConfig {
         applicationId = "org.vpinball.vpinball_bgfx"
-        minSdk = 30
+        minSdk = 34
         targetSdk = 35
         versionCode = versionCodeValue
         versionName = versionNameValue
@@ -137,4 +141,10 @@ dependencies {
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.navigation)
+
+    implementation(libs.meta.spatial.sdk)
+    implementation(libs.meta.spatial.sdk.vr)
+    implementation(libs.meta.spatial.sdk.compose)
+    implementation(libs.meta.spatial.sdk.toolkit)
+    implementation(libs.meta.spatial.sdk.ovrmetrics)
 }

@@ -167,7 +167,7 @@ void Settings::Validate(const bool addDefaults)
    // GfxBackend section
 
    #ifdef __ANDROID__
-      SettingString(Settings::Player, "GfxBackend"s, "OpenGLES"s, ""s);
+      SettingString(Settings::Player, "GfxBackend"s, "Vulkan"s, ""s);
    #elif defined(__APPLE__)
       SettingString(Settings::Player, "GfxBackend"s, "Metal"s, ""s);
    #else

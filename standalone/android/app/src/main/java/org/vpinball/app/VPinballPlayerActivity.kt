@@ -11,6 +11,8 @@ class VPinballPlayerActivity : SDLActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        VPinballManager.vpinballJNI.VPinballInitOpenXR(this)
+
         VPinballManager.setPlayerActivity(this)
 
         CoroutineScope(Dispatchers.Main).launch {
