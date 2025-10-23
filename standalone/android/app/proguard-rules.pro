@@ -19,3 +19,8 @@
 -dontwarn org.conscrypt.**
 -dontwarn org.bouncycastle.**
 -dontwarn org.openjsse.**
+
+-dontwarn horizonos.app.container.TaskContainer
+-dontwarn horizonos.app.container.TaskContainerManager$TaskContainerCallback
+-dontwarn horizonos.app.container.TaskContainerManager
+-dontwarn vros.os.VrosBuild

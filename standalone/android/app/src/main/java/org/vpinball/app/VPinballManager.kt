@@ -199,6 +199,7 @@ object VPinballManager : KoinComponent {
 
                             delay(2000)
                             playerActivity?.finish()
+                            playerActivity?.finishAffinity()
                         }
                     }
                     VPinballEvent.WEB_SERVER -> {
