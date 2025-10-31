@@ -80,7 +80,8 @@ fun TableListGridItem(
 
     val hazeState = remember { HazeState() }
 
-    val ratio = VPinballManager.getDisplaySize().width.toFloat() / VPinballManager.getDisplaySize().height.toFloat()
+    // Match sample: card height = width * 1.5 -> aspectRatio = 2/3
+    val ratio = 2f / 3f
 
     Box {
         Box(

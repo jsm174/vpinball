@@ -10,9 +10,8 @@ struct TableImageView: View {
             if let image = table.uiImage {
                 Image(uiImage: image)
                     .resizable()
-                    .aspectRatio(1179 / 2556,
-                                 contentMode: .fit)
-
+                    .scaledToFill()
+                    .clipped()
             } else {
                 TablePlaceholderImage()
             }
