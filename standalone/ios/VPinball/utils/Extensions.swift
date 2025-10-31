@@ -85,6 +85,11 @@ extension View {
                                                contentMode: contentMode))
     }
 
+    func gradientEffect(icon: String, contentMode: ContentMode) -> some View {
+        modifier(GradientEffectAuto(icon: icon,
+                                    contentMode: contentMode))
+    }
+
     func statusBarHidden(_ hidden: Bool,
                          style: UIStatusBarStyle? = nil,
                          animated: Bool = true) -> some View
