@@ -47,6 +47,7 @@ typedef enum {
 // Callbacks
 
 typedef void (*VPinballEventCallback)(VPINBALL_EVENT, const char*);
+typedef void (*VPinballZipCallback)(int current, int total, const char* filename);
 
 // Functions
 
@@ -77,3 +78,8 @@ VPINBALLAPI VPINBALL_STATUS VPinballLoadTable(const char* pPath);
 VPINBALLAPI VPINBALL_STATUS VPinballExtractTableScript();
 VPINBALLAPI VPINBALL_STATUS VPinballPlay();
 VPINBALLAPI VPINBALL_STATUS VPinballStop();
+
+// Zip
+
+VPINBALLAPI VPINBALL_STATUS VPinballZipCreate(const char* pSourcePath, const char* pDestPath, VPinballZipCallback callback);
+VPINBALLAPI VPINBALL_STATUS VPinballZipExtract(const char* pSourcePath, const char* pDestPath, VPinballZipCallback callback);

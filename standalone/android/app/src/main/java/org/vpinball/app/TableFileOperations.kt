@@ -204,35 +204,6 @@ class TableFileOperations(private val getTablesPath: () -> String) {
         }
     }
 
-    fun addDirectoryToZip(zip: ZipOutputStream, directoryPath: String, basePath: String, onProgress: ((Int) -> Unit)? = null) {
-        val allFiles = File(directoryPath).walkTopDown().toList()
-        val fileCount = allFiles.count { it.isFile }
-        var processedFiles = 0
-
-        allFiles.forEach { file ->
-            val relativePath = file.absolutePath.drop(basePath.length + 1)
-
-            if (relativePath.isEmpty()) {
-                return@forEach
-            }
-
-            if (file.isDirectory) {
-                zip.putNextEntry(ZipEntry("$relativePath/"))
-                zip.closeEntry()
-            } else {
-                zip.putNextEntry(ZipEntry(relativePath))
-                FileInputStream(file).use { input -> input.copyTo(zip) }
-                zip.closeEntry()
-
-                processedFiles++
-                if (fileCount > 0) {
-                    val progress = (processedFiles * 100) / fileCount
-                    onProgress?.invoke(progress)
-                }
-            }
-        }
-    }
-
     fun getFileName(context: Context, uri: Uri): String? {
         return try {
             when (uri.scheme) {
