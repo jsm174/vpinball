@@ -1,6 +1,10 @@
 package org.vpinball.app.jni;
 
 public class VPinballJNI {
+    public interface ZipProgressCallback {
+        void onProgress(int current, int total, String filename);
+    }
+
     public native String VPinballGetVersionStringFull();
     public native void VPinballInit(VPinballEventCallback callback);
     public native void VPinballLog(int level, String message);
@@ -20,4 +24,6 @@ public class VPinballJNI {
     public native int VPinballPlay();
     public native void VPinballStop();
     public native boolean VPinballInitOpenXR(Object activity);
+    public native int VPinballZipCreate(String sourcePath, String destPath, ZipProgressCallback callback);
+    public native int VPinballZipExtract(String sourcePath, String destPath, ZipProgressCallback callback);
 }
