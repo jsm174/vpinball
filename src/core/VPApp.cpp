@@ -1015,6 +1015,8 @@ BOOL VPApp::InitInstance()
    PLOGI << "Application path: " << m_vpinball.GetAppPath(VPinball::AppSubFolder::Root);
    PLOGI << "Preference path: " << m_vpinball.GetAppPath(VPinball::AppSubFolder::Preferences);
    
+   PLOGI << "A";
+   
    Settings::SetRecentDir_ImportDir_Default(g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string());
    Settings::SetRecentDir_LoadDir_Default(g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string());
    Settings::SetRecentDir_FontDir_Default(g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string());
@@ -1024,10 +1026,16 @@ BOOL VPApp::InitInstance()
    Settings::SetRecentDir_SoundDir_Default(g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string());
    Settings::SetRecentDir_POVDir_Default(g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string());
 
+   PLOGI << "B";
+
    m_vpinball.m_settings.SetVersion_VPinball(string(VP_VERSION_STRING_DIGITS), false);
 
+   PLOGI << "C";
+   
    m_vpinball.LoadEditorSetupFromSettings();
 
+   PLOGI << "D";
+   
    SDL_SetHint(SDL_HINT_WINDOW_ALLOW_TOPMOST, "0");
    if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
    {
@@ -1035,6 +1043,8 @@ BOOL VPApp::InitInstance()
       // FIXME this is not correct as we may be running something else than the player (extract vbs, ...)
       exit(1);
    }
+
+   PLOGI << "E";
    
    #ifdef __STANDALONE__
       PLOGI << "SDL video driver: " << SDL_GetCurrentVideoDriver();
@@ -1043,6 +1053,8 @@ BOOL VPApp::InitInstance()
          showDisplayIDs();
    #endif
 
+   PLOGI << "F";
+   
    return TRUE;
 }
 
