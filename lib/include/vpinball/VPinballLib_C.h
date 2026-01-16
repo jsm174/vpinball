@@ -44,6 +44,12 @@ typedef enum {
    VPINBALL_EVENT_COMMAND
 } VPINBALL_EVENT;
 
+typedef enum {
+   VPINBALL_PATH_ROOT,
+   VPINBALL_PATH_TABLES,
+   VPINBALL_PATH_PREFERENCES
+} VPINBALL_PATH;
+
 // Callbacks
 
 typedef void (*VPinballEventCallback)(VPINBALL_EVENT, const char*);
@@ -70,6 +76,10 @@ VPINBALLAPI VPINBALL_STATUS VPinballResetIni();
 // Web Server
 
 VPINBALLAPI void VPinballUpdateWebServer();
+
+// Paths
+
+VPINBALLAPI const char* VPinballGetPath(VPINBALL_PATH pathType);
 
 // Player
 

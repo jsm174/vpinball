@@ -15,6 +15,12 @@ enum class VPinballLogLevel(val value: Int) {
     ERROR(3),
 }
 
+enum class VPinballPath(val value: Int) {
+    ROOT(0),
+    TABLES(1),
+    PREFERENCES(2)
+}
+
 enum class VPinballStatus(val value: Int) {
     SUCCESS(0),
     FAILURE(1),
@@ -85,8 +91,8 @@ enum class VPinballStorageMode(override val text: String) : VPinballDisplayText 
     CUSTOM("Custom");
 
     companion object {
-        fun fromTablesPath(tablesPath: String): VPinballStorageMode {
-            return if (tablesPath.isEmpty()) INTERNAL else CUSTOM
+        fun fromSAFPath(safPath: String): VPinballStorageMode {
+            return if (safPath.isEmpty()) INTERNAL else CUSTOM
         }
     }
 }

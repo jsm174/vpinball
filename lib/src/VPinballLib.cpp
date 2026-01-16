@@ -181,7 +181,7 @@ void VPinballLib::Init(VPinballEventCallback callback)
 
       g_pvp = new ::VPinball();
       g_pvp->SetLogicalNumberOfProcessors(SDL_GetNumLogicalCPUCores());
-      g_pvp->m_settings.SetIniPath(g_pvp->GetAppPath(VPinball::AppSubFolder::Preferences, "VPinballX.ini").string() + PATH_SEPARATOR_CHAR);
+      g_pvp->m_settings.SetIniPath(g_pvp->GetAppPath(VPinball::AppSubFolder::Preferences, "VPinballX.ini").string());
       g_pvp->m_settings.Load(true);
       g_pvp->m_settings.SetVersion_VPinball(string(VP_VERSION_STRING_DIGITS), false);
       g_pvp->m_settings.Save();
@@ -473,6 +473,20 @@ VPINBALL_STATUS VPinballLib::ResetIni()
 void VPinballLib::UpdateWebServer()
 {
    m_webServer.Update();
+}
+
+string VPinballLib::GetPath(VPINBALL_PATH pathType)
+{
+   switch (pathType) {
+      case VPINBALL_PATH_ROOT:
+         return g_pvp->GetAppPath(VPinball::AppSubFolder::Root).string();
+      case VPINBALL_PATH_TABLES:
+         return g_pvp->GetAppPath(VPinball::AppSubFolder::Tables).string();
+      case VPINBALL_PATH_PREFERENCES:
+         return g_pvp->GetAppPath(VPinball::AppSubFolder::Preferences).string();
+      default:
+         return "";
+   }
 }
 
 VPINBALL_STATUS VPinballLib::LoadTable(const string& tablePath)

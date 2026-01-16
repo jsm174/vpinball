@@ -74,6 +74,7 @@ public:
    void SaveValueBool(const string& sectionName, const string& key, bool value);
    VPINBALL_STATUS ResetIni();
    void UpdateWebServer();
+   string GetPath(VPINBALL_PATH pathType);
    VPINBALL_STATUS LoadTable(const string& tablePath);
    VPINBALL_STATUS ExtractTableScript();
    VPINBALL_STATUS Play();

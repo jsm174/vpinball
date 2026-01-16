@@ -18,6 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.vpinball.app.jni.VPinballLogLevel
+import org.vpinball.app.jni.VPinballPath
 import org.vpinball.app.jni.VPinballSettingsSection.STANDALONE
 import org.vpinball.app.jni.VPinballStatus
 import org.vpinball.app.ui.screens.landing.LandingScreenViewModel
@@ -26,20 +27,21 @@ class TableManager(private val context: Context) {
     private val _tables = MutableStateFlow<List<Table>>(emptyList())
     val tables: StateFlow<List<Table>> = _tables.asStateFlow()
 
-    private var tablesPath: String = ""
+    private var safPath: String = ""
+    private var effectivePath: String = ""
     private var tablesJSONPath: String = ""
     private var requiresStaging: Boolean = false
     private var loadedTable: Table? = null
     private var loadedTableWorkingDir: String = ""
-    private val fileOps = TableFileOperations { tablesPath }
+    private val fileOps = TableFileOperations { effectivePath }
 
     init {
-        loadTablesPath()
+        loadPaths()
     }
 
     suspend fun refresh(onProgress: ((Int, String) -> Unit)? = null) {
         withContext(Dispatchers.IO) {
-            loadTablesPath()
+            loadPaths()
             loadTables(onProgress)
         }
     }
@@ -59,8 +61,8 @@ class TableManager(private val context: Context) {
 
             val updatedImage =
                 when {
-                    fileOps.exists(pngPath) -> relativePath(pngPath, tablesPath)
-                    fileOps.exists(jpgPath) -> relativePath(jpgPath, tablesPath)
+                    fileOps.exists(pngPath) -> relativePath(pngPath, effectivePath)
+                    fileOps.exists(jpgPath) -> relativePath(jpgPath, effectivePath)
                     else -> table.image
                 }
 
@@ -183,37 +185,32 @@ class TableManager(private val context: Context) {
     }
 
     fun resetTableIni(table: Table): Boolean {
-        loadTablesPath()
+        loadPaths()
         val iniRelativePath = table.path.substringBeforeLast('.') + ".ini"
         val iniFullPath = buildPath(iniRelativePath)
         return fileOps.delete(iniFullPath)
     }
 
-    private fun loadTablesPath() {
-        val customPath = VPinballManager.loadValue(STANDALONE, "TablesPath", "")
+    private fun loadPaths() {
+        safPath = VPinballManager.loadValue(STANDALONE, "SAFPath", "")
 
-        tablesPath =
-            if (customPath.isNotEmpty()) {
-                customPath
-            } else {
-                File(context.filesDir, "tables").absolutePath
-            }
-
-        if (!tablesPath.endsWith("/")) {
-            tablesPath += "/"
+        effectivePath = if (safPath.isNotEmpty()) {
+            if (!safPath.endsWith("/")) "$safPath/" else safPath
+        } else {
+            val path = VPinballManager.getPath(VPinballPath.TABLES)
+            if (!path.endsWith("/")) "$path/" else path
         }
 
-        requiresStaging = SAFFileSystem.isSAFPath(tablesPath)
+        requiresStaging = safPath.isNotEmpty()
 
-        tablesJSONPath =
-            if (requiresStaging) {
-                "${tablesPath}tables.json"
-            } else {
-                File(tablesPath, "tables.json").absolutePath
-            }
+        tablesJSONPath = if (safPath.isEmpty()) {
+            File(VPinballManager.getPath(VPinballPath.PREFERENCES), "tables.json").absolutePath
+        } else {
+            "${effectivePath}tables.json"
+        }
 
-        if (!requiresStaging && !fileOps.exists(tablesPath)) {
-            fileOps.createDirectory(tablesPath)
+        if (!requiresStaging && !fileOps.exists(effectivePath)) {
+            fileOps.createDirectory(effectivePath)
         }
     }
 
@@ -273,8 +270,8 @@ class TableManager(private val context: Context) {
 
                 val updatedImage =
                     when {
-                        fileOps.exists(pngPath) -> relativePath(pngPath, tablesPath)
-                        fileOps.exists(jpgPath) -> relativePath(jpgPath, tablesPath)
+                        fileOps.exists(pngPath) -> relativePath(pngPath, effectivePath)
+                        fileOps.exists(jpgPath) -> relativePath(jpgPath, effectivePath)
                         else -> table.image
                     }
 
@@ -285,7 +282,7 @@ class TableManager(private val context: Context) {
         }
 
         onProgress?.invoke(70, "Scanning for tables...")
-        val vpxFiles = fileOps.listFiles(tablesPath, ".vpx")
+        val vpxFiles = fileOps.listFiles(effectivePath, ".vpx")
 
         onProgress?.invoke(90, "Finalizing...")
         for (filePath in vpxFiles) {
@@ -320,7 +317,7 @@ class TableManager(private val context: Context) {
     }
 
     private fun createTable(path: String): Table {
-        val relativePath = relativePath(path, tablesPath)
+        val relativePath = relativePath(path, effectivePath)
         val stem = File(relativePath).nameWithoutExtension
         val parentPath = File(relativePath).parent ?: ""
         val now = System.currentTimeMillis() / 1000
@@ -328,8 +325,8 @@ class TableManager(private val context: Context) {
         val imageBasePath = if (parentPath.isNotEmpty()) "$parentPath/$stem" else stem
         val image =
             when {
-                fileOps.exists(buildPath("$imageBasePath.png")) -> relativePath(buildPath("$imageBasePath.png"), tablesPath)
-                fileOps.exists(buildPath("$imageBasePath.jpg")) -> relativePath(buildPath("$imageBasePath.jpg"), tablesPath)
+                fileOps.exists(buildPath("$imageBasePath.png")) -> relativePath(buildPath("$imageBasePath.png"), effectivePath)
+                fileOps.exists(buildPath("$imageBasePath.jpg")) -> relativePath(buildPath("$imageBasePath.jpg"), effectivePath)
                 else -> ""
             }
 
@@ -368,9 +365,9 @@ class TableManager(private val context: Context) {
 
     private fun buildPath(relativePath: String): String {
         return if (requiresStaging) {
-            "$tablesPath$relativePath"
+            "$effectivePath$relativePath"
         } else {
-            File(tablesPath, relativePath).absolutePath
+            File(effectivePath, relativePath).absolutePath
         }
     }
 
@@ -502,7 +499,7 @@ class TableManager(private val context: Context) {
         val tablePath = buildPath(table.path)
         val tableDir = File(table.path).parent?.let { buildPath(it) } ?: return false
 
-        if (tableDir.isEmpty() || tableDir == tablesPath || "$tableDir/" == tablesPath) {
+        if (tableDir.isEmpty() || tableDir == effectivePath || "$tableDir/" == effectivePath) {
             return false
         }
 
@@ -569,7 +566,7 @@ class TableManager(private val context: Context) {
                 SAFFileSystem.clearUriCache("${File(table.path).parent}/$baseName.jpg")
             }
 
-            val relPath = relativePath(destPath, tablesPath)
+            val relPath = relativePath(destPath, effectivePath)
             val now = System.currentTimeMillis() / 1000
             val updatedTable = table.copy(image = relPath, modifiedAt = now)
 
@@ -602,7 +599,7 @@ class TableManager(private val context: Context) {
                 if (requiresStaging) {
                     withContext(Dispatchers.Main) { onProgress?.invoke(10, "Copying files") }
 
-                    val stagingBaseDir = File(context.cacheDir, "staged_export")
+                    val stagingBaseDir = File(VPinballManager.getPath(VPinballPath.PREFERENCES), "saf_staging")
                     val stagingTableDir = File(stagingBaseDir, tableDir)
 
                     if (stagingTableDir.exists()) {
@@ -664,7 +661,7 @@ class TableManager(private val context: Context) {
         val fileName = File(table.path).name
 
         onProgress?.invoke(10, "Staging table...")
-        val cachePath = File(context.filesDir, "staging_cache/$tableDir").absolutePath
+        val cachePath = File(VPinballManager.getPath(VPinballPath.PREFERENCES), "saf_staging/$tableDir").absolutePath
 
         if (fileOps.exists(cachePath)) {
             fileOps.deleteDirectory(cachePath)
@@ -745,7 +742,7 @@ class TableManager(private val context: Context) {
 
         if (requiresStaging) {
             onProgress?.invoke(10, "Staging table...")
-            cachePath = File(context.filesDir, "staging_cache/$tableDir").absolutePath
+            cachePath = File(VPinballManager.getPath(VPinballPath.PREFERENCES), "saf_staging/$tableDir").absolutePath
 
             if (fileOps.exists(cachePath)) {
                 fileOps.deleteDirectory(cachePath)

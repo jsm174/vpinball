@@ -9,6 +9,12 @@ enum VPinballLogLevel: CInt {
     case error
 }
 
+enum VPinballPath: CInt {
+    case root
+    case tables
+    case preferences
+}
+
 enum VPinballStatus: CInt {
     case success
     case failure
@@ -219,6 +225,9 @@ func VPinballResetIni() -> CInt
 
 @_silgen_name("VPinballUpdateWebServer")
 func VPinballUpdateWebServer()
+
+@_silgen_name("VPinballGetPath")
+func VPinballGetPath(_ pathType: CInt) -> UnsafePointer<CChar>
 
 @_silgen_name("VPinballLoadTable")
 func VPinballLoadTable(_ pPath: UnsafePointer<CChar>) -> CInt

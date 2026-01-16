@@ -18,6 +18,7 @@ import org.vpinball.app.jni.VPinballCommandData
 import org.vpinball.app.jni.VPinballEvent
 import org.vpinball.app.jni.VPinballJNI
 import org.vpinball.app.jni.VPinballLogLevel
+import org.vpinball.app.jni.VPinballPath
 import org.vpinball.app.jni.VPinballProgressData
 import org.vpinball.app.jni.VPinballRumbleData
 import org.vpinball.app.jni.VPinballScriptErrorData
@@ -81,7 +82,7 @@ object VPinballManager : KoinComponent {
         if (isStarted) return
         isStarted = true
 
-        runCatching { FileUtils.copyAssets(context.assets, "", context.filesDir) }
+        runCatching { FileUtils.copyAssets(context.assets, "", filesDir) }
 
         vpinballJNI.VPinballInit { value, jsonData ->
             mainActivity?.let { activity ->
@@ -377,8 +378,5 @@ object VPinballManager : KoinComponent {
         }
     }
 
-    fun getTablesPath(): String {
-        val customPath = loadValue(STANDALONE, "TablesPath", "")
-        return customPath.ifEmpty { File(filesDir, "tables").absolutePath }
-    }
+    fun getPath(pathType: VPinballPath): String = vpinballJNI.VPinballGetPath(pathType.value)
 }
