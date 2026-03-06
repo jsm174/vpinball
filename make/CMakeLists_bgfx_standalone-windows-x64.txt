@@ -1,0 +1,146 @@
+cmake_minimum_required(VERSION 3.25)
+
+option(POST_BUILD_COPY_EXT_LIBS "Copy external libraries to build directory" ON)
+
+file(READ src/core/vpversion.h version)
+string(REGEX MATCH "VP_VERSION_MAJOR[ ]+([0-9]+)" _tmp ${version})
+set(VERSION_MAJOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "VP_VERSION_MINOR[ ]+([0-9]+)" _tmp ${version})
+set(VERSION_MINOR "${CMAKE_MATCH_1}")
+string(REGEX MATCH "VP_VERSION_REV[ ]+([0-9]+)" _tmp ${version})
+set(VERSION_REV "${CMAKE_MATCH_1}")
+set(APP_NAME "VPinballX_BGFX_Standalone64")
+
+project(vpinball VERSION "${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_REV}")
+
+include("${CMAKE_SOURCE_DIR}/make/CMakeLists_common_standalone.txt")
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 99)
+
+set_source_files_properties(
+   third-party/include/miniz/miniz.c PROPERTIES LANGUAGE CXX
+)
+
+add_executable(vpinball
+   ${VPX_STANDALONE_SOURCES}
+
+   src/input/OpenPinDevHandler.h
+   src/input/OpenPinDevHandler.cpp
+
+   standalone/windows/main.cpp
+
+   third-party/include/imgui/imgui_impl_sdl3.cpp
+   third-party/include/imgui/imgui_impl_sdl3.h
+)
+
+target_include_directories(vpinball PUBLIC
+   ${CMAKE_SOURCE_DIR}/third-party/include
+   ${CMAKE_SOURCE_DIR}
+   ${CMAKE_SOURCE_DIR}/third-party/include/libvbscript
+   media
+   pin
+   src
+   plugins
+)
+
+target_precompile_headers(vpinball PUBLIC
+)
+
+target_compile_definitions(vpinball PRIVATE
+   __STANDALONE__
+
+   ENABLE_BGFX
+
+   __LIBVBSCRIPT__
+   __WINESRC__
+   WINE_UNICODE_NATIVE
+
+   $<$<CONFIG:Debug>:BX_CONFIG_DEBUG=1>
+   $<$<CONFIG:Release>:BX_CONFIG_DEBUG=0>
+)
+
+add_compile_options(
+   $<$<CONFIG:RELEASE>:/Ob2>
+   $<$<CONFIG:RELEASE>:/O2>
+   $<$<CONFIG:RELEASE>:/Oi>
+   $<$<CONFIG:RELEASE>:/fp:fast>
+   $<$<CONFIG:RELEASE>:/fp:except->
+   $<$<CONFIG:RELEASE>:/Ot>
+   $<$<CONFIG:RELEASE>:/GF>
+   $<$<CONFIG:RELEASE>:/GS->
+   $<$<CONFIG:RELEASE>:/Gy>
+   $<$<CONFIG:RELEASE>:/GR>
+   $<$<CONFIG:RELEASE>:/Oy>
+   $<$<CONFIG:RELEASE>:/GT>
+   $<$<CONFIG:RELEASE>:/GL>
+   $<$<CONFIG:RELEASE>:/w44005>
+   /Zc:__cplusplus
+   /Zc:preprocessor
+   /std:c++20
+)
+
+target_link_directories(vpinball PUBLIC
+   third-party/build-libs/windows-x64
+)
+
+target_link_libraries(vpinball
+   bgfx64.lib
+   bimg64.lib
+   bimg_decode64.lib
+   bimg_encode64.lib
+   bx64.lib
+   SDL364.lib
+   SDL3_image64.lib
+   SDL3_ttf64.lib
+   freeimage64.lib
+   pinmame64.lib
+   altsound64.lib
+   dmdutil64.lib
+   dof64.lib
+   hidapi64.lib
+   openxr_loader64.lib
+   vbscript64.lib
+   winmm.lib
+   hid.lib
+   setupapi.lib
+)
+
+target_link_options(vpinball PUBLIC
+   $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
+   $<$<CONFIG:RELEASE>:/OPT:REF>
+   $<$<CONFIG:RELEASE>:/OPT:ICF>
+   $<$<CONFIG:RELEASE>:/LTCG>
+)
+
+set_target_properties(vpinball PROPERTIES
+   RUNTIME_OUTPUT_NAME "${APP_NAME}"
+   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
+)
+
+add_custom_command(TARGET vpinball POST_BUILD
+   COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_SOURCE_DIR}/src/assets" "$<TARGET_FILE_DIR:vpinball>/assets"
+   COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_SOURCE_DIR}/scripts" "$<TARGET_FILE_DIR:vpinball>/scripts"
+   COMMAND "${CMAKE_COMMAND}" -E copy_directory "${CMAKE_SOURCE_DIR}/docs" "$<TARGET_FILE_DIR:vpinball>/docs"
+   COMMAND "${CMAKE_COMMAND}" -E make_directory "$<TARGET_FILE_DIR:vpinball>/shaders-${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_REV}"
+)
+
+if(POST_BUILD_COPY_EXT_LIBS)
+   add_custom_command(TARGET vpinball POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/SDL364.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/SDL3_image64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/SDL3_ttf64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/freeimage64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/pinmame64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/altsound64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/dmdutil64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/dof64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/hidapi64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/openxr_loader64.dll" "$<TARGET_FILE_DIR:vpinball>"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64/vbscript64.dll" "$<TARGET_FILE_DIR:vpinball>"
+   )
+endif()
+
+set(PluginPlatform "windows")
+set(PluginArch "x64")
+include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugins.txt")

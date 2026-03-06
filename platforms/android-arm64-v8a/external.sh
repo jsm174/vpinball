@@ -16,6 +16,7 @@ echo "  OPENXR_SHA: ${OPENXR_SHA}"
 echo "  LIBDMDUTIL_SHA: ${LIBDMDUTIL_SHA}"
 echo "  LIBALTSOUND_SHA: ${LIBALTSOUND_SHA}"
 echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
+echo "  LIBVBSCRIPT_SHA: ${LIBVBSCRIPT_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
 echo ""
@@ -348,6 +349,40 @@ if [ "${LIBDOF_EXPECTED_SHA}" != "${LIBDOF_FOUND_SHA}" ]; then
 fi
 
 #
+# build libvbscript
+#
+
+LIBVBSCRIPT_EXPECTED_SHA="${LIBVBSCRIPT_SHA}"
+LIBVBSCRIPT_FOUND_SHA="$([ -f libvbscript/cache.txt ] && cat libvbscript/cache.txt || echo "")"
+
+if [ "${LIBVBSCRIPT_EXPECTED_SHA}" != "${LIBVBSCRIPT_FOUND_SHA}" ]; then
+   echo "Building libvbscript. Expected: ${LIBVBSCRIPT_EXPECTED_SHA}, Found: ${LIBVBSCRIPT_FOUND_SHA}"
+
+   rm -rf libvbscript
+   mkdir libvbscript
+   cd libvbscript
+
+   curl -sL https://github.com/jsm174/libvbscript/archive/${LIBVBSCRIPT_SHA}.tar.gz -o libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   tar xzf libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   mv libvbscript-${LIBVBSCRIPT_SHA} libvbscript
+   cd libvbscript
+   cmake \
+      -DBUILD_SHARED=ON \
+      -DCMAKE_SYSTEM_NAME=Android \
+      -DCMAKE_SYSTEM_VERSION=34 \
+      -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+      -DANDROID_NDK=${ANDROID_NDK_HOME} \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$LIBVBSCRIPT_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # build ffmpeg
 #
 
@@ -488,6 +523,11 @@ cp libaltsound/libaltsound/src/altsound.h ../../../third-party/include
 
 cp libdof/libdof/build/libdof.so ../../../third-party/runtime-libs/android-arm64-v8a
 cp -r libdof/libdof/include/DOF ../../../third-party/include/
+
+cp libvbscript/libvbscript/build/libvbscript.so ../../../third-party/runtime-libs/android-arm64-v8a
+mkdir -p ../../../third-party/include/libvbscript
+cp libvbscript/libvbscript/include/libvbscript.h ../../../third-party/include/libvbscript/
+cp -r libvbscript/libvbscript/wine/include/* ../../../third-party/include/libvbscript/
 
 for LIB in libavcodec libavdevice libavfilter libavformat libavutil libswresample libswscale; do
    cp ffmpeg/ffmpeg/${LIB}/${LIB}.so ../../../third-party/runtime-libs/android-arm64-v8a

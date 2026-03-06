@@ -24,6 +24,7 @@ echo "  LIBDMDUTIL_SHA: ${LIBDMDUTIL_SHA}"
 echo "  LIBALTSOUND_SHA: ${LIBALTSOUND_SHA}"
 echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
+echo "  LIBVBSCRIPT_SHA: ${LIBVBSCRIPT_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
 echo ""
 
@@ -344,6 +345,10 @@ if [ "${LIBDOF_EXPECTED_SHA}" != "${LIBDOF_FOUND_SHA}" ]; then
 fi
 
 #
+# libvbscript - not built for x86
+#
+
+#
 # build ffmpeg
 #
 
@@ -493,6 +498,7 @@ cp libdof/libdof/third-party/build-libs/win/x86/hidapi.lib ../../../third-party/
 cp libdof/libdof/third-party/runtime-libs/win/x86/hidapi.dll ../../../third-party/runtime-libs/windows-x86
 cp libdof/libdof/third-party/build-libs/win/x86/libftdi1.lib ../../../third-party/build-libs/windows-x86
 cp libdof/libdof/third-party/runtime-libs/win/x86/libftdi1.dll ../../../third-party/runtime-libs/windows-x86
+
 
 for LIB in avcodec avdevice avfilter avformat avutil swresample swscale; do
    DIR="lib${LIB}"

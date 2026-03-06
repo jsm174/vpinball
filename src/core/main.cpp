@@ -178,6 +178,11 @@ extern "C" int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE /*hPrevInstance*/, 
 
    Logger::Init();
 
+#ifdef __STANDALONE__
+   extern void vpx_libvbscript_init();
+   vpx_libvbscript_init();
+#endif
+
    int retval = 0;
    try
    {

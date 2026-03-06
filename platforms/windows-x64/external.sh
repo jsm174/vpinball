@@ -24,6 +24,7 @@ echo "  LIBDMDUTIL_SHA: ${LIBDMDUTIL_SHA}"
 echo "  LIBALTSOUND_SHA: ${LIBALTSOUND_SHA}"
 echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
+echo "  LIBVBSCRIPT_SHA: ${LIBVBSCRIPT_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
 echo ""
 
@@ -344,6 +345,42 @@ if [ "${LIBDOF_EXPECTED_SHA}" != "${LIBDOF_FOUND_SHA}" ]; then
 fi
 
 #
+# build libvbscript
+#
+
+LIBVBSCRIPT_EXPECTED_SHA="${LIBVBSCRIPT_SHA}"
+LIBVBSCRIPT_FOUND_SHA="$([ -f libvbscript/cache.txt ] && cat libvbscript/cache.txt || echo "")"
+
+if [ "${LIBVBSCRIPT_EXPECTED_SHA}" != "${LIBVBSCRIPT_FOUND_SHA}" ]; then
+   echo "Building libvbscript. Expected: ${LIBVBSCRIPT_EXPECTED_SHA}, Found: ${LIBVBSCRIPT_FOUND_SHA}"
+
+   rm -rf libvbscript
+   mkdir libvbscript
+   cd libvbscript
+
+   curl -sL https://github.com/jsm174/libvbscript/archive/${LIBVBSCRIPT_SHA}.tar.gz -o libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   tar xzf libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   mv libvbscript-${LIBVBSCRIPT_SHA} libvbscript
+   cd libvbscript
+   CURRENT_DIR="$(pwd)"
+   "${MSYS2_PATH}/usr/bin/bash.exe" -l -c "
+      cd \"${CURRENT_DIR}\" &&
+      cmake \
+         -DBUILD_SHARED=ON \
+         -DPLATFORM=win \
+         -DARCH=x64 \
+         -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+         -B build &&
+      cmake --build build -- -j$(nproc)
+   "
+   cd ..
+
+   echo "$LIBVBSCRIPT_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # build ffmpeg
 #
 
@@ -493,6 +530,12 @@ cp libdof/libdof/third-party/build-libs/win/x64/hidapi64.lib ../../../third-part
 cp libdof/libdof/third-party/runtime-libs/win/x64/hidapi64.dll ../../../third-party/runtime-libs/windows-x64
 cp libdof/libdof/third-party/build-libs/win/x64/libftdi164.lib ../../../third-party/build-libs/windows-x64
 cp libdof/libdof/third-party/runtime-libs/win/x64/libftdi164.dll ../../../third-party/runtime-libs/windows-x64
+
+cp libvbscript/libvbscript/build/vbscript64.dll ../../../third-party/runtime-libs/windows-x64
+cp libvbscript/libvbscript/build/vbscript64.lib ../../../third-party/build-libs/windows-x64
+mkdir -p ../../../third-party/include/libvbscript
+cp libvbscript/libvbscript/include/libvbscript.h ../../../third-party/include/libvbscript/
+cp -r libvbscript/libvbscript/wine/include/* ../../../third-party/include/libvbscript/
 
 for LIB in avcodec avdevice avfilter avformat avutil swresample swscale; do
    DIR="lib${LIB}"

@@ -939,7 +939,6 @@ bool try_parse_color(const string& str, OLE_COLOR& value);
 string color_to_hex(OLE_COLOR color);
 
 #ifdef __STANDALONE__
-extern "C" HRESULT external_open_storage(const OLECHAR* pwcsName, IStorage* pstgPriority, DWORD grfMode, SNB snbExclude, DWORD reserved, IStorage** ppstgOpen);
 extern "C" HRESULT external_create_object(const WCHAR *progid, IClassFactory* cf, IUnknown* obj);
 extern "C" void external_log_info(const char* format, ...);
 extern "C" void external_log_debug(const char* format, ...);

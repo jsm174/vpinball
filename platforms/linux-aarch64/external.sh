@@ -17,6 +17,7 @@ echo "  LIBALTSOUND_SHA: ${LIBALTSOUND_SHA}"
 echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
+echo "  LIBVBSCRIPT_SHA: ${LIBVBSCRIPT_SHA}"
 echo ""
 
 NUM_PROCS=$(nproc)
@@ -361,6 +362,36 @@ if [ "${LIBZIP_EXPECTED_SHA}" != "${LIBZIP_FOUND_SHA}" ]; then
 fi
 
 #
+# build libvbscript
+#
+
+LIBVBSCRIPT_EXPECTED_SHA="${LIBVBSCRIPT_SHA}"
+LIBVBSCRIPT_FOUND_SHA="$([ -f libvbscript/cache.txt ] && cat libvbscript/cache.txt || echo "")"
+
+if [ "${LIBVBSCRIPT_EXPECTED_SHA}" != "${LIBVBSCRIPT_FOUND_SHA}" ]; then
+   echo "Building libvbscript. Expected: ${LIBVBSCRIPT_EXPECTED_SHA}, Found: ${LIBVBSCRIPT_FOUND_SHA}"
+
+   rm -rf libvbscript
+   mkdir libvbscript
+   cd libvbscript
+
+   curl -sL https://github.com/jsm174/libvbscript/archive/${LIBVBSCRIPT_SHA}.tar.gz -o libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   tar xzf libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   mv libvbscript-${LIBVBSCRIPT_SHA} libvbscript
+   cd libvbscript
+   cmake \
+      -DBUILD_SHARED=ON \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$LIBVBSCRIPT_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # copy libraries
 #
 
@@ -417,3 +448,8 @@ done
 cp -a libzip/libzip/build/lib/libzip.{so,so.*} ../../../third-party/runtime-libs/linux-aarch64
 cp libzip/libzip/build/zipconf.h ../../../third-party/include
 cp libzip/libzip/lib/zip.h ../../../third-party/include
+
+cp -a libvbscript/libvbscript/build/libvbscript.so* ../../../third-party/runtime-libs/linux-aarch64
+mkdir -p ../../../third-party/include/libvbscript
+cp libvbscript/libvbscript/include/libvbscript.h ../../../third-party/include/libvbscript/
+cp -r libvbscript/libvbscript/wine/include/* ../../../third-party/include/libvbscript/

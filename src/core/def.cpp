@@ -833,19 +833,28 @@ vector<string> add_line_numbers(const char* src)
 }
 
 #ifdef __STANDALONE__
-HRESULT external_open_storage(const OLECHAR* pwcsName, IStorage* pstgPriority, DWORD grfMode, SNB snbExclude, DWORD reserved, IStorage** ppstgOpen)
-{
-   char szName[1024];
-   WideCharToMultiByte(CP_ACP, 0, pwcsName, -1, szName, std::size(szName), nullptr, nullptr);
+#include "libvbscript/libvbscript.h"
 
-   return PoleStorage::Create(szName, "/", (IStorage**)ppstgOpen);
+static void vpx_log(libvbscript_log_level_t level, const char* format, va_list args)
+{
+   va_list args_copy;
+   va_copy(args_copy, args);
+   int size = vsnprintf(nullptr, 0, format, args_copy);
+   va_end(args_copy);
+   if (size > 0) {
+      char* const buffer = new char[size + 1];
+      vsnprintf(buffer, size + 1, format, args);
+      switch (level) {
+      case LIBVBSCRIPT_LOG_DEBUG: PLOGD << buffer; break;
+      case LIBVBSCRIPT_LOG_ERROR: PLOGE << buffer; break;
+      default: PLOGI << buffer; break;
+      }
+      delete [] buffer;
+   }
 }
 
-HRESULT external_create_object(const WCHAR* progid, IClassFactory* cf, IUnknown* obj)
+static HRESULT vpx_create_object(const WCHAR* progid, IClassFactory* cf, IUnknown* obj)
 {
-   // External objects should now be handled using the DynamicScript overrides in 10.8.1.
-   // Keeping as a fallback, and to allow for syncing Wine updates to 10.8.0 Standalone.
-
    IUnknown** ppObj = (IUnknown**)&obj;
    *ppObj = NULL;
 
@@ -856,55 +865,20 @@ HRESULT external_create_object(const WCHAR* progid, IClassFactory* cf, IUnknown*
    return CLASS_E_CLASSNOTAVAILABLE;
 }
 
-void external_log_info(const char* format, ...)
+HRESULT WINAPI StgOpenStorage(const OLECHAR* pwcsName, IStorage* pstgPriority, DWORD grfMode, SNB snbExclude, DWORD reserved, IStorage** ppstgOpen)
 {
-   va_list args;
-   va_start(args, format);
-   va_list args_copy;
-   va_copy(args_copy, args);
-   int size = vsnprintf(nullptr, 0, format, args_copy);
-   va_end(args_copy);
-   if (size > 0) {
-      char* const buffer = new char[size + 1];
-      vsnprintf(buffer, size + 1, format, args);
-      PLOGI << buffer;
-      delete [] buffer;
-   }
-   va_end(args);
+   char szName[1024];
+   WideCharToMultiByte(CP_ACP, 0, pwcsName, -1, szName, std::size(szName), nullptr, nullptr);
+
+   return PoleStorage::Create(szName, "/", (IStorage**)ppstgOpen);
 }
 
-void external_log_debug(const char* format, ...)
+extern "C" void vpx_libvbscript_init()
 {
-   va_list args;
-   va_start(args, format);
-   va_list args_copy;
-   va_copy(args_copy, args);
-   int size = vsnprintf(nullptr, 0, format, args_copy);
-   va_end(args_copy);
-   if (size > 0) {
-      char* const buffer = new char[size + 1];
-      vsnprintf(buffer, size + 1, format, args);
-      PLOGD << buffer;
-      delete [] buffer;
-   }
-   va_end(args);
-}
-
-void external_log_error(const char* format, ...)
-{
-   va_list args;
-   va_start(args, format);
-   va_list args_copy;
-   va_copy(args_copy, args);
-   int size = vsnprintf(nullptr, 0, format, args_copy);
-   va_end(args_copy);
-   if (size > 0) {
-      char* const buffer = new char[size + 1];
-      vsnprintf(buffer, size + 1, format, args);
-      PLOGE << buffer;
-      delete [] buffer;
-   }
-   va_end(args);
+   libvbscript_callbacks_t callbacks = {};
+   callbacks.log = vpx_log;
+   callbacks.create_object = vpx_create_object;
+   libvbscript_init(&callbacks);
 }
 
 #endif

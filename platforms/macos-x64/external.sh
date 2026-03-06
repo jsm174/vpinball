@@ -17,6 +17,7 @@ echo "  LIBALTSOUND_SHA: ${LIBALTSOUND_SHA}"
 echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
+echo "  LIBVBSCRIPT_SHA: ${LIBVBSCRIPT_SHA}"
 echo ""
 
 NUM_PROCS=$(sysctl -n hw.ncpu)
@@ -299,6 +300,38 @@ if [ "${LIBDOF_EXPECTED_SHA}" != "${LIBDOF_FOUND_SHA}" ]; then
 fi
 
 #
+# build libvbscript
+#
+
+LIBVBSCRIPT_EXPECTED_SHA="${LIBVBSCRIPT_SHA}"
+LIBVBSCRIPT_FOUND_SHA="$([ -f libvbscript/cache.txt ] && cat libvbscript/cache.txt || echo "")"
+
+if [ "${LIBVBSCRIPT_EXPECTED_SHA}" != "${LIBVBSCRIPT_FOUND_SHA}" ]; then
+   echo "Building libvbscript. Expected: ${LIBVBSCRIPT_EXPECTED_SHA}, Found: ${LIBVBSCRIPT_FOUND_SHA}"
+
+   rm -rf libvbscript
+   mkdir libvbscript
+   cd libvbscript
+
+   curl -sL https://github.com/jsm174/libvbscript/archive/${LIBVBSCRIPT_SHA}.tar.gz -o libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   tar xzf libvbscript-${LIBVBSCRIPT_SHA}.tar.gz
+   mv libvbscript-${LIBVBSCRIPT_SHA} libvbscript
+   cd libvbscript
+   cmake \
+      -DBUILD_SHARED=ON \
+      -DCMAKE_OSX_ARCHITECTURES=x86_64 \
+      -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$LIBVBSCRIPT_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # build ffmpeg
 #
 
@@ -424,6 +457,11 @@ cp -r libdof/libdof/include/DOF ../../../third-party/include/
 cp -a libdof/libdof/third-party/runtime-libs/macos/x64/libusb-1*.dylib ../../../third-party/runtime-libs/macos-x64
 cp -a libdof/libdof/third-party/runtime-libs/macos/x64/libhidapi.{dylib,*.dylib} ../../../third-party/runtime-libs/macos-x64
 cp -a libdof/libdof/third-party/runtime-libs/macos/x64/libftdi1*.dylib ../../../third-party/runtime-libs/macos-x64
+
+cp -a libvbscript/libvbscript/build/libvbscript.{dylib,*.dylib} ../../../third-party/runtime-libs/macos-x64
+mkdir -p ../../../third-party/include/libvbscript
+cp libvbscript/libvbscript/include/libvbscript.h ../../../third-party/include/libvbscript/
+cp -r libvbscript/libvbscript/wine/include/* ../../../third-party/include/libvbscript/
 
 for LIB in libavcodec libavdevice libavfilter libavformat libavutil libswresample libswscale; do
    cp -a ffmpeg/ffmpeg/${LIB}/${LIB}.{dylib,*.dylib} ../../../third-party/runtime-libs/macos-x64
