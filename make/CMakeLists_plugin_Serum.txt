@@ -20,35 +20,37 @@ if(BUILD_SHARED)
    )
 
    if(PluginPlatform STREQUAL "windows")
-      add_compile_options(
-         $<$<CONFIG:RELEASE>:/Ob2>
-         $<$<CONFIG:RELEASE>:/O2>
-         $<$<CONFIG:RELEASE>:/Oi>
-         $<$<CONFIG:RELEASE>:/arch:SSE2>
-         $<$<CONFIG:RELEASE>:/fp:fast>
-         $<$<CONFIG:RELEASE>:/fp:except->
-         $<$<CONFIG:RELEASE>:/Ot>
-         $<$<CONFIG:RELEASE>:/GF>
-         $<$<CONFIG:RELEASE>:/GS->
-         $<$<CONFIG:RELEASE>:/Gy>
-         $<$<CONFIG:RELEASE>:/GR>
-         $<$<CONFIG:RELEASE>:/Oy>
-         $<$<CONFIG:RELEASE>:/GT>
-         $<$<CONFIG:RELEASE>:/GL>
-      )
-      set_target_properties(SerumPlugin PROPERTIES
-         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
-      )
-      target_compile_options(SerumPlugin PUBLIC
-         $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:CXX>:${OPT_COMMON}>>
-         $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:C>:${OPT_COMMON}>>
-      )
-      target_link_options(SerumPlugin PUBLIC
-         $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
-         $<$<CONFIG:RELEASE>:/OPT:REF>
-         $<$<CONFIG:RELEASE>:/OPT:ICF>
-         $<$<CONFIG:RELEASE>:/LTCG>
-      )
+      if(MSVC)
+         add_compile_options(
+            $<$<CONFIG:RELEASE>:/Ob2>
+            $<$<CONFIG:RELEASE>:/O2>
+            $<$<CONFIG:RELEASE>:/Oi>
+            $<$<CONFIG:RELEASE>:/arch:SSE2>
+            $<$<CONFIG:RELEASE>:/fp:fast>
+            $<$<CONFIG:RELEASE>:/fp:except->
+            $<$<CONFIG:RELEASE>:/Ot>
+            $<$<CONFIG:RELEASE>:/GF>
+            $<$<CONFIG:RELEASE>:/GS->
+            $<$<CONFIG:RELEASE>:/Gy>
+            $<$<CONFIG:RELEASE>:/GR>
+            $<$<CONFIG:RELEASE>:/Oy>
+            $<$<CONFIG:RELEASE>:/GT>
+            $<$<CONFIG:RELEASE>:/GL>
+         )
+         set_target_properties(SerumPlugin PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
+         )
+         target_compile_options(SerumPlugin PUBLIC
+            $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:CXX>:${OPT_COMMON}>>
+            $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:C>:${OPT_COMMON}>>
+         )
+         target_link_options(SerumPlugin PUBLIC
+            $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
+            $<$<CONFIG:RELEASE>:/OPT:REF>
+            $<$<CONFIG:RELEASE>:/OPT:ICF>
+            $<$<CONFIG:RELEASE>:/LTCG>
+         )
+      endif()
       if (PluginArch STREQUAL "x64")
          set_target_properties(SerumPlugin PROPERTIES
             OUTPUT_NAME "plugin-serum64"

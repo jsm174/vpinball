@@ -58,64 +58,57 @@ target_compile_definitions(vpinball PRIVATE
 
    $<$<CONFIG:Debug>:BX_CONFIG_DEBUG=1>
    $<$<CONFIG:Release>:BX_CONFIG_DEBUG=0>
+
+   "__forceinline=__attribute__((always_inline)) inline"
 )
 
-add_compile_options(
-   $<$<CONFIG:RELEASE>:/Ob2>
-   $<$<CONFIG:RELEASE>:/O2>
-   $<$<CONFIG:RELEASE>:/Oi>
-   $<$<CONFIG:RELEASE>:/fp:fast>
-   $<$<CONFIG:RELEASE>:/fp:except->
-   $<$<CONFIG:RELEASE>:/Ot>
-   $<$<CONFIG:RELEASE>:/GF>
-   $<$<CONFIG:RELEASE>:/GS->
-   $<$<CONFIG:RELEASE>:/Gy>
-   $<$<CONFIG:RELEASE>:/GR>
-   $<$<CONFIG:RELEASE>:/Oy>
-   $<$<CONFIG:RELEASE>:/GT>
-   $<$<CONFIG:RELEASE>:/GL>
-   $<$<CONFIG:RELEASE>:/w44005>
-   /Zc:__cplusplus
-   /Zc:preprocessor
-   /std:c++20
+target_compile_options(vpinball PUBLIC
+   -mssse3
+   -fvisibility=hidden
+   $<$<CXX_COMPILER_ID:GNU>:
+      -ffast-math
+      -ffp-contract=off>
+)
+
+set_source_files_properties(src/core/Settings.cpp PROPERTIES
+   COMPILE_FLAGS "$<$<CXX_COMPILER_ID:GNU>:-fno-tree-pta>"
 )
 
 target_link_directories(vpinball PUBLIC
-   third-party/build-libs/windows-x64
+   ${CMAKE_SOURCE_DIR}/third-party/build-libs/windows-x64
+   ${CMAKE_SOURCE_DIR}/third-party/runtime-libs/windows-x64
 )
 
 target_link_libraries(vpinball
-   bgfx64.lib
-   bimg64.lib
-   bimg_decode64.lib
-   bimg_encode64.lib
-   bx64.lib
-   SDL364.lib
-   SDL3_image64.lib
-   SDL3_ttf64.lib
-   freeimage64.lib
-   pinmame64.lib
-   altsound64.lib
-   dmdutil64.lib
-   dof64.lib
-   hidapi64.lib
-   openxr_loader64.lib
-   vbscript64.lib
-   winmm.lib
-   hid.lib
-   setupapi.lib
+   bgfx64
+   bimg64
+   bimg_decode64
+   bimg_encode64
+   bx64
+   SDL364
+   SDL3_image64
+   SDL3_ttf64
+   freeimage64
+   pinmame64
+   altsound64
+   dmdutil64
+   dof64
+   hidapi64
+   openxr_loader64
+   vbscript64
+   winmm
+   hid
+   setupapi
 )
 
 target_link_options(vpinball PUBLIC
-   $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
-   $<$<CONFIG:RELEASE>:/OPT:REF>
-   $<$<CONFIG:RELEASE>:/OPT:ICF>
-   $<$<CONFIG:RELEASE>:/LTCG>
+   -Wl,--allow-multiple-definition
+   -static-libgcc
+   -static-libstdc++
 )
 
 set_target_properties(vpinball PROPERTIES
    RUNTIME_OUTPUT_NAME "${APP_NAME}"
-   MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
 )
 
 add_custom_command(TARGET vpinball POST_BUILD

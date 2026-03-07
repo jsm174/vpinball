@@ -15,35 +15,37 @@ if(PluginPlatform STREQUAL "windows")
       plugins
       plugins/pinup-events
    )
-   add_compile_options(
-      $<$<CONFIG:RELEASE>:/Ob2>
-      $<$<CONFIG:RELEASE>:/O2>
-      $<$<CONFIG:RELEASE>:/Oi>
-      $<$<CONFIG:RELEASE>:/arch:SSE2>
-      $<$<CONFIG:RELEASE>:/fp:fast>
-      $<$<CONFIG:RELEASE>:/fp:except->
-      $<$<CONFIG:RELEASE>:/Ot>
-      $<$<CONFIG:RELEASE>:/GF>
-      $<$<CONFIG:RELEASE>:/GS->
-      $<$<CONFIG:RELEASE>:/Gy>
-      $<$<CONFIG:RELEASE>:/GR>
-      $<$<CONFIG:RELEASE>:/Oy>
-      $<$<CONFIG:RELEASE>:/GT>
-      $<$<CONFIG:RELEASE>:/GL>
-   )
-   set_target_properties(PinupEventsPlugin PROPERTIES
-      MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
-   )
-   target_compile_options(PinupEventsPlugin PUBLIC
-      $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:CXX>:${OPT_COMMON}>>
-      $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:C>:${OPT_COMMON}>>
-   )
-   target_link_options(PinupEventsPlugin PUBLIC
-      $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
-      $<$<CONFIG:RELEASE>:/OPT:REF>
-      $<$<CONFIG:RELEASE>:/OPT:ICF>
-      $<$<CONFIG:RELEASE>:/LTCG>
-   )
+   if(MSVC)
+      add_compile_options(
+         $<$<CONFIG:RELEASE>:/Ob2>
+         $<$<CONFIG:RELEASE>:/O2>
+         $<$<CONFIG:RELEASE>:/Oi>
+         $<$<CONFIG:RELEASE>:/arch:SSE2>
+         $<$<CONFIG:RELEASE>:/fp:fast>
+         $<$<CONFIG:RELEASE>:/fp:except->
+         $<$<CONFIG:RELEASE>:/Ot>
+         $<$<CONFIG:RELEASE>:/GF>
+         $<$<CONFIG:RELEASE>:/GS->
+         $<$<CONFIG:RELEASE>:/Gy>
+         $<$<CONFIG:RELEASE>:/GR>
+         $<$<CONFIG:RELEASE>:/Oy>
+         $<$<CONFIG:RELEASE>:/GT>
+         $<$<CONFIG:RELEASE>:/GL>
+      )
+      set_target_properties(PinupEventsPlugin PROPERTIES
+         MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
+      )
+      target_compile_options(PinupEventsPlugin PUBLIC
+         $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:CXX>:${OPT_COMMON}>>
+         $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:C>:${OPT_COMMON}>>
+      )
+      target_link_options(PinupEventsPlugin PUBLIC
+         $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
+         $<$<CONFIG:RELEASE>:/OPT:REF>
+         $<$<CONFIG:RELEASE>:/OPT:ICF>
+         $<$<CONFIG:RELEASE>:/LTCG>
+      )
+   endif()
    if (PluginArch STREQUAL "x64")
       set_target_properties(PinupEventsPlugin PROPERTIES
          OUTPUT_NAME "plugin-pinup-events64"

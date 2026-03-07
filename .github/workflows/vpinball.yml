@@ -115,7 +115,14 @@ jobs:
         run: |
           TYPE=$(echo "${{ matrix.type }}" | tr '[:upper:]' '[:lower:]')
           cp make/CMakeLists_${TYPE}-${{ matrix.platform }}-${{ matrix.arch }}.txt CMakeLists.txt
-          if [[ "${{ matrix.platform }}" == "windows" ]]; then
+          if [[ "${{ matrix.type }}" == "BGFX_STANDALONE" && "${{ matrix.platform }}" == "windows" ]]; then
+            CURRENT_DIR="$(pwd)"
+            /c/msys64/usr/bin/bash.exe -l -c "
+              cd \"${CURRENT_DIR}\" &&
+              cmake -DCMAKE_BUILD_TYPE=${{ matrix.config }} -B build/${{ matrix.config }} &&
+              cmake --build build/${{ matrix.config }} -- -j\$(nproc)
+            "
+          elif [[ "${{ matrix.platform }}" == "windows" ]]; then
             if [[ "${{ matrix.arch }}" == "x64" ]]; then
               cmake -G "Visual Studio 17 2022" -A x64 -B build
             else
