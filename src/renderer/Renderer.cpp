@@ -359,6 +359,16 @@ Renderer::~Renderer()
    delete m_pOffscreenVRRight;
    for (int window = 0; window <= VPXWindowId::VPXWINDOW_Topper; window++)
       m_ancillaryWndHdrRT[window] = nullptr;
+#if defined(ENABLE_BGFX)
+   for (int window = 0; window <= VPXWindowId::VPXWINDOW_Topper; window++)
+   {
+      auto& wc = m_windowCapture[window];
+      if (bgfx::isValid(wc.readbackTex))
+         bgfx::destroy(wc.readbackTex);
+      delete[] wc.rawData;
+      delete[] wc.data;
+   }
+#endif
    #if defined(ENABLE_DX9) || defined(__OPENGLES__) || defined(__APPLE__)
    m_envRadianceTexture.reset();
    #else
@@ -3255,12 +3265,17 @@ VPXRenderContext2D& Renderer::GetAncillaryRenderContext(VPXWindowId window, floa
 
 void Renderer::RenderAncillaryWindow(VPXWindowId window, const VPX::RenderOutput& output, RenderTarget* embedRT, const vector<AncillaryRendererDef>& ancillaryWndRenderers)
 {
+   static int logCount[VPXWindowId::VPXWINDOW_Topper + 1] = {};
    bool isOutputLinear;
    int m_outputX, m_outputY, m_outputW, m_outputH;
    RenderDevice* const rd = m_renderDevice;
    RenderTarget* outputRT = SetupAncillaryRenderTarget(window, output, embedRT, m_outputX, m_outputY, m_outputW, m_outputH, isOutputLinear);
    if (outputRT == nullptr)
+   {
+      if (logCount[window]++ < 5)
+         PLOGI << "WebCapture: window " << window << " SetupAncillaryRenderTarget returned null, mode=" << (int)output.GetMode() << " renderers=" << ancillaryWndRenderers.size();
       return;
+   }
 
    rd->ResetRenderState();
    if (output.GetMode() == VPX::RenderOutput::OM_WINDOW)
@@ -3275,18 +3290,25 @@ void Renderer::RenderAncillaryWindow(VPXWindowId window, const VPX::RenderOutput
          break;
    }
 
+   if (logCount[window]++ < 10)
+      PLOGI << "WebCapture: window " << window << " mode=" << (int)output.GetMode() << " rendered=" << rendered
+            << " renderers=" << ancillaryWndRenderers.size() << " outputRT=" << (outputRT ? outputRT->m_name : "null"s)
+            << " isBackBuffer=" << (outputRT ? outputRT->IsBackBuffer() : false)
+            << " colorTex=" << (outputRT ? bgfx::isValid(outputRT->GetCoreColorTexture()) : false)
+            << " srcFmt=" << (int)outputRT->GetCoreColorFormat();
+
    if (output.GetMode() == VPX::RenderOutput::OM_WINDOW)
    {
       if (!rendered)
       {
-         m_renderDevice->GetCurrentPass()->ClearCommands(); // No rendering done, clear the pass (avoids a useless clear)
+         m_renderDevice->GetCurrentPass()->ClearCommands();
       }
       else
       {
          if (!output.GetWindow()->IsVisible())
          {
             output.GetWindow()->Show();
-            m_renderDevice->m_outputWnd[0]->RaiseAndFocus(); // Keep focus on playfield when showing an ancillary window
+            m_renderDevice->m_outputWnd[0]->RaiseAndFocus();
          }
 
          if (isOutputLinear)
@@ -3350,4 +3372,159 @@ void Renderer::RenderAncillaryWindow(VPXWindowId window, const VPX::RenderOutput
    }
 
    UpdateBasicShaderMatrix();
+
+#if defined(ENABLE_BGFX)
+   if (rendered && outputRT)
+      CaptureAncillaryWindow(window, outputRT, m_outputX, m_outputY, m_outputW, m_outputH);
+#endif
 }
+
+#if defined(ENABLE_BGFX)
+void Renderer::CaptureAncillaryWindow(VPXWindowId window, RenderTarget* rt, int srcX, int srcY, int srcW, int srcH)
+{
+   const int w = srcW;
+   const int h = srcH;
+   auto& cap = m_windowCapture[window];
+
+   bgfx::TextureHandle srcTex = rt->GetCoreColorTexture();
+   if (!bgfx::isValid(srcTex))
+      return;
+
+   bgfx::TextureFormat::Enum srcFormat = rt->GetCoreColorFormat();
+   colorFormat vpxFmt = rt->GetColorFormat();
+   bool isHDR = (vpxFmt == colorFormat::RGBA16F || vpxFmt == colorFormat::RGB16F);
+   int bpp = 4;
+   if (vpxFmt == colorFormat::RGB16F) bpp = 8;
+   else if (vpxFmt == colorFormat::RGBA16F) bpp = 8;
+   else if (vpxFmt == colorFormat::RGB32F) bpp = 12;
+   else if (vpxFmt == colorFormat::RGBA32F) bpp = 16;
+
+   if (!bgfx::isValid(cap.readbackTex) || cap.width != w || cap.height != h)
+   {
+      if (bgfx::isValid(cap.readbackTex))
+         bgfx::destroy(cap.readbackTex);
+      delete[] cap.rawData;
+      delete[] cap.data;
+      PLOGI << "WebCapture: Creating readback tex " << w << "x" << h << " bgfxFmt=" << (int)srcFormat
+            << " vpxFmt=" << (int)vpxFmt << " vpxRGBA16F=" << (int)colorFormat::RGBA16F
+            << " isHDR=" << isHDR << " bpp=" << bpp;
+      cap.readbackIsHDR = false;
+      uint64_t flagCombos[] = {
+         BGFX_TEXTURE_BLIT_DST | BGFX_TEXTURE_READ_BACK,
+         BGFX_TEXTURE_READ_BACK,
+         BGFX_TEXTURE_BLIT_DST,
+      };
+      for (auto flags : flagCombos)
+      {
+         cap.readbackTex = bgfx::createTexture2D(w, h, false, 1, srcFormat, flags);
+         if (bgfx::isValid(cap.readbackTex))
+         {
+            cap.readbackIsHDR = isHDR;
+            PLOGI << "WebCapture: Success with flags=" << flags;
+            break;
+         }
+      }
+      if (!bgfx::isValid(cap.readbackTex))
+      {
+         cap.readbackTex = bgfx::createTexture2D(w, h, false, 1, bgfx::TextureFormat::RGBA8, BGFX_TEXTURE_BLIT_DST | BGFX_TEXTURE_READ_BACK);
+         PLOGI << "WebCapture: Fell back to RGBA8";
+      }
+      PLOGI << "WebCapture: Created readback tex valid=" << bgfx::isValid(cap.readbackTex) << " readbackIsHDR=" << cap.readbackIsHDR;
+      int rawBpp = cap.readbackIsHDR ? bpp : 4;
+      cap.rawData = new uint8_t[w * h * rawBpp];
+      memset(cap.rawData, 0, w * h * rawBpp);
+      cap.data = new uint8_t[w * h * 4];
+      cap.width = w;
+      cap.height = h;
+      cap.valid = false;
+      cap.pendingFrame = UINT32_MAX;
+   }
+
+   if (cap.pendingFrame != UINT32_MAX)
+   {
+      if (cap.pendingFrame == 0)
+      {
+         std::lock_guard<std::mutex> lock(m_windowCaptureMutex);
+         cap.frameId++;
+         cap.valid = true;
+         cap.pendingFrame = UINT32_MAX;
+      }
+      else
+      {
+         cap.pendingFrame--;
+         return;
+      }
+   }
+
+   if (!bgfx::isValid(cap.readbackTex))
+      return;
+
+   bgfx::blit(m_renderDevice->m_activeViewId, cap.readbackTex, (uint16_t)0, (uint16_t)0,
+      srcTex, (uint16_t)srcX, (uint16_t)srcY, (uint16_t)srcW, (uint16_t)srcH);
+   bgfx::readTexture(cap.readbackTex, cap.rawData);
+   cap.pendingFrame = 3;
+}
+
+static inline float halfToFloat(uint16_t h)
+{
+   uint32_t s = (h >> 15) & 1;
+   uint32_t e = (h >> 10) & 0x1F;
+   uint32_t m = h & 0x3FF;
+   if (e == 0) return s ? 0.f : (m / 1024.f) / 16384.f;
+   if (e == 31) return 1.f;
+   return (s ? -1.f : 1.f) * (1.f + m / 1024.f) * powf(2.f, (float)e - 15.f);
+}
+
+static inline uint8_t linearToSRGB(float v)
+{
+   if (v <= 0.f) return 0;
+   if (v >= 1.f) return 255;
+   float s = v <= 0.0031308f ? v * 12.92f : 1.055f * powf(v, 1.f / 2.4f) - 0.055f;
+   return (uint8_t)(s * 255.f + 0.5f);
+}
+
+bool Renderer::GetWindowFrame(VPXWindowId window, int* width, int* height, unsigned int* frameId, const void** data)
+{
+   if (window < VPXWindowId::VPXWINDOW_Backglass || window > VPXWindowId::VPXWINDOW_Topper)
+      return false;
+   std::lock_guard<std::mutex> lock(m_windowCaptureMutex);
+   auto& cap = m_windowCapture[window];
+   if (!cap.valid)
+      return false;
+
+   const unsigned int pixels = cap.width * cap.height;
+   if (cap.readbackIsHDR)
+   {
+      const uint16_t* src = reinterpret_cast<const uint16_t*>(cap.rawData);
+      for (unsigned int i = 0; i < pixels; i++)
+      {
+         float r = halfToFloat(src[i * 4 + 0]);
+         float g = halfToFloat(src[i * 4 + 1]);
+         float b = halfToFloat(src[i * 4 + 2]);
+         r = r / (1.f + r);
+         g = g / (1.f + g);
+         b = b / (1.f + b);
+         cap.data[i * 4 + 0] = linearToSRGB(r * m_exposure);
+         cap.data[i * 4 + 1] = linearToSRGB(g * m_exposure);
+         cap.data[i * 4 + 2] = linearToSRGB(b * m_exposure);
+         cap.data[i * 4 + 3] = 255;
+      }
+   }
+   else
+   {
+      for (unsigned int i = 0; i < pixels; i++)
+      {
+         cap.data[i * 4 + 0] = cap.rawData[i * 4 + 0];
+         cap.data[i * 4 + 1] = cap.rawData[i * 4 + 1];
+         cap.data[i * 4 + 2] = cap.rawData[i * 4 + 2];
+         cap.data[i * 4 + 3] = 255;
+      }
+   }
+
+   *width = cap.width;
+   *height = cap.height;
+   *frameId = cap.frameId;
+   *data = cap.data;
+   return true;
+}
+#endif

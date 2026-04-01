@@ -262,8 +262,14 @@ typedef struct VPXPluginAPI
    // Game state
    double(MSGPIAPI* GetGameTime)(); // Game time in seconds
 
+   // Window frame capture
+   // Returns the latest captured frame of an ancillary window (Backglass, ScoreView, Topper).
+   // Data is RGBA8 format, owned by the engine. Returns non-zero if a frame is available.
+   // Thread safe
+   int(MSGPIAPI* GetWindowFrame)(VPXWindowId window, int* width, int* height, unsigned int* frameId, const void** data);
+
    // Rendering
-   
+
    // Create a texture from encoded data (Webp, Exr, ...).
    // Texture must be destroyed by the caller using DeleteTexture.
    // Thread safe

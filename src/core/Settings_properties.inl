@@ -1353,6 +1353,7 @@ PropBoolDyn(PluginScoreView, Enable, "Enable"s, "Enable ScoreView player plugin"
 PropBoolDyn(PluginSerum, Enable, "Enable"s, "Enable Serum plugin"s, g_isStandalone);
 PropBoolDyn(PluginWMP, Enable, "Enable"s, "Enable WMP plugin"s, g_isStandalone);
 PropBoolDyn(PluginVNI, Enable, "Enable"s, "Enable VNI plugin"s, g_isStandalone);
+PropBoolDyn(PluginWebDisplay, Enable, "Enable"s, "Enable WebDisplay plugin"s, g_isStandalone);
 
 // Standalone
 PropEnumWithMin(Standalone, RenderingModeOverride, "Override rendering mode"s, ""s, int, -1, -1, "Default"s, "2D"s, "Stereo 3D"s, "VR"s);

@@ -1,0 +1,115 @@
+# plugin CMake file to be included in main project CMakelists
+
+# --- WebDisplay plugin ---
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 99)
+
+set(WEBDISPLAY_PLUGIN_SOURCES
+   plugins/webdisplay/webdisplay.cpp
+   third-party/include/mongoose/mongoose.c
+)
+
+if(BUILD_SHARED)
+   add_library(WebDisplayPlugin MODULE ${WEBDISPLAY_PLUGIN_SOURCES})
+
+   target_include_directories(WebDisplayPlugin PUBLIC
+      ${CMAKE_SOURCE_DIR}/third-party/include
+      plugins
+      plugins/webdisplay
+   )
+
+   target_compile_definitions(WebDisplayPlugin PRIVATE
+      MG_ENABLE_LOG=0
+   )
+
+   if(PluginPlatform STREQUAL "windows" OR PluginPlatform STREQUAL "windows-mingw")
+      if(MSVC)
+         add_compile_options(
+            $<$<CONFIG:RELEASE>:/Ob2>
+            $<$<CONFIG:RELEASE>:/O2>
+            $<$<CONFIG:RELEASE>:/Oi>
+            $<$<CONFIG:RELEASE>:/arch:SSE2>
+            $<$<CONFIG:RELEASE>:/fp:fast>
+            $<$<CONFIG:RELEASE>:/fp:except->
+            $<$<CONFIG:RELEASE>:/Ot>
+            $<$<CONFIG:RELEASE>:/GF>
+            $<$<CONFIG:RELEASE>:/GS->
+            $<$<CONFIG:RELEASE>:/Gy>
+            $<$<CONFIG:RELEASE>:/GR>
+            $<$<CONFIG:RELEASE>:/Oy>
+            $<$<CONFIG:RELEASE>:/GT>
+            $<$<CONFIG:RELEASE>:/GL>
+         )
+         set_target_properties(WebDisplayPlugin PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
+         )
+         target_compile_options(WebDisplayPlugin PUBLIC
+            $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:CXX>:${OPT_COMMON}>>
+            $<$<CONFIG:RELEASE>:$<$<COMPILE_LANGUAGE:C>:${OPT_COMMON}>>
+         )
+         target_link_options(WebDisplayPlugin PUBLIC
+            $<$<CONFIG:RELEASE>:/INCREMENTAL:NO>
+            $<$<CONFIG:RELEASE>:/OPT:REF>
+            $<$<CONFIG:RELEASE>:/OPT:ICF>
+            $<$<CONFIG:RELEASE>:/LTCG>
+         )
+      endif()
+      target_link_libraries(WebDisplayPlugin PRIVATE ws2_32)
+      if (PluginArch STREQUAL "x64")
+         set_target_properties(WebDisplayPlugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "plugin-webdisplay64"
+         )
+      else()
+         set_target_properties(WebDisplayPlugin PROPERTIES
+            PREFIX ""
+            OUTPUT_NAME "plugin-webdisplay"
+         )
+      endif()
+   else()
+      set_target_properties(WebDisplayPlugin PROPERTIES
+         PREFIX ""
+         OUTPUT_NAME "plugin-webdisplay"
+      )
+      if(PluginPlatform STREQUAL "macos")
+         set_target_properties(WebDisplayPlugin PROPERTIES
+            SUFFIX ".dylib"
+         )
+      endif()
+   endif()
+
+   add_custom_command(TARGET WebDisplayPlugin POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/plugins/webdisplay/plugin.cfg" "${PLUGINS_DIR}/webdisplay/plugin.cfg"
+      COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:WebDisplayPlugin>" "${PLUGINS_DIR}/webdisplay"
+      COMMAND "${CMAKE_COMMAND}" -E rm "$<TARGET_FILE:WebDisplayPlugin>"
+   )
+
+   if(POST_BUILD_COPY_EXT_LIBS AND PluginPlatform STREQUAL "windows-mingw")
+      add_custom_command(TARGET WebDisplayPlugin POST_BUILD
+         COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/${PluginPlatform}-${PluginArch}/libgcc_s_seh-1.dll" "${PLUGINS_DIR}/webdisplay/libgcc_s_seh-1.dll"
+         COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/${PluginPlatform}-${PluginArch}/libstdc++-6.dll" "${PLUGINS_DIR}/webdisplay/libstdc++-6.dll"
+      )
+   endif()
+endif()
+
+if(BUILD_STATIC)
+   add_compile_options(-fPIC)
+
+   add_library(WebDisplayPlugin STATIC ${WEBDISPLAY_PLUGIN_SOURCES})
+
+   target_include_directories(WebDisplayPlugin PUBLIC
+      ${CMAKE_SOURCE_DIR}/third-party/include
+      plugins
+      plugins/webdisplay
+   )
+
+   target_compile_definitions(WebDisplayPlugin PRIVATE
+      MG_ENABLE_LOG=0
+   )
+
+   set_target_properties(WebDisplayPlugin PROPERTIES
+      PREFIX ""
+      OUTPUT_NAME "plugin-webdisplay"
+   )
+endif()

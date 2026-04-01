@@ -82,6 +82,8 @@ private:
 
    static double MSGPIAPI GetGameTime();
 
+   static int MSGPIAPI GetWindowFrame(VPXWindowId window, int* width, int* height, unsigned int* frameId, const void** data);
+
    static VPXTexture MSGPIAPI CreateTexture(uint8_t* rawData, int size);
    static void MSGPIAPI UpdateTexture(VPXTexture* texture, int width, int height, VPXTextureFormat format, const void* image);
    static VPXTextureInfo* MSGPIAPI GetTextureInfo(VPXTexture texture);

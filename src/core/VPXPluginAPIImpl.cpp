@@ -192,6 +192,15 @@ void MSGPIAPI VPXPluginAPIImpl::UpdateTexture(VPXTexture* texture, int width, in
    UpdateVPXTextureInfo(*tex);
 }
 
+int MSGPIAPI VPXPluginAPIImpl::GetWindowFrame(VPXWindowId window, int* width, int* height, unsigned int* frameId, const void** data)
+{
+#if defined(ENABLE_BGFX)
+   if (g_pplayer && g_pplayer->m_renderer)
+      return g_pplayer->m_renderer->GetWindowFrame(window, width, height, frameId, data) ? 1 : 0;
+#endif
+   return 0;
+}
+
 VPXTexture MSGPIAPI VPXPluginAPIImpl::CreateTexture(uint8_t* rawData, int size)
 {
    // BGFX allows to create texture from any thread and other rendering backends are single threaded
@@ -689,6 +698,8 @@ VPXPluginAPIImpl::VPXPluginAPIImpl(MsgPI::MsgPluginManager& pluginManager)
    m_api.SetPlungerState = SetPlungerState;
 
    m_api.GetGameTime = GetGameTime;
+
+   m_api.GetWindowFrame = GetWindowFrame;
 
    m_api.CreateTexture = CreateTexture;
    m_api.UpdateTexture = UpdateTexture;

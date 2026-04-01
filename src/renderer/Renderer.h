@@ -247,6 +247,27 @@ private:
    } m_ancillaryRenderSetup;
    VPXRenderContext2D m_ancillaryRenderContext;
 
+#if defined(ENABLE_BGFX)
+   struct WindowCapture
+   {
+      bgfx::TextureHandle readbackTex = BGFX_INVALID_HANDLE;
+      bool readbackIsHDR = false;
+      uint8_t* rawData = nullptr;
+      uint8_t* data = nullptr;
+      int width = 0;
+      int height = 0;
+      uint32_t pendingFrame = UINT32_MAX;
+      unsigned int frameId = 0;
+      bool valid = false;
+   };
+   WindowCapture m_windowCapture[VPXWindowId::VPXWINDOW_Topper + 1];
+   std::mutex m_windowCaptureMutex;
+   void CaptureAncillaryWindow(VPXWindowId window, RenderTarget* rt, int srcX, int srcY, int srcW, int srcH);
+public:
+   bool GetWindowFrame(VPXWindowId window, int* width, int* height, unsigned int* frameId, const void** data);
+private:
+#endif
+
    bool m_shaderDirty = true;
    void SetupShaders();
 

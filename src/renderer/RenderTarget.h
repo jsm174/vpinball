@@ -42,6 +42,7 @@ public:
 
 #if defined(ENABLE_BGFX)
    bgfx::FrameBufferHandle GetCoreFrameBuffer() const { return m_framebuffer; }
+   bgfx::TextureHandle GetCoreColorTexture() const { return m_color_tex; }
    bgfx::TextureFormat::Enum GetCoreColorFormat() const { return m_colorFormat; }
    static void OnFrameFlushed() { current_render_target = nullptr; current_render_layer = 0; }
 #elif defined(ENABLE_OPENGL)
