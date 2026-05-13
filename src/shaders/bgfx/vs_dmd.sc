@@ -9,6 +9,7 @@ $output v_texcoord0, v_texcoord1
 #include "common.sh"
 
 #ifdef WORLD
+	uniform mat4 matWorld;
 	#ifdef STEREO
 		uniform mat4 matRotViewProj[2];
 		uniform vec4 cameraPosWorld[2];
@@ -41,11 +42,12 @@ void main()
 		gl_Layer = gl_InstanceID;
 	#endif
 	#ifdef WORLD
-		// Camera-relative clip transform: subtract camera world pos on the GPU to keep magnitudes small.
-		vec3 wpos_rel = a_position.xyz - cCameraPosWorld;
+		// Camera-relative clip transform: apply matWorld then subtract camera world pos on the GPU to keep magnitudes small.
+		vec4 tpos = mul(matWorld, pos);
+		vec3 wpos_rel = tpos.xyz - cCameraPosWorld;
 		gl_Position = mul(mRotViewProj, vec4(wpos_rel, 1.0));
 		#ifdef CLIP
-			v_clipDistance = dot(clip_plane, pos);
+			v_clipDistance = dot(clip_plane, tpos);
 		#endif
 	#else
 		// Set Z to 1. which in turns result in a written depth of 0. needed to avoid tonemapping of DMD and for correct fake stereo

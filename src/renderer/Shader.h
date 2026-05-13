@@ -163,32 +163,32 @@ enum ShaderTechniques
 
    SHADER_TECHNIQUE(basic_DMD, SHADER_glassPad, SHADER_glassArea, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd),
    SHADER_TECHNIQUE(
-      basic_DMD_world, SHADER_glassPad, SHADER_glassArea, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd, SHADER_clip_plane),
+      basic_DMD_world, SHADER_matWorld, SHADER_glassPad, SHADER_glassArea, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd, SHADER_clip_plane),
 
    SHADER_TECHNIQUE(display_DMD, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
       SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex),
-   SHADER_TECHNIQUE(display_DMD_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea,
+   SHADER_TECHNIQUE(display_DMD_world, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea,
       SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex, SHADER_clip_plane),
    SHADER_TECHNIQUE(display_Seg, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha,
       SHADER_w_h_height, SHADER_displayTex),
-   SHADER_TECHNIQUE(display_Seg_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
+   SHADER_TECHNIQUE(display_Seg_world, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
       SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_clip_plane),
    SHADER_TECHNIQUE(display_CRT, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity,
       SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties),
-   SHADER_TECHNIQUE(display_CRT_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness,
+   SHADER_TECHNIQUE(display_CRT_world, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness,
       SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties, SHADER_clip_plane),
 
    SHADER_TECHNIQUE(basic_noDMD, SHADER_glassPad, SHADER_glassArea, SHADER_alphaTestValue, SHADER_vColor_Intensity, SHADER_tex_sprite, SHADER_u_basic_shade_mode),
    SHADER_TECHNIQUE(basic_noDMD_notex, SHADER_glassPad, SHADER_glassArea, SHADER_vColor_Intensity),
-   SHADER_TECHNIQUE(basic_noDMD_world, SHADER_glassPad, SHADER_glassArea, SHADER_alphaTestValue, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vColor_Intensity, SHADER_tex_sprite,
+   SHADER_TECHNIQUE(basic_noDMD_world, SHADER_matWorld, SHADER_glassPad, SHADER_glassArea, SHADER_alphaTestValue, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vColor_Intensity, SHADER_tex_sprite,
       SHADER_u_basic_shade_mode, SHADER_clip_plane),
 
-   SHADER_TECHNIQUE(basic_noLight, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_lightCenter_doShadow, SHADER_balls, SHADER_staticColor_Alpha,
+   SHADER_TECHNIQUE(basic_noLight, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_lightCenter_doShadow, SHADER_balls, SHADER_staticColor_Alpha,
       SHADER_alphaTestValueAB_filterMode_addBlend, SHADER_amount_blend_modulate_vs_add_flasherMode, SHADER_tex_flasher_A, SHADER_tex_flasher_B, SHADER_clip_plane),
 
-   SHADER_TECHNIQUE(bulb_light, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_blend_modulate_vs_add, SHADER_lightCenter_maxRange, SHADER_lightColor2_falloff_power,
+   SHADER_TECHNIQUE(bulb_light, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_blend_modulate_vs_add, SHADER_lightCenter_maxRange, SHADER_lightColor2_falloff_power,
       SHADER_lightColor_intensity, SHADER_clip_plane),
-   SHADER_TECHNIQUE(bulb_light_with_ball_shadows, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_balls, SHADER_blend_modulate_vs_add, SHADER_lightCenter_maxRange,
+   SHADER_TECHNIQUE(bulb_light_with_ball_shadows, SHADER_matWorld, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_balls, SHADER_blend_modulate_vs_add, SHADER_lightCenter_maxRange,
       SHADER_lightColor2_falloff_power, SHADER_lightColor_intensity, SHADER_clip_plane),
 
    SHADER_TECHNIQUE(

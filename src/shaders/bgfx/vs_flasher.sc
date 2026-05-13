@@ -8,6 +8,7 @@ $output v_tablePos, v_texcoord0
 
 #include "common.sh"
 
+uniform mat4 matWorld;
 #ifdef STEREO
 	uniform mat4 matRotViewProj[2];
 	uniform vec4 cameraPosWorld[2];
@@ -26,15 +27,16 @@ $output v_tablePos, v_texcoord0
 void main()
 {
 	vec4 pos = vec4(a_position, 1.0);
-	v_tablePos = a_position.xyz;
+	vec4 tpos = mul(matWorld, pos);
+	v_tablePos = tpos.xyz;
 	v_texcoord0 = a_texcoord0;
 	#ifdef STEREO
 		gl_Layer = gl_InstanceID;
 	#endif
 	#ifdef CLIP
-		v_clipDistance = dot(clip_plane, pos);
+		v_clipDistance = dot(clip_plane, tpos);
 	#endif
-	// Camera-relative clip transform: subtract camera world pos on the GPU to keep magnitudes small.
-	vec3 wpos_rel = a_position.xyz - cCameraPosWorld;
+	// Camera-relative clip transform: apply matWorld then subtract camera world pos on the GPU to keep magnitudes small.
+	vec3 wpos_rel = tpos.xyz - cCameraPosWorld;
 	gl_Position = mul(mRotViewProj, vec4(wpos_rel, 1.0));
 }

@@ -1073,16 +1073,19 @@ void Renderer::UpdateBasicShaderMatrix(const Matrix3D& objectTrafo)
    m_renderDevice->m_basicShader->SetMatrix(SHADER_matWorldView, &m_mvp.GetModelView(0), m_mvp.m_nEyes);
    m_renderDevice->m_basicShader->SetMatrix(SHADER_matWorldViewInverseTranspose, &m_mvp.GetModelViewInverseTranspose(0), m_mvp.m_nEyes);
 
-   // Camera-relative uniforms. The shader subtracts cameraPosWorld from the world
-   // position on the GPU, then applies (viewRotation x proj). This avoids Adreno (Quest) f32
+   // Camera-relative uniforms. The shader applies matWorld then subtracts cameraPosWorld from the
+   // world position on the GPU, then applies (viewRotation x proj). This avoids Adreno (Quest) f32
    // precision loss in mul(matWorldViewProj, pos) where the camera-translation column dominates the
    // CPU-composed mvp entries; the cancellation now happens at full f32 precision per-vertex.
    m_renderDevice->m_basicShader->SetMatrix(SHADER_matRotViewProj, &m_mvp.GetRotViewProj(0), m_mvp.m_nEyes);
    m_renderDevice->m_basicShader->SetVector(SHADER_cameraPosWorld, &m_mvp.GetCameraPos(0), m_mvp.m_nEyes);
+   m_renderDevice->m_lightShader->SetMatrix(SHADER_matWorld, &m_mvp.GetModel());
    m_renderDevice->m_lightShader->SetMatrix(SHADER_matRotViewProj, &m_mvp.GetRotViewProj(0), m_mvp.m_nEyes);
    m_renderDevice->m_lightShader->SetVector(SHADER_cameraPosWorld, &m_mvp.GetCameraPos(0), m_mvp.m_nEyes);
+   m_renderDevice->m_flasherShader->SetMatrix(SHADER_matWorld, &m_mvp.GetModel());
    m_renderDevice->m_flasherShader->SetMatrix(SHADER_matRotViewProj, &m_mvp.GetRotViewProj(0), m_mvp.m_nEyes);
    m_renderDevice->m_flasherShader->SetVector(SHADER_cameraPosWorld, &m_mvp.GetCameraPos(0), m_mvp.m_nEyes);
+   m_renderDevice->m_DMDShader->SetMatrix(SHADER_matWorld, &m_mvp.GetModel());
    m_renderDevice->m_DMDShader->SetMatrix(SHADER_matRotViewProj, &m_mvp.GetRotViewProj(0), m_mvp.m_nEyes);
    m_renderDevice->m_DMDShader->SetVector(SHADER_cameraPosWorld, &m_mvp.GetCameraPos(0), m_mvp.m_nEyes);
 
