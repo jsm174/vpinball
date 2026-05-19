@@ -408,8 +408,54 @@ if [ "${LIBZIP_EXPECTED_SHA}" != "${LIBZIP_FOUND_SHA}" ]; then
 fi
 
 #
+# build scorbit_sdk
+#
+
+SCORBIT_SDK_EXPECTED_SHA="${SCORBIT_SDK_SHA}"
+SCORBIT_SDK_FOUND_SHA="$([ -f scorbit_sdk/cache.txt ] && cat scorbit_sdk/cache.txt || echo "")"
+
+if [ "${SCORBIT_SDK_EXPECTED_SHA}" != "${SCORBIT_SDK_FOUND_SHA}" ]; then
+   echo "Building scorbit_sdk. Expected: ${SCORBIT_SDK_EXPECTED_SHA}, Found: ${SCORBIT_SDK_FOUND_SHA}"
+   # scorbit_sdk/cmake/encrypt.cmake reads $SCORBIT_SDK_ENCRYPT_SECRET from the
+   # environment (cmake inherits it). Without Scorbit's shared secret a from-source
+   # build CANNOT decrypt provider keys (incl. the public demo key), and there are
+   # no official macOS prebuilt packages. Obtain the secret/key from Scorbit and
+   # export SCORBIT_SDK_ENCRYPT_SECRET before running this script.
+   if [ -z "${SCORBIT_SDK_ENCRYPT_SECRET}" ]; then
+      echo "  WARNING: SCORBIT_SDK_ENCRYPT_SECRET not set - Scorbit auth will fail (see plugins/scorbit/README.md)"
+   fi
+
+   rm -rf scorbit_sdk
+   mkdir scorbit_sdk
+   cd scorbit_sdk
+
+   curl -sL https://github.com/scorbit-io/scorbit_sdk/archive/refs/tags/${SCORBIT_SDK_SHA}.tar.gz -o scorbit_sdk-${SCORBIT_SDK_SHA}.tar.gz
+   tar xzf scorbit_sdk-${SCORBIT_SDK_SHA}.tar.gz
+   mv scorbit_sdk-${SCORBIT_SDK_SHA} scorbit_sdk
+   cd scorbit_sdk
+   cmake \
+      -DSCORBIT_SDK_SHARED=ON \
+      -DSCORBIT_SDK_BUILD_TESTS=OFF \
+      -DSCORBIT_SDK_BUILD_EXAMPLES=OFF \
+      -DCMAKE_OSX_ARCHITECTURES=arm64 \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$SCORBIT_SDK_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # copy libraries
 #
+
+cp -a scorbit_sdk/scorbit_sdk/build/libscorbit_sdk.{dylib,*.dylib} ../../../third-party/runtime-libs/macos-arm64
+cp -r scorbit_sdk/scorbit_sdk/include/scorbit_sdk ../../../third-party/include/
+cp scorbit_sdk/scorbit_sdk/build/generated/scorbit_sdk/export.h ../../../third-party/include/scorbit_sdk/ 2>/dev/null || true
+cp scorbit_sdk/scorbit_sdk/build/generated/scorbit_sdk/version.h ../../../third-party/include/scorbit_sdk/ 2>/dev/null || true
 
 cp -a SDL3/SDL/build/libSDL3.{dylib,*.dylib} ../../../third-party/runtime-libs/macos-arm64
 cp -r SDL3/SDL/include/SDL3 ../../../third-party/include/

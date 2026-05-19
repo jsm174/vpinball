@@ -1,0 +1,99 @@
+# plugin CMake file to be included in main project CMakelists
+
+# --- Scorbit score tracking / pairing plugin ---
+
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_C_STANDARD 99)
+
+set(SCORBIT_PLUGIN_SOURCES
+   plugins/scorbit/common.h
+   plugins/scorbit/ScorbitPlugin.cpp
+   plugins/scorbit/Scorbit.h
+   plugins/scorbit/Scorbit.cpp
+   plugins/scorbit/ScorbitQR.cpp
+
+   third-party/include/qrcodegen/qrcodegen.h
+   third-party/include/qrcodegen/qrcodegen.c
+)
+
+if(BUILD_SHARED)
+   add_library(ScorbitPlugin MODULE ${SCORBIT_PLUGIN_SOURCES})
+
+   target_include_directories(ScorbitPlugin PUBLIC
+      ${CMAKE_SOURCE_DIR}/third-party/include
+      plugins
+      plugins/scorbit
+      src/core
+      src
+   )
+
+   if(PluginPlatform STREQUAL "windows" OR PluginPlatform STREQUAL "windows-mingw")
+      if(MSVC)
+         set_target_properties(ScorbitPlugin PROPERTIES
+            MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:DEBUG>:Debug>"
+         )
+      endif()
+      target_link_directories(ScorbitPlugin PUBLIC ${CMAKE_SOURCE_DIR}/third-party/build-libs/${PluginPlatform}-${PluginArch} ${CMAKE_SOURCE_DIR}/third-party/runtime-libs/${PluginPlatform}-${PluginArch})
+      set_target_properties(ScorbitPlugin PROPERTIES
+         PREFIX ""
+         OUTPUT_NAME "plugin-scorbit64"
+      )
+      target_link_libraries(ScorbitPlugin scorbit_sdk)
+   else()
+      set_target_properties(ScorbitPlugin PROPERTIES
+         PREFIX ""
+         OUTPUT_NAME "plugin-scorbit"
+      )
+      if(PluginPlatform STREQUAL "macos")
+         set_target_properties(ScorbitPlugin PROPERTIES
+            SUFFIX ".dylib"
+         )
+      endif()
+      target_link_directories(ScorbitPlugin PUBLIC
+         ${CMAKE_SOURCE_DIR}/third-party/runtime-libs/${PluginPlatform}-${PluginArch}
+      )
+      target_link_libraries(ScorbitPlugin PUBLIC scorbit_sdk)
+   endif()
+
+   add_custom_command(TARGET ScorbitPlugin POST_BUILD
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/plugins/scorbit/plugin.cfg" "${PLUGINS_DIR}/scorbit/plugin.cfg"
+      COMMAND "${CMAKE_COMMAND}" -E copy "$<TARGET_FILE:ScorbitPlugin>" "${PLUGINS_DIR}/scorbit"
+      COMMAND "${CMAKE_COMMAND}" -E rm "$<TARGET_FILE:ScorbitPlugin>"
+   )
+
+   if(POST_BUILD_COPY_EXT_LIBS)
+      if(PluginPlatform STREQUAL "windows")
+         add_custom_command(TARGET ScorbitPlugin POST_BUILD
+            COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/${PluginPlatform}-${PluginArch}/scorbit_sdk.dll" "${PLUGINS_DIR}/scorbit/scorbit_sdk.dll"
+         )
+      elseif(PluginPlatform STREQUAL "linux")
+         add_custom_command(TARGET ScorbitPlugin POST_BUILD
+            COMMAND cp -a "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/linux-${PluginArch}/libscorbit_sdk.so" "${PLUGINS_DIR}/scorbit/"
+            COMMAND cp -a "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/linux-${PluginArch}/libscorbit_sdk.so.*" "${PLUGINS_DIR}/scorbit/"
+         )
+      elseif(PluginPlatform STREQUAL "macos")
+         add_custom_command(TARGET ScorbitPlugin POST_BUILD
+            COMMAND cp -a "${CMAKE_SOURCE_DIR}/third-party/runtime-libs/macos-${PluginArch}/libscorbit_sdk.dylib" "${PLUGINS_DIR}/scorbit/"
+         )
+      endif()
+   endif()
+endif()
+
+if(BUILD_STATIC)
+   add_compile_options(-fPIC)
+
+   add_library(ScorbitPlugin STATIC ${SCORBIT_PLUGIN_SOURCES})
+
+   target_include_directories(ScorbitPlugin PUBLIC
+      ${CMAKE_SOURCE_DIR}/third-party/include
+      plugins
+      plugins/scorbit
+      src/core
+      src
+   )
+
+   set_target_properties(ScorbitPlugin PROPERTIES
+      PREFIX ""
+      OUTPUT_NAME "plugin-scorbit"
+   )
+endif()
