@@ -1,0 +1,107 @@
+{
+  "_notes": [
+    "Compiled by Leprinco",
+    "Mario Andretti (Gottlieb/Premier 1995)"
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Leprinco <leprinco@yahoo.fr>",
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system3",
+    "roms": [
+      "andretti"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Standings #1",
+      "short_label": "#1",
+      "initials": {
+        "start": 1370,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1373,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Standings #2",
+      "short_label": "#2",
+      "initials": {
+        "start": 1381,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1384,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Standings #3",
+      "short_label": "#3",
+      "initials": {
+        "start": 1392,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1395,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Standings #4",
+      "short_label": "#4",
+      "initials": {
+        "start": 1403,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1406,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Standings #5",
+      "short_label": "#5",
+      "initials": {
+        "start": 1414,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1417,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ],
+  "mode_champions": [
+    {
+      "label": "Highest Ball Score",
+      "short_label": "HBS",
+      "initials": {
+        "start": 1621,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3469,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ]
+}

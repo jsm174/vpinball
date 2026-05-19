@@ -1,0 +1,91 @@
+{
+  "_notes": [
+    "Compiled by Leprinco",
+    "Rescue 911 (Gottlieb 1994) - Gottlieb System 3"
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Leprinco <leprinco@yahoo.fr>",
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system3",
+    "roms": [
+      "rescu911"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Super Hero",
+      "short_label": "SH",
+      "initials": {
+        "start": 1379,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1382,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Hero #1",
+      "short_label": "#1",
+      "initials": {
+        "start": 1390,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1393,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Hero #2",
+      "short_label": "#2",
+      "initials": {
+        "start": 1401,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1404,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Hero #3",
+      "short_label": "#3",
+      "initials": {
+        "start": 1412,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1415,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Hero #4",
+      "short_label": "#4",
+      "initials": {
+        "start": 1423,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1426,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ]
+}

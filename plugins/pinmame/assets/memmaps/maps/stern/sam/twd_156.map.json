@@ -1,0 +1,311 @@
+{
+  "_notes": [
+    "The Walking Dead (v1.56, 2014, Stern).",
+    "Stern SAM platform. ARM AT91 CPU, NVRAM at CPU 0x02100000.",
+    "Scores are 4-byte little-endian integers.",
+    "Score entry: 4-byte score at start, initials (+0x08 bytes) as null-terminated ch.",
+    "Stride between entries is 0x20 bytes.",
+    "Verified against NVRAM data with real scores."
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "stern-sam",
+    "roms": [
+      "twd_156"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Grand Champion",
+      "short_label": "GC",
+      "initials": {
+        "start": "0x021035B8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021035B0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "First Place",
+      "short_label": "#1",
+      "initials": {
+        "start": "0x021035D8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021035D0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Second Place",
+      "short_label": "#2",
+      "initials": {
+        "start": "0x021035F8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021035F0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Third Place",
+      "short_label": "#3",
+      "initials": {
+        "start": "0x02103618",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103610",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Fourth Place",
+      "short_label": "#4",
+      "initials": {
+        "start": "0x02103638",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103630",
+        "encoding": "int",
+        "length": 4
+      }
+    }
+  ],
+  "mode_champions": [
+    {
+      "label": "Walkers Killed Champion",
+      "short_label": "WK",
+      "initials": {
+        "start": "0x02103658",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "counter": {
+        "start": "0x02103650",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Combo Champion",
+      "short_label": "Combo",
+      "initials": {
+        "start": "0x02103678",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103670",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Bicycle Girl Champion",
+      "short_label": "BG",
+      "initials": {
+        "start": "0x02103698",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103690",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Barn Champion",
+      "short_label": "Barn",
+      "initials": {
+        "start": "0x021036B8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021036B0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "CDC Champion",
+      "short_label": "CDC",
+      "initials": {
+        "start": "0x021036D8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021036D0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Riot Champion",
+      "short_label": "Riot",
+      "initials": {
+        "start": "0x021036F8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021036F0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Tunnel Champion",
+      "short_label": "Tunnel",
+      "initials": {
+        "start": "0x02103718",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103710",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Arena Champion",
+      "short_label": "Arena",
+      "initials": {
+        "start": "0x02103738",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103730",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Terminus Champion",
+      "short_label": "Term",
+      "initials": {
+        "start": "0x02103758",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103750",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Blood Bath Champion",
+      "short_label": "BB",
+      "initials": {
+        "start": "0x02103778",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103770",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Crossbow Champion",
+      "short_label": "XB",
+      "initials": {
+        "start": "0x02103798",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x02103790",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "X Champion",
+      "short_label": "X",
+      "initials": {
+        "start": "0x021037B8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021037B0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Horde Champion",
+      "short_label": "Horde",
+      "initials": {
+        "start": "0x021037D8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021037D0",
+        "encoding": "int",
+        "length": 4
+      }
+    },
+    {
+      "label": "Last Man Standing Champion",
+      "short_label": "LMS",
+      "initials": {
+        "start": "0x021037F8",
+        "encoding": "ch",
+        "null": "terminate",
+        "length": 11
+      },
+      "score": {
+        "start": "0x021037F0",
+        "encoding": "int",
+        "length": 4
+      }
+    }
+  ]
+}
