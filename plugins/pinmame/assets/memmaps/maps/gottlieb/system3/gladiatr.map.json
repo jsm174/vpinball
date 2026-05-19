@@ -1,0 +1,90 @@
+{
+  "_notes": [
+    "Compiled by Leprinco"
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Leprinco <leprinco@yahoo.fr>",
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system3",
+    "roms": [
+      "gladiatr"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Ultimate Gladiator",
+      "short_label": "UG",
+      "initials": {
+        "start": 3340,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3365,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Honorific Gladiators #1",
+      "short_label": "#1",
+      "initials": {
+        "start": 3345,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3370,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Honorific Gladiators #2",
+      "short_label": "#2",
+      "initials": {
+        "start": 3350,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3375,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Honorific Gladiators #3",
+      "short_label": "#3",
+      "initials": {
+        "start": 3355,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3380,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Honorific Gladiators #4",
+      "short_label": "#4",
+      "initials": {
+        "start": 3360,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 3385,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ]
+}

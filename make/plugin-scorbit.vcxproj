@@ -1,0 +1,145 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ImportGroup Label="Shared">
+    <Import Project="vpx-configurations.vcxitems" Label="Shared" />
+  </ImportGroup>
+
+  <ItemGroup>
+    <ClCompile Include="../../plugins/scorbit/common.cpp" />
+    <ClCompile Include="../../plugins/scorbit/ScorbitPlugin.cpp" />
+    <ClCompile Include="../../plugins/scorbit/GameTracker.cpp" />
+    <ClCompile Include="../../plugins/scorbit/Machines.cpp" />
+    <ClCompile Include="../../plugins/scorbit/Scorbit.cpp" />
+    <ClCompile Include="../../plugins/scorbit/qrcodegen.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../plugins/scorbit/common.h" />
+    <ClInclude Include="../../plugins/scorbit/GameTracker.h" />
+    <ClInclude Include="../../plugins/scorbit/Machines.h" />
+    <ClInclude Include="../../plugins/scorbit/Scorbit.h" />
+    <ClInclude Include="../../plugins/scorbit/qrcodegen.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="../../plugins/scorbit/plugin.cfg">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+  </ItemGroup>
+  <ItemDefinitionGroup>
+    <PostBuildEvent>
+      <Command>
+        if not exist "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\" md "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetPath)" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetDir)plugin.cfg" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /s /i "$(SolutionDir)..\..\plugins\scorbit\assets" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\assets\"
+
+        if not exist "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\" md "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetPath)" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetDir)plugin.cfg" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /s /i "$(SolutionDir)..\..\plugins\scorbit\assets" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\assets\"
+
+        if not exist "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\" md "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetPath)" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+        copy /y "$(TargetDir)plugin.cfg" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /s /i "$(SolutionDir)..\..\plugins\scorbit\assets" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\assets\"
+
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\scorbit_sdk.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\scorbit_sdk.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\scorbit_sdk.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libgcc_s_seh-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libgcc_s_seh-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libgcc_s_seh-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libstdc++-6.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libstdc++-6.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libstdc++-6.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libwinpthread-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libwinpthread-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\libwinpthread-1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\zlib1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_BGFX-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\zlib1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)_GL-$(Platform)\plugins\scorbit\"
+        xcopy /y /d /q /f "$(SolutionDir)..\..\third-party\runtime-libs\windows-x64\zlib1.dll" "$(SolutionDir)..\bin\vpx\$(Configuration)-$(Platform)\plugins\scorbit\"
+      </Command>
+    </PostBuildEvent>
+    <Link>
+      <AdditionalLibraryDirectories>$(SolutionDir)../../third-party/build-libs/windows-x64/;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>scorbit_sdk.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <PropertyGroup>
+    <IncludePath>$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)../../plugins;$(SolutionDir)../../plugins/scorbit;$(SolutionDir)../../third-party/include</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>17.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{BEA0BE8F-CC7F-4A4B-9A9D-99EBE68246DA}</ProjectGuid>
+    <RootNamespace>plugin-scorbit</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup>
+    <TargetName>$(RootNamespace)64</TargetName>
+    <OutDir>$(SolutionDir)..\bin\$(TargetName)\$(Configuration)-$(Platform)\</OutDir>
+    <IntDir>$(SolutionDir)..\obj\$(TargetName)\$(Configuration)-$(Platform)\</IntDir>
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+	<UseDebugLibraries>$(Configuration.StartsWith('Debug'))</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>$(Configuration.StartsWith('Release'))</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableUAC>false</EnableUAC>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(Configuration.StartsWith('Debug'))">
+    <ClCompile>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="$(Configuration.StartsWith('Release'))">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>false</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <FloatingPointModel>Fast</FloatingPointModel>
+      <BufferSecurityCheck>false</BufferSecurityCheck>
+      <FloatingPointExceptions>false</FloatingPointExceptions>
+    </ClCompile>
+    <Link>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
