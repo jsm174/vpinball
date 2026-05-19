@@ -30,6 +30,18 @@ include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_PinMAME.txt")
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_PinupEvents.txt")
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_PUP.txt")
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_RemoteControl.txt")
+# Scorbit only builds where its SDK is built (see platforms/*/external.sh):
+# macOS, Linux, and 64-bit Windows (MSVC + mingw). There is no scorbit_sdk for
+# iOS, Android, tvOS, or 32-bit Windows, so skip the plugin on those.
+set(SCORBIT_SUPPORTED ON)
+if(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator"
+      OR PLATFORM STREQUAL "tvos" OR PLATFORM STREQUAL "android"
+      OR (PLATFORM STREQUAL "windows" AND ARCH STREQUAL "x86"))
+   set(SCORBIT_SUPPORTED OFF)
+endif()
+if(SCORBIT_SUPPORTED)
+   include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_Scorbit.txt")
+endif()
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_ScoreView.txt")
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_Serum.txt")
 include("${CMAKE_SOURCE_DIR}/make/CMakeLists_plugin_VNI.txt")

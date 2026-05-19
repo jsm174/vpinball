@@ -5,6 +5,7 @@
 #include "plugins/LoggingPlugin.h"
 #include "plugins/ScriptablePlugin.h"
 #include "plugins/ControllerPlugin.h"
+#include "plugins/PinMAMEPlugin.h"
 #include "plugins/VPXPlugin.h" // Only used for optional feature (locating PinMAME files along a VPX table)
 
 #include <filesystem>
@@ -242,6 +243,7 @@ void PINMAMECALLBACK OnLogMessage(PINMAME_LOG_LEVEL logLevel, const char* format
 static unsigned int onAudioUpdateId;
 static unsigned int onAudioSrcChangedId;
 static unsigned int getAudioSrcId;
+static unsigned int getNvramMsgId;
 static AudioUpdateMsg* audioSrc = nullptr;
 static AudioSrcId audioSrcDef = {};
 
@@ -252,6 +254,21 @@ static void OnGetAudioSrc(const unsigned int msgId, void* userData, void* msgDat
       memcpy(&msg->entries[msg->count], &audioSrcDef, sizeof(AudioSrcId));
    if (audioSrc != nullptr)
       msg->count++;
+}
+
+static std::vector<uint8_t> nvramSnapshot;
+
+static void OnGetNvram(const unsigned int msgId, void* userData, void* msgData)
+{
+   PinMAMEGetNvramMsg* msg = static_cast<PinMAMEGetNvramMsg*>(msgData);
+   if (controller == nullptr) {
+      msg->size = 0;
+      msg->data = nullptr;
+      return;
+   }
+   nvramSnapshot = controller->GetNVRAM();
+   msg->size = static_cast<uint32_t>(nvramSnapshot.size());
+   msg->data = nvramSnapshot.data();
 }
 
 static void StopAudioStream()
@@ -406,6 +423,9 @@ MSGPI_EXPORT void MSGPIAPI PinMAMEPluginLoad(const uint32_t sessionId, const Msg
    getAudioSrcId = msgApi->GetMsgID(CTLPI_NAMESPACE, CTLPI_AUDIO_GET_SRC_MSG);
    msgApi->SubscribeMsg(endpointId, getAudioSrcId, OnGetAudioSrc, nullptr);
 
+   getNvramMsgId = msgApi->GetMsgID(PINMAMEPI_NAMESPACE, PINMAMEPI_GET_NVRAM_MSG);
+   msgApi->SubscribeMsg(endpointId, getNvramMsgId, OnGetNvram, nullptr);
+
    // Contribute our API to the script engine
    getScriptApiMsgId = msgApi->GetMsgID(SCRIPTPI_NAMESPACE, SCRIPTPI_MSG_GET_API);
    msgApi->BroadcastMsg(endpointId, getScriptApiMsgId, &scriptApi);
@@ -532,6 +552,8 @@ MSGPI_EXPORT void MSGPIAPI PinMAMEPluginUnload()
    msgApi->ReleaseMsgID(onAudioUpdateId);
    msgApi->UnsubscribeMsg(getAudioSrcId, OnGetAudioSrc, nullptr);
    msgApi->ReleaseMsgID(getAudioSrcId);
+   msgApi->UnsubscribeMsg(getNvramMsgId, OnGetNvram, nullptr);
+   msgApi->ReleaseMsgID(getNvramMsgId);
    msgApi->ReleaseMsgID(onAudioSrcChangedId);
    msgApi->FlushPendingCallbacks(endpointId);
    PinmameSetMsgAPI(nullptr, 0);

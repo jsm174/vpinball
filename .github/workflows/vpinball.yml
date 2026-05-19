@@ -9,6 +9,7 @@ concurrency:
 
 env:
   VERSION_START_SHA: ea558e7417f6f06fe567d34f0e33792a141b8e64
+  SCORBIT_SDK_ENCRYPT_SECRET: ${{ secrets.SCORBIT_SDK_ENCRYPT_SECRET }}
 
 defaults:
   run:
@@ -123,7 +124,7 @@ jobs:
         uses: microsoft/setup-msbuild@v3
       - if: (matrix.platform == 'windows' || matrix.platform == 'windows-mingw')
         run: |
-          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm make diffutils nasm bison git autoconf automake libtool"
+          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm make diffutils patch nasm bison git autoconf automake libtool"
           if [[ "${{ matrix.arch }}" == "x64" ]]; then
             /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-zlib mingw-w64-ucrt-x86_64-libwinpthread mingw-w64-ucrt-x86_64-libiconv mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-tools"
           else
@@ -136,7 +137,7 @@ jobs:
       - if: (matrix.platform == 'linux')
         run: |
           sudo apt-get update
-          sudo apt install cmake nasm bison zlib1g-dev libdrm-dev libgbm-dev libglu1-mesa-dev libegl-dev libgl1-mesa-dev libwayland-dev libwayland-egl-backend-dev libudev-dev libx11-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libxrandr-dev libasound2-dev libpipewire-0.3-dev
+          sudo apt install cmake nasm bison zlib1g-dev libcurl4-openssl-dev libdrm-dev libgbm-dev libglu1-mesa-dev libegl-dev libgl1-mesa-dev libwayland-dev libwayland-egl-backend-dev libudev-dev libx11-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libxrandr-dev libasound2-dev libpipewire-0.3-dev
       - uses: actions/checkout@v6
       - name: Calculate external cache hash
         run: |
@@ -296,7 +297,7 @@ jobs:
       - uses: microsoft/setup-msbuild@v3
       - if: (matrix.platform == 'windows')
         run: |
-          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm make diffutils nasm autoconf automake libtool"
+          /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm make diffutils patch nasm autoconf automake libtool"
           if [[ "${{ matrix.arch }}" == "x64" ]]; then
             /c/msys64/usr/bin/bash.exe -l -c "pacman -S --noconfirm mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-zlib mingw-w64-ucrt-x86_64-libwinpthread mingw-w64-ucrt-x86_64-libiconv mingw-w64-ucrt-x86_64-cmake mingw-w64-ucrt-x86_64-tools"
           else
@@ -376,7 +377,7 @@ jobs:
     steps:
       - run: |
           sudo apt-get update
-          sudo apt install cmake nasm bison zlib1g-dev libdrm-dev libgbm-dev libglu1-mesa-dev libegl-dev libgl1-mesa-dev libwayland-dev libwayland-egl-backend-dev libudev-dev libx11-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libxrandr-dev libasound2-dev libgpiod-dev
+          sudo apt install cmake nasm bison zlib1g-dev libcurl4-openssl-dev libdrm-dev libgbm-dev libglu1-mesa-dev libegl-dev libgl1-mesa-dev libwayland-dev libwayland-egl-backend-dev libudev-dev libx11-dev libxcursor-dev libxi-dev libxss-dev libxtst-dev libxkbcommon-dev libxrandr-dev libasound2-dev libgpiod-dev
       - uses: actions/checkout@v6
       - name: Calculate external cache hash
         run: |
