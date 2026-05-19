@@ -21,6 +21,14 @@
 #include <charconv>
 #include <mutex>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#else
+#include <dlfcn.h>
+#include <climits>
+#endif
+
 namespace PinMAME
 {
 
@@ -371,6 +379,42 @@ static void OnControllerDestroyed(Controller*)
 
 using namespace PinMAME;
 
+static std::filesystem::path GetPluginPath()
+{
+#ifdef _WIN32
+   HMODULE hm = nullptr;
+   if (GetModuleHandleExA(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS | GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, "PinMAMEPluginLoad", &hm) == 0)
+      return std::filesystem::path();
+
+   std::wstring pathBuf;
+   DWORD size = MAX_PATH;
+   while (true)
+   {
+      pathBuf.resize(size);
+      const DWORD length = ::GetModuleFileNameW(hm, pathBuf.data(), size);
+      if (length == 0)
+         return std::filesystem::path();
+      if (length < size)
+      {
+         pathBuf.resize(length);
+         break;
+      }
+      size *= 2;
+   }
+   std::filesystem::path path(pathBuf);
+#else
+   Dl_info info {};
+   if (dladdr((void*)&GetPluginPath, &info) == 0 || !info.dli_fname)
+      return std::filesystem::path();
+
+   char pathBuf[PATH_MAX];
+   if (!realpath(info.dli_fname, pathBuf))
+      return std::filesystem::path();
+   std::filesystem::path path(pathBuf);
+#endif
+   return path.empty() ? path : path.parent_path();
+}
+
 MSGPI_EXPORT void MSGPIAPI PinMAMEPluginLoad(const uint32_t sessionId, const MsgPluginAPI* api)
 {
    controller = nullptr;
@@ -469,6 +513,10 @@ MSGPI_EXPORT void MSGPIAPI PinMAMEPluginLoad(const uint32_t sessionId, const Msg
       if (pinmamePath.empty())
          pinmamePath = std::filesystem::path(getenv("HOME")) / ".pinmame"sv;
       #endif
+
+      // Fall back to the memory maps bundled with the plugin (see https://github.com/tomlogic/pinmame-nvram-maps)
+      if (std::error_code ec; !std::filesystem::exists(memmapPath, ec))
+         memmapPath = GetPluginPath() / "assets"sv / "memmaps"sv;
 
       // FIXME implement a last resort or just ask the user to define its path setup in the settings ?
       if (pinmamePath.empty())
