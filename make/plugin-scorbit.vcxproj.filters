@@ -1,0 +1,51 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="source">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;c++;cppm;ixx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../../plugins/scorbit/common.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="../../plugins/scorbit/ScorbitPlugin.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="../../plugins/scorbit/GameTracker.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="../../plugins/scorbit/Machines.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="../../plugins/scorbit/Scorbit.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="../../plugins/scorbit/qrcodegen.c">
+      <Filter>source</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="../../plugins/scorbit/common.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="../../plugins/scorbit/GameTracker.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="../../plugins/scorbit/Machines.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="../../plugins/scorbit/Scorbit.h">
+      <Filter>source</Filter>
+    </ClInclude>
+    <ClInclude Include="../../plugins/scorbit/qrcodegen.h">
+      <Filter>source</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CopyFileToFolders Include="../../plugins/scorbit/plugin.cfg">
+      <Filter>source</Filter>
+    </CopyFileToFolders>
+  </ItemGroup>
+</Project>

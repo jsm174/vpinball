@@ -1,0 +1,275 @@
+{
+  "_notes": [
+    "Kingpin (1996, Capcom).",
+    "Capcom 16-bit bus: 8-bit NVRAM data on D0-D7, actual data at even file positions.",
+    "CPU address = 0x30000000 + even_index * 2.",
+    "Scores stored as score/10 (scale: 10). Verified against PINemHi output."
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "capcom",
+    "roms": [
+      "kpb105",
+      "kpv106"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Kingpin #1",
+      "short_label": "KP1",
+      "initials": {
+        "offsets": [
+          "0x30000500",
+          "0x30000502",
+          "0x30000504"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x300004D8",
+          "0x300004DA",
+          "0x300004DC",
+          "0x300004DE"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Kingpin #2",
+      "short_label": "KP2",
+      "initials": {
+        "offsets": [
+          "0x30000508",
+          "0x3000050A",
+          "0x3000050C"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x300004E0",
+          "0x300004E2",
+          "0x300004E4",
+          "0x300004E6"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Kingpin #3",
+      "short_label": "KP3",
+      "initials": {
+        "offsets": [
+          "0x30000510",
+          "0x30000512",
+          "0x30000514"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x300004E8",
+          "0x300004EA",
+          "0x300004EC",
+          "0x300004EE"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Kingpin #4",
+      "short_label": "KP4",
+      "initials": {
+        "offsets": [
+          "0x30000518",
+          "0x3000051A",
+          "0x3000051C"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x300004F0",
+          "0x300004F2",
+          "0x300004F4",
+          "0x300004F6"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Kingpin #5",
+      "short_label": "KP5",
+      "initials": {
+        "offsets": [
+          "0x30000520",
+          "0x30000522",
+          "0x30000524"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x300004F8",
+          "0x300004FA",
+          "0x300004FC",
+          "0x300004FE"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    }
+  ],
+  "mode_champions": [
+    {
+      "label": "Buyin Boss #1",
+      "short_label": "BB1",
+      "initials": {
+        "offsets": [
+          "0x30000550",
+          "0x30000552",
+          "0x30000554"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x30000528",
+          "0x3000052A",
+          "0x3000052C",
+          "0x3000052E"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Buyin Boss #2",
+      "short_label": "BB2",
+      "initials": {
+        "offsets": [
+          "0x30000558",
+          "0x3000055A",
+          "0x3000055C"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x30000530",
+          "0x30000532",
+          "0x30000534",
+          "0x30000536"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Buyin Boss #3",
+      "short_label": "BB3",
+      "initials": {
+        "offsets": [
+          "0x30000560",
+          "0x30000562",
+          "0x30000564"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x30000538",
+          "0x3000053A",
+          "0x3000053C",
+          "0x3000053E"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Buyin Boss #4",
+      "short_label": "BB4",
+      "initials": {
+        "offsets": [
+          "0x30000568",
+          "0x3000056A",
+          "0x3000056C"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x30000540",
+          "0x30000542",
+          "0x30000544",
+          "0x30000546"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    },
+    {
+      "label": "Buyin Boss #5",
+      "short_label": "BB5",
+      "initials": {
+        "offsets": [
+          "0x30000570",
+          "0x30000572",
+          "0x30000574"
+        ],
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "offsets": [
+          "0x30000548",
+          "0x3000054A",
+          "0x3000054C",
+          "0x3000054E"
+        ],
+        "encoding": "int",
+        "endian": "big",
+        "length": 4,
+        "scale": 10
+      }
+    }
+  ]
+}
