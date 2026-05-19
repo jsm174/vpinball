@@ -1,0 +1,209 @@
+{
+  "_notes": [
+    "Generic Gottlieb System 80/80A map.",
+    "NVRAM: 256x4-bit chip (nibble:low) at CPU address 0x1800.",
+    "All games share the same bookkeeping/audit and high score layout.",
+    "High score addresses verified against Time Line (timeline.nv) with real scores.",
+    "Other ROMs in this map have zero/virgin NVRAMs.",
+    "2026-03: Added System 80/80A ROMs: amazonh, cntforc7, cntforce, hh7, jack2opn, jamesb, mars7, panthera, pnkpnthr, qbquest, sorbit, spidermn, starrac7, striker, touchdn, vlcno_ax."
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 3,
+    "copyright": [
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system80",
+    "roms": [
+      "vlcno_ax"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "High Score #1",
+      "short_label": "1st",
+      "initials": {
+        "start": "0x18BA",
+        "encoding": "ch",
+        "default": "\u0000\u0000\u0000",
+        "length": 6
+      },
+      "score": {
+        "start": "0x18C0",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    },
+    {
+      "label": "High Score #2",
+      "short_label": "2nd",
+      "initials": {
+        "start": "0x18C6",
+        "encoding": "ch",
+        "default": "\u0000\u0000\u0000",
+        "length": 6
+      },
+      "score": {
+        "start": "0x18CC",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    },
+    {
+      "label": "High Score #3",
+      "short_label": "3rd",
+      "initials": {
+        "start": "0x18D2",
+        "encoding": "ch",
+        "default": "\u0000\u0000\u0000",
+        "length": 6
+      },
+      "score": {
+        "start": "0x18D8",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    },
+    {
+      "label": "High Score #4",
+      "short_label": "4th",
+      "initials": {
+        "start": "0x18DE",
+        "encoding": "ch",
+        "default": "\u0000\u0000\u0000",
+        "length": 6
+      },
+      "score": {
+        "start": "0x18E4",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    },
+    {
+      "label": "High Score #5",
+      "short_label": "5th",
+      "initials": {
+        "start": "0x18EA",
+        "encoding": "ch",
+        "default": "\u0000\u0000\u0000",
+        "length": 6
+      },
+      "score": {
+        "start": "0x18F0",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    }
+  ],
+  "audits": {
+    "Bookkeeping": {
+      "01": {
+        "label": "Left Chute Coins",
+        "start": "0x1800",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "02": {
+        "label": "Right Chute Coins",
+        "start": "0x1804",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "03": {
+        "label": "Center Chute Coins",
+        "start": "0x1808",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "04": {
+        "label": "Total Plays",
+        "start": "0x180C",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "05": {
+        "label": "Total Replays",
+        "start": "0x1810",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "07": {
+        "label": "Extra Balls",
+        "start": "0x1814",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "08": {
+        "label": "Tilts",
+        "start": "0x1818",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "09": {
+        "label": "Specials",
+        "start": "0x181C",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "10": {
+        "label": "Times HGTD Awarded",
+        "start": "0x1820",
+        "encoding": "bcd",
+        "length": 4
+      },
+      "14a": {
+        "label": "HGTD Initials",
+        "start": "0x182A",
+        "encoding": "ch",
+        "null": "truncate",
+        "length": 6
+      },
+      "14": {
+        "label": "Highest Game To Date",
+        "start": "0x1830",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      },
+      "15": {
+        "label": "Game Time",
+        "suffix": " seconds",
+        "start": "0x1824",
+        "encoding": "bcd",
+        "length": 6,
+        "scale": 10
+      }
+    }
+  },
+  "adjustments": {
+    "Standard Adjustments": {
+      "11": {
+        "label": "First High Score",
+        "start": "0x1836",
+        "encoding": "bcd",
+        "length": 2,
+        "scale": 100000
+      },
+      "12": {
+        "label": "Second High Score",
+        "start": "0x1838",
+        "encoding": "bcd",
+        "length": 2,
+        "scale": 100000
+      },
+      "13": {
+        "label": "Third High Score",
+        "start": "0x183A",
+        "encoding": "bcd",
+        "length": 2,
+        "scale": 100000
+      }
+    }
+  }
+}
