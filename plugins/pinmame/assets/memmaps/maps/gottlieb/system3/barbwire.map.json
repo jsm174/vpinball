@@ -1,0 +1,107 @@
+{
+  "_notes": [
+    "Compiled by Leprinco",
+    "Barb Wire (Gottlieb 1996), Gottlieb System 3"
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Leprinco <leprinco@yahoo.fr>",
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system3",
+    "roms": [
+      "barbwire"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "First Place",
+      "short_label": "#1",
+      "initials": {
+        "start": 1374,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1377,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Second Place",
+      "short_label": "#2",
+      "initials": {
+        "start": 1385,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1388,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Third Place",
+      "short_label": "#3",
+      "initials": {
+        "start": 1396,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1399,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Fourth Place",
+      "short_label": "#4",
+      "initials": {
+        "start": 1407,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1410,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Fifth Place",
+      "short_label": "#5",
+      "initials": {
+        "start": 1418,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1421,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ],
+  "mode_champions": [
+    {
+      "label": "Highest Ball Score",
+      "short_label": "HBS",
+      "initials": {
+        "start": 1460,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1463,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ]
+}

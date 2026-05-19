@@ -1,0 +1,91 @@
+{
+  "_notes": [
+    "Compiled by Leprinco",
+    "Street Fighter II '1993) - Gottlieb System 3"
+  ],
+  "_fileformat": 0.8,
+  "_metadata": {
+    "version": 1,
+    "copyright": [
+      "Copyright (C) 2026 by Leprinco <leprinco@yahoo.fr>",
+      "Copyright (C) 2026 by Tom Collins <tom@scorbit.io>"
+    ],
+    "license": "GNU Lesser General Public License v3.0",
+    "platform": "gottlieb-system3",
+    "roms": [
+      "sfight2"
+    ]
+  },
+  "high_scores": [
+    {
+      "label": "Street Fighters #1",
+      "short_label": "#1",
+      "initials": {
+        "start": 1389,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1392,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Street Fighters #2",
+      "short_label": "#2",
+      "initials": {
+        "start": 1400,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1403,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Street Fighters #3",
+      "short_label": "#3",
+      "initials": {
+        "start": 1411,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1414,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Street Fighters #4",
+      "short_label": "#4",
+      "initials": {
+        "start": 1422,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1425,
+        "encoding": "bcd",
+        "length": 5
+      }
+    },
+    {
+      "label": "Street Fighters #5",
+      "short_label": "#5",
+      "initials": {
+        "start": 1433,
+        "encoding": "ch",
+        "length": 3
+      },
+      "score": {
+        "start": 1436,
+        "encoding": "bcd",
+        "length": 5
+      }
+    }
+  ]
+}
