@@ -446,6 +446,138 @@ if [ "${LIBZIP_EXPECTED_SHA}" != "${LIBZIP_FOUND_SHA}" ]; then
 fi
 
 #
+# build openssl (static, baked into libscorbit_sdk)
+#
+
+OPENSSL_EXPECTED_SHA="${OPENSSL_SHA}"
+OPENSSL_FOUND_SHA="$([ -f openssl/cache.txt ] && cat openssl/cache.txt || echo "")"
+
+if [ "${OPENSSL_EXPECTED_SHA}" != "${OPENSSL_FOUND_SHA}" ]; then
+   echo "Building openssl. Expected: ${OPENSSL_EXPECTED_SHA}, Found: ${OPENSSL_FOUND_SHA}"
+
+   rm -rf openssl
+   mkdir openssl
+   cd openssl
+
+   curl -sL https://github.com/openssl/openssl/archive/${OPENSSL_SHA}.tar.gz -o openssl-${OPENSSL_SHA}.tar.gz
+   tar xzf openssl-${OPENSSL_SHA}.tar.gz
+   mv openssl-${OPENSSL_SHA} openssl
+   cd openssl
+   ./Configure mingw64 no-shared no-tests no-docs --prefix="$(cd .. && pwd)/install" --openssldir="$(cd .. && pwd)/install"
+   make -j${NUM_PROCS}
+   make install_sw
+   cd ..
+
+   echo "$OPENSSL_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+OPENSSL_INSTALL="$(pwd)/openssl/install"
+
+#
+# build libarchive (static, baked into libscorbit_sdk)
+#
+
+LIBARCHIVE_EXPECTED_SHA="${LIBARCHIVE_SHA}"
+LIBARCHIVE_FOUND_SHA="$([ -f libarchive/cache.txt ] && cat libarchive/cache.txt || echo "")"
+
+if [ "${LIBARCHIVE_EXPECTED_SHA}" != "${LIBARCHIVE_FOUND_SHA}" ]; then
+   echo "Building libarchive. Expected: ${LIBARCHIVE_EXPECTED_SHA}, Found: ${LIBARCHIVE_FOUND_SHA}"
+
+   rm -rf libarchive
+   mkdir libarchive
+   cd libarchive
+
+   curl -sL https://github.com/libarchive/libarchive/archive/${LIBARCHIVE_SHA}.tar.gz -o libarchive-${LIBARCHIVE_SHA}.tar.gz
+   tar xzf libarchive-${LIBARCHIVE_SHA}.tar.gz
+   mv libarchive-${LIBARCHIVE_SHA} libarchive
+   cd libarchive
+   cmake \
+      -DBUILD_SHARED_LIBS=OFF \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DENABLE_OPENSSL=OFF \
+      -DENABLE_LIBB2=OFF \
+      -DENABLE_LZMA=OFF \
+      -DENABLE_ZSTD=OFF \
+      -DENABLE_BZip2=OFF \
+      -DENABLE_LZ4=OFF \
+      -DENABLE_LIBXML2=OFF \
+      -DENABLE_EXPAT=OFF \
+      -DENABLE_ICONV=OFF \
+      -DENABLE_TAR=OFF \
+      -DENABLE_CPIO=OFF \
+      -DENABLE_CAT=OFF \
+      -DENABLE_UNZIP=OFF \
+      -DENABLE_TEST=OFF \
+      -DENABLE_ZLIB=ON \
+      -DCMAKE_INSTALL_PREFIX="$(cd .. && pwd)/install" \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cmake --install build
+   cd ..
+
+   echo "$LIBARCHIVE_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+LIBARCHIVE_INSTALL="$(pwd)/libarchive/install"
+
+#
+# build scorbit_sdk
+#
+
+SCORBIT_SDK_EXPECTED_SHA="${SCORBIT_SDK_SHA}-key2"
+SCORBIT_SDK_FOUND_SHA="$([ -f scorbit_sdk/cache.txt ] && cat scorbit_sdk/cache.txt || echo "")"
+
+if [ "${SCORBIT_SDK_EXPECTED_SHA}" != "${SCORBIT_SDK_FOUND_SHA}" ]; then
+   echo "Building scorbit_sdk. Expected: ${SCORBIT_SDK_EXPECTED_SHA}, Found: ${SCORBIT_SDK_FOUND_SHA}"
+   if [ -z "${SCORBIT_SDK_ENCRYPT_SECRET}" ]; then
+      echo "  WARNING: SCORBIT_SDK_ENCRYPT_SECRET not set - Scorbit auth will fail"
+   fi
+
+   rm -rf scorbit_sdk
+   mkdir scorbit_sdk
+   cd scorbit_sdk
+
+   curl -sL https://github.com/jsm174/scorbit_sdk/archive/${SCORBIT_SDK_SHA}.tar.gz -o scorbit_sdk-${SCORBIT_SDK_SHA}.tar.gz
+   tar xzf scorbit_sdk-${SCORBIT_SDK_SHA}.tar.gz
+   mv scorbit_sdk-${SCORBIT_SDK_SHA} scorbit_sdk
+   cd scorbit_sdk
+   cmake \
+      -DSCORBIT_SDK_SHARED=ON \
+      -DSCORBIT_SDK_BUILD_TESTS=OFF \
+      -DSCORBIT_SDK_BUILD_EXAMPLES=OFF \
+      -DSCORBIT_SDK_ENABLE_NFC_TPM=OFF \
+      -DOPENSSL_ROOT_DIR="${OPENSSL_INSTALL}" \
+      -DOPENSSL_USE_STATIC_LIBS=ON \
+      -DLibArchive_ROOT="${LIBARCHIVE_INSTALL}" \
+      -DLibArchive_INCLUDE_DIR="${LIBARCHIVE_INSTALL}/include" \
+      -DLibArchive_LIBRARY="${LIBARCHIVE_INSTALL}/lib/libarchive.a" \
+      -DCPR_USE_SYSTEM_CURL=OFF \
+      -DCPR_CURL_USE_LIBPSL=OFF \
+      -DCURL_USE_OPENSSL=ON \
+      -DCURL_USE_LIBPSL=OFF \
+      -DCURL_USE_LIBSSH2=OFF \
+      -DUSE_NGHTTP2=OFF \
+      -DCURL_BROTLI=OFF \
+      -DCURL_ZSTD=OFF \
+      -DUSE_LIBIDN2=OFF \
+      -DCURL_DISABLE_LDAP=ON \
+      -DCMAKE_SHARED_LINKER_FLAGS="-Wl,--no-as-needed -lz" \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$SCORBIT_SDK_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # copy libraries
 #
 
@@ -547,3 +679,9 @@ cp libzip/libzip/build/lib/libzip64.dll ../../../third-party/runtime-libs/window
 cp libzip/libzip/build/lib/libzip64.dll.a ../../../third-party/build-libs/windows-mingw-x64
 cp libzip/libzip/build/zipconf.h ../../../third-party/include
 cp libzip/libzip/lib/zip.h ../../../third-party/include
+
+cp scorbit_sdk/scorbit_sdk/build/libscorbit_sdk.dll ../../../third-party/runtime-libs/windows-mingw-x64
+cp scorbit_sdk/scorbit_sdk/build/libscorbit_sdk.dll.a ../../../third-party/build-libs/windows-mingw-x64
+cp -r scorbit_sdk/scorbit_sdk/include/scorbit_sdk ../../../third-party/include/
+cp scorbit_sdk/scorbit_sdk/build/PackageProjectInclude/scorbit_sdk/export.h ../../../third-party/include/scorbit_sdk/
+cp scorbit_sdk/scorbit_sdk/build/PackageProjectInclude/scorbit_sdk/version.h ../../../third-party/include/scorbit_sdk/
