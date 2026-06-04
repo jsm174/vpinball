@@ -252,6 +252,7 @@ void PUPMediaPlayer::StopBlocking()
       frame.texture = nullptr;
       frame.uploaded = false;
       frame.pts = -1.0;
+      frame.playIndex = -1;
    }
 
    if (m_swsContext)
@@ -425,11 +426,6 @@ void PUPMediaPlayer::Run()
          }
          m_playIndex++;
          m_startTimestamp = m_syncOnGameTime ? m_gameTime : (static_cast<double>(SDL_GetTicks()) / 1000.0);
-         {
-            std::lock_guard lock(m_mutex);
-            for (auto& frame : m_frames)
-               frame.valid = false;
-         }
          continue;
       }
       else if (rfRet < 0)
@@ -498,6 +494,7 @@ void PUPMediaPlayer::HandleVideoFrame(AVFrame* frame)
       return;
 
    // Select the best buffer slot, eventually waiting for a free slot
+   const int currentPlayIndex = m_playIndex;
    int selectedFrameSlot = -1;
    while (m_running)
    {
@@ -511,7 +508,8 @@ void PUPMediaPlayer::HandleVideoFrame(AVFrame* frame)
             selectedFrameSlot = i;
             break;
          }
-         else if ((m_frames[i].age > maxAge) && (m_frames[i].pts < playPTS))
+         // Frames from a previous loop iteration are always reusable (renderer holds the last frame across the loop seam)
+         else if ((m_frames[i].age > maxAge) && ((m_frames[i].playIndex != currentPlayIndex) || (m_frames[i].pts < playPTS)))
          { // Search for the oldest slot with a frame behind play time
             maxAge = m_frames[i].age;
             selectedFrameSlot = i;
@@ -613,6 +611,7 @@ void PUPMediaPlayer::HandleVideoFrame(AVFrame* frame)
       selectedFrame.age = 0;
       selectedFrame.pts = (static_cast<double>(selectedFrame.frame->pts) * m_pVideoContext->pkt_timebase.num) / m_pVideoContext->pkt_timebase.den;
       selectedFrame.uploaded = false;
+      selectedFrame.playIndex = currentPlayIndex;
       selectedFrame.valid = true;
       //LOGD(std::format("{} Decoded with Video PTS: {:5.3f} / Slot: {}", m_filename.filename().string(), selectedFrame.pts, selectedFrameSlot));
    }

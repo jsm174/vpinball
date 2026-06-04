@@ -74,6 +74,7 @@ private:
       double pts = -1.0;
       bool uploaded = false;
       int age = 0;
+      int playIndex = -1;
    };
    vector<FrameInfo> m_frames;
    SwsContext* m_swsContext = nullptr;
