@@ -1,4 +1,4 @@
-# Visual Pinball
+# Visual Pinball Test
 
 *An open source pinball table editor and simulator.*
 
