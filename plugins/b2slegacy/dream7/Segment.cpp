@@ -119,6 +119,14 @@ void Segment::InitSegment(const string& szName, float x, float y, float width, f
    m_pOwnMatrix = new Matrix();
    m_pOwnMatrix->Translate(x, y);
    m_pOwnMatrix->Rotate(angle);
+
+   LOGI(std::format("DREAM7DBG InitSegment name='{}' angle={:.6f} capangle={:.6f} topcap={} bottomcap={} tan={:.9f} "
+                    "topleft={:.6f} topright={:.6f} bottomleft={:.6f} bottomright={:.6f} "
+                    "p0=({:.6f},{:.6f}) p1=({:.6f},{:.6f}) p2=({:.6f},{:.6f}) p3=({:.6f},{:.6f}) p4=({:.6f},{:.6f}) p5=({:.6f},{:.6f})",
+      m_szName, angle, capangle, (int)topcap, (int)bottomcap, tanf(capangle * (float)(M_PI / 180.0)),
+      topleft, topright, bottomleft, bottomright,
+      m_points[0].x, m_points[0].y, m_points[1].x, m_points[1].y, m_points[2].x, m_points[2].y,
+      m_points[3].x, m_points[3].y, m_points[4].x, m_points[4].y, m_points[5].x, m_points[5].y));
 }
 
 void Segment::CreateLightData()

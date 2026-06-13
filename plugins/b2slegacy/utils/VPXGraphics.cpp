@@ -216,6 +216,7 @@ void VPXGraphics::FillPolygon(const std::vector<SDL_FPoint>& points, const Gradi
 
    double minx = 99999.0;
    double maxx = -99999.0;
+   double minRawY = 99999.0;
    double prec = 0.00001;
    uint8_t r = GetRValue(m_color);
    uint8_t g = GetGValue(m_color);
@@ -228,6 +229,7 @@ void VPXGraphics::FillPolygon(const std::vector<SDL_FPoint>& points, const Gradi
       if (x < minx) minx = x;
       if (x > maxx) maxx = x;
       if (y > prec) prec = y;
+      if (vy[i] < minRawY) minRawY = vy[i];
    }
    minx = std::floor(minx);
    maxx = std::floor(maxx);
@@ -333,6 +335,9 @@ void VPXGraphics::FillPolygon(const std::vector<SDL_FPoint>& points, const Gradi
    const int n = yi;
    yi = (int)list[1];
    int j = 0;
+
+   LOGI(std::format("DREAM7DBG FillPolygon ps={} minRawY={:.9f} minSnapY={:.9f} topScanline={} minx={:.3f} maxx={:.3f}",
+      ps, minRawY, (double)list[1], yi, minx, maxx));
    for (i = 0; i < n - 7; i += 4) {
       float x1 = list[i + 0];
       float y1 = list[i + 1];
