@@ -128,6 +128,8 @@ Shader::TechniqueDef Shader::shaderTechniqueNames[SHADER_TECHNIQUE_COUNT] {
       SHADER_staticColor_Alpha, SHADER_clip_plane),
    SHADER_TECHNIQUE(unshaded_with_texture, SHADER_layer, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_matWorld, SHADER_matWorldView, SHADER_matWorldViewInverseTranspose,
       SHADER_staticColor_Alpha, SHADER_tex_base_color, SHADER_clip_plane),
+   SHADER_TECHNIQUE(unshaded_with_texture_mono, SHADER_layer, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_matWorld, SHADER_matWorldView, SHADER_matWorldViewInverseTranspose,
+      SHADER_staticColor_Alpha, SHADER_tex_base_color, SHADER_clip_plane),
    SHADER_TECHNIQUE(unshaded_without_texture_shadow, SHADER_layer, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_matWorld, SHADER_matWorldView, SHADER_matWorldViewInverseTranspose,
       SHADER_lightCenter_doShadow, SHADER_balls, SHADER_staticColor_Alpha, SHADER_clip_plane),
    SHADER_TECHNIQUE(unshaded_with_texture_shadow, SHADER_layer, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_matWorld, SHADER_matWorldView, SHADER_matWorldViewInverseTranspose,
@@ -164,20 +166,35 @@ Shader::TechniqueDef Shader::shaderTechniqueNames[SHADER_TECHNIQUE_COUNT] {
    SHADER_TECHNIQUE(light_without_texture_isMetal),
 
    SHADER_TECHNIQUE(basic_DMD, SHADER_glassPad, SHADER_glassArea, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd),
+   SHADER_TECHNIQUE(basic_DMD_mono, SHADER_glassPad, SHADER_glassArea, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd),
    SHADER_TECHNIQUE(
       basic_DMD_world, SHADER_glassPad, SHADER_glassArea, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd, SHADER_clip_plane),
+   SHADER_TECHNIQUE(
+      basic_DMD_world_mono, SHADER_glassPad, SHADER_glassArea, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_vColor_Intensity, SHADER_tex_dmd, SHADER_clip_plane),
 
    SHADER_TECHNIQUE(display_DMD, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
       SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex),
+   SHADER_TECHNIQUE(display_DMD_mono, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
+      SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex),
    SHADER_TECHNIQUE(display_DMD_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea,
+      SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex, SHADER_clip_plane),
+   SHADER_TECHNIQUE(display_DMD_world_mono, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_w_h_height, SHADER_displayProperties, SHADER_glassPad, SHADER_glassArea,
       SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_displayTex, SHADER_clip_plane),
    SHADER_TECHNIQUE(display_Seg, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha,
       SHADER_w_h_height, SHADER_displayTex),
+   SHADER_TECHNIQUE(display_Seg_mono, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha,
+      SHADER_w_h_height, SHADER_displayTex),
    SHADER_TECHNIQUE(display_Seg_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
+      SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_clip_plane),
+   SHADER_TECHNIQUE(display_Seg_world_mono, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_alphaSegState, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass,
       SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_clip_plane),
    SHADER_TECHNIQUE(display_CRT, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity,
       SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties),
+   SHADER_TECHNIQUE(display_CRT_mono, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness, SHADER_displayGlass, SHADER_vColor_Intensity,
+      SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties),
    SHADER_TECHNIQUE(display_CRT_world, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness,
+      SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties, SHADER_clip_plane),
+   SHADER_TECHNIQUE(display_CRT_world_mono, SHADER_matRotViewProj, SHADER_cameraPosWorld, SHADER_vRes_Alpha_time, SHADER_glassPad, SHADER_glassArea, SHADER_glassTint_Roughness,
       SHADER_displayGlass, SHADER_vColor_Intensity, SHADER_staticColor_Alpha, SHADER_w_h_height, SHADER_displayTex, SHADER_displayProperties, SHADER_clip_plane),
 
    SHADER_TECHNIQUE(basic_noDMD, SHADER_glassPad, SHADER_glassArea, SHADER_alphaTestValue, SHADER_vColor_Intensity, SHADER_tex_sprite, SHADER_u_basic_shade_mode),
@@ -1618,6 +1635,7 @@ void Shader::Load()
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_kickerBoolean,            STEREO(vs_kicker_noclip),              STEREO(fs_basic_notex_noat_noclip));
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_unshaded_without_texture, STEREO(vs_basic_notex_noclip),         STEREO(fs_unshaded_notex_noclip));
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_unshaded_with_texture,    STEREO(vs_basic_tex_noclip),           STEREO(fs_unshaded_tex_noclip));
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_unshaded_with_texture_mono, "vs_basic_tex_noclip",               "fs_unshaded_tex_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_unshaded_without_texture_shadow, STEREO(vs_basic_notex_noclip),  STEREO(fs_unshaded_notex_ballshadow_noclip));
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_unshaded_with_texture_shadow, STEREO(vs_basic_tex_noclip),       STEREO(fs_unshaded_tex_ballshadow_noclip));
       // Variants with a clipping plane
@@ -1657,7 +1675,9 @@ void Shader::Load()
    case DMD_SHADER:
       // basic_DMD_ext and basic_DMD_world_ext are not implemented as they are designed for external DMD capture which is not implemented for BGFX (and expected to be removed at some point in future)
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_DMD,         STEREO(vs_dmd_noworld),      "fs_dmd_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_DMD_mono,    "vs_dmd_noworld",            "fs_dmd_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_DMD_world,   STEREO(vs_dmd_world_noclip), "fs_dmd_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_DMD_world_mono, "vs_dmd_world_noclip",    "fs_dmd_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_DMD_world,   STEREO(vs_dmd_world_clip), "fs_dmd_clip", true);
 
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_basic_noDMD_world, STEREO(vs_dmd_world_clip), "fs_sprite_tex_clip", true);
@@ -1668,9 +1688,15 @@ void Shader::Load()
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_DMD,             STEREO(vs_dmd_noworld), "fs_display_dmd_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_Seg,             STEREO(vs_dmd_noworld), "fs_display_seg_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_CRT,             STEREO(vs_dmd_noworld), "fs_display_crt_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_DMD_mono,        "vs_dmd_noworld", "fs_display_dmd_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_Seg_mono,        "vs_dmd_noworld", "fs_display_seg_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_CRT_mono,        "vs_dmd_noworld", "fs_display_crt_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_DMD_world,       STEREO(vs_dmd_world_noclip), "fs_display_dmd_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_Seg_world,       STEREO(vs_dmd_world_noclip), "fs_display_seg_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_CRT_world,       STEREO(vs_dmd_world_noclip), "fs_display_crt_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_DMD_world_mono,  "vs_dmd_world_noclip", "fs_display_dmd_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_Seg_world_mono,  "vs_dmd_world_noclip", "fs_display_seg_noclip");
+      loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_CRT_world_mono,  "vs_dmd_world_noclip", "fs_display_crt_noclip");
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_DMD_world,       STEREO(vs_dmd_world_clip), "fs_display_dmd_clip", true);
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_Seg_world,       STEREO(vs_dmd_world_clip), "fs_display_seg_clip", true);
       loadProgram(embeddedShaders, SHADER_TECHNIQUE_display_CRT_world,       STEREO(vs_dmd_world_clip), "fs_display_crt_clip", true);

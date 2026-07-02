@@ -1412,7 +1412,12 @@ void Renderer::SetupSegmentRenderer(int profile, const bool isBackdrop, const ve
       static_cast<float>(colorSpace)); // Output colorspace (3D render is linear, backdrop is tonemapped but needs sRGB conversion, dedicated window is tonemapped sRGB)
    m_renderDevice->m_DMDShader->SetFloat4v(SHADER_alphaSegState, reinterpret_cast<const vec4*>(segs), 4);
    m_renderDevice->m_DMDShader->SetTexture(SHADER_displayTex, segSDF, true, SF_TRILINEAR, SA_CLAMP, SA_CLAMP);
-   m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_Seg : SHADER_TECHNIQUE_display_Seg_world);
+   #ifdef ENABLE_BGFX
+   if (m_renderDevice->GetCurrentPass()->m_rt->m_nLayers == 1)
+      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_Seg_mono : SHADER_TECHNIQUE_display_Seg_world_mono);
+   else
+   #endif
+      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_Seg : SHADER_TECHNIQUE_display_Seg_world);
 }
 
 void Renderer::SetupDMDRender(int profile, const bool isBackdrop, const vec3& color, const float brightness, const std::shared_ptr<BaseTexture>& dmd, const float alpha, const ColorSpace colorSpace, Vertex3D_NoTex2* vertices,
@@ -1428,7 +1433,12 @@ void Renderer::SetupDMDRender(int profile, const bool isBackdrop, const vec3& co
       m_renderDevice->m_DMDShader->SetVector(SHADER_vColor_Intensity, color.x * brightness, color.y * brightness, color.z * brightness, dmd->m_format != BaseTexture::BW_FP32 ? 1.f : 0.f);
       m_renderDevice->m_DMDShader->SetVector(SHADER_vRes_Alpha_time, (float)dmd->width(), (float)dmd->height(), alpha, (float)(g_pplayer->m_overall_frames % 2048));
       m_renderDevice->m_DMDShader->SetVector(SHADER_glassArea, 0.f, 0.f, 1.f, 1.f);
-      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_basic_DMD : SHADER_TECHNIQUE_basic_DMD_world);
+      #ifdef ENABLE_BGFX
+      if (m_renderDevice->GetCurrentPass()->m_rt->m_nLayers == 1)
+         m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_basic_DMD_mono : SHADER_TECHNIQUE_basic_DMD_world_mono);
+      else
+      #endif
+         m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_basic_DMD : SHADER_TECHNIQUE_basic_DMD_world);
       m_renderDevice->m_DMDShader->SetTexture(SHADER_tex_dmd, dmd.get());
    }
    // New DMD renderer
@@ -1454,7 +1464,12 @@ void Renderer::SetupDMDRender(int profile, const bool isBackdrop, const vec3& co
          0.5f + 0.5f * (m_dmdDotProperties[profile].x * (1.0f - m_dmdDotProperties[profile].y) /* Dot border darkening */), // Dot internal SDF threshold
          0.f); // Unused
       m_renderDevice->m_DMDShader->SetTexture(SHADER_displayTex, dmd.get());
-      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_DMD : SHADER_TECHNIQUE_display_DMD_world);
+      #ifdef ENABLE_BGFX
+      if (m_renderDevice->GetCurrentPass()->m_rt->m_nLayers == 1)
+         m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_DMD_mono : SHADER_TECHNIQUE_display_DMD_world_mono);
+      else
+      #endif
+         m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_DMD : SHADER_TECHNIQUE_display_DMD_world);
    }
 }
 
@@ -1476,7 +1491,12 @@ void Renderer::SetupCRTRender(int profile, const bool isBackdrop, const vec3& co
       static_cast<float>(4 * crt->width()), static_cast<float>(4 * crt->height()), // Output size
       0.f); // Unused
    m_renderDevice->m_DMDShader->SetTexture(SHADER_displayTex, crt.get(), profile != 1 ? SF_NONE : SF_ANISOTROPIC);
-   m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_CRT : SHADER_TECHNIQUE_display_CRT_world);
+   #ifdef ENABLE_BGFX
+   if (m_renderDevice->GetCurrentPass()->m_rt->m_nLayers == 1)
+      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_CRT_mono : SHADER_TECHNIQUE_display_CRT_world_mono);
+   else
+   #endif
+      m_renderDevice->m_DMDShader->SetTechnique(isBackdrop ? SHADER_TECHNIQUE_display_CRT : SHADER_TECHNIQUE_display_CRT_world);
 }
 
 void Renderer::DrawBulbLightBuffer()
@@ -3111,7 +3131,12 @@ void Renderer::DrawImage(VPXRenderContext2D* ctx, VPXTexture texture, const floa
       const Matrix3D matRot = Matrix3D::MatrixTranslate(-px, -py, 0.f) * Matrix3D::MatrixRotateZ(rotation * (float)(M_PI / 180.0)) * Matrix3D::MatrixTranslate(px, py, 0.f);
       matRot.TransformPositions(vertices, vertices, 4);
    }
-   rdl->m_basicShader->SetTechnique(SHADER_TECHNIQUE_unshaded_with_texture);
+   #ifdef ENABLE_BGFX
+   if (rdl->GetCurrentPass()->m_rt->m_nLayers == 1)
+      rdl->m_basicShader->SetTechnique(SHADER_TECHNIQUE_unshaded_with_texture_mono);
+   else
+   #endif
+      rdl->m_basicShader->SetTechnique(SHADER_TECHNIQUE_unshaded_with_texture);
    rdl->DrawTexturedQuad(rdl->m_basicShader, vertices, true, g_pplayer->m_renderer->m_ancillaryRenderSetup.depthbias);
    if (alpha != 1.f || tintR != 1.f || tintG != 1.f || tintB != 1.f)
       rdl->m_basicShader->SetVector(SHADER_staticColor_Alpha, 1.f, 1.f, 1.f, 1.f);
