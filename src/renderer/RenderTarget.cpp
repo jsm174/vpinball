@@ -129,7 +129,6 @@ RenderTarget::RenderTarget(RenderDevice* const rd, const SurfaceType type, const
    // FIXME most render target are not blit destination and are only used as write target then GPU sampling
    default: texFlags = BGFX_TEXTURE_RT | BGFX_TEXTURE_BLIT_DST; break;
    }
-   bgfx::TextureFormat::Enum m_colorFormat;
    switch (format)
    {
    case colorFormat::RED16F: m_colorFormat = bgfx::TextureFormat::R16F; break;
@@ -677,7 +676,9 @@ void RenderTarget::CopyTo(RenderTarget* const dest, const bool copyColor, const 
       memcpy(tvb.data, verts, 4 * sizeof(Vertex3D_TexelOnly));
       bgfx::setVertexBuffer(0, &tvb);
       bgfx::setInstanceCount(1);
-      bgfx::setState(m_rd->m_bgfxState | BGFX_STATE_PT_TRISTRIP);
+      // Self contained opaque copy: RC_COPY commands do not apply a render state, so the ambient
+      // state left by the previously executed command (blending, depth test,...) must not be used
+      bgfx::setState(BGFX_STATE_WRITE_RGB | BGFX_STATE_WRITE_A | BGFX_STATE_PT_TRISTRIP);
       bgfx::submit(m_rd->m_activeViewId, shader->GetCore());
       shader->End();
    }

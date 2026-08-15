@@ -122,6 +122,8 @@ private:
    vector<Flasher*> m_dmdSources;
    static void ControllerOnGetDMDSrc(const unsigned int msgId, void* userData, void* msgData);
    static DisplayFrame ControllerOnGetRenderDMD(const CtlResId id);
+   static int MSGPIAPI GetWindowCaptureState(VPXWindowId window, unsigned int* width, unsigned int* height);
+   static const uint8_t* MSGPIAPI GetWindowCaptureFrame(VPXWindowId window, unsigned int* width, unsigned int* height, unsigned int* frameId);
    const unsigned int m_onDisplaySrcChgMsgId;
    const unsigned int m_onDisplayGetSrcMsgId;
 };

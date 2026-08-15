@@ -23,6 +23,7 @@
 #include <thread>
 #include <mutex>
 #include <semaphore>
+#include <atomic>
 #endif
 
 #if defined(ENABLE_OPENGL) && !defined(__STANDALONE__)
@@ -284,6 +285,46 @@ public:
 
    uint64_t m_lastGPUFrameLength = 0;
 
+   // Window capture: on-demand CPU readback of the composed playfield / backglass / scoreview /
+   // topper output, exposed to plugins through VPXPluginAPI (see VPXPluginAPIImpl). Captures are
+   // pull-gated: while GetWindowCaptureFrame is being polled, the frame preparation queues a capture
+   // render target, the render thread blits it to a readback texture after submitting the frame's
+   // views, and the asynchronous bgfx::readTexture completes a few frames later without ever
+   // stalling or touching presentation.
+   struct WindowCapture
+   {
+      std::atomic<uint64_t> lastPollUs { 0 };
+      std::mutex mutex; // Guards the state below, shared between the capture (render thread) and bus consumers
+      std::vector<uint8_t> backFrame; // SRGB888, written by the readback completion
+      std::vector<uint8_t> serveFrame; // SRGB888, handed out to bus consumers
+      unsigned int backWidth = 0, backHeight = 0;
+      unsigned int serveWidth = 0, serveHeight = 0;
+      unsigned int captureId = 0;
+      unsigned int serveId = 0;
+      bool hasNewFrame = false;
+      // Logic thread (frame preparation)
+      uint64_t lastCaptureUs = 0;
+      unsigned int declined = 0; // Consecutive capture attempts no renderer produced content for, throttles retries
+      // Frame graph handoff, written by the logic thread while building the frame, consumed by the render thread when submitting it
+      std::atomic<bool> queued { false };
+      RenderTarget* queuedRT = nullptr;
+      uint32_t queuedX = 0, queuedY = 0, queuedW = 0, queuedH = 0;
+      // Render thread only
+      bgfx::TextureHandle readbackTex = BGFX_INVALID_HANDLE;
+      uint32_t readbackW = 0, readbackH = 0;
+      bgfx::TextureFormat::Enum readbackFormat = bgfx::TextureFormat::Count;
+      std::vector<uint8_t> readbackBuf;
+      uint32_t readbackReadyFrame = 0;
+      std::atomic<bool> readbackPending { false };
+      int loggedFormat = -1; // Last render target format an unsupported format warning was logged for
+   };
+   unsigned int m_wndCaptureMaxDim = 640; // Longest dimension of window captures, read from settings at player startup
+   const uint8_t* GetWindowCaptureFrame(int index, unsigned int& width, unsigned int& height, unsigned int& frameId); // index is a VPXWindowId, Playfield..Topper
+   bool GetWndCaptureSize(int index, unsigned int& width, unsigned int& height) const;
+   bool ShouldCaptureWnd(int index); // Logic thread, true when a consumer is polling and a capture slot is free
+   void QueueWndCapture(int index, RenderTarget* rt, int x, int y, int w, int h); // Logic thread, during frame preparation
+   void OnWndCaptureDeclined(int index) { m_wndCapture[index].declined++; } // Logic thread, no renderer produced content for an attempted capture
+
 #if BX_PLATFORM_WINDOWS
    void OnInputSampled();
    struct PresentMonProvider* m_presentMonProvider = nullptr;
@@ -300,6 +341,10 @@ private:
 #endif
 
    uint32_t m_frameIndex = 0;
+
+   void ProcessQueuedWndCaptures();
+   void FinalizeWndCaptures(uint32_t frameIdx);
+   WindowCapture m_wndCapture[VPXWindowId::VPXWINDOW_Topper + 1];
 
    uint32_t m_lastPresentFrameIdx = 0;
    float m_renderLatency = 0.f;

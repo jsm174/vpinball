@@ -37,6 +37,7 @@
 #endif
 #include <bx/platform.h>
 #include <bx/string.h>
+#include <bx/math.h>
 #include <bgfx/bgfx.h>
 #include <bimg/bimg.h>
 #ifdef __STANDALONE__
@@ -944,6 +945,15 @@ void RenderDevice::BGFXDesktopRenderLoop(const bgfx::Init& init)
       }
    }
 
+   for (WindowCapture& cap : m_wndCapture)
+   {
+      if (bgfx::isValid(cap.readbackTex))
+      {
+         bgfx::destroy(cap.readbackTex);
+         cap.readbackTex = BGFX_INVALID_HANDLE;
+      }
+   }
+
 #if BX_PLATFORM_WINDOWS
    if (m_presentMonProvider)
    {
@@ -960,6 +970,226 @@ void RenderDevice::OnInputSampled()
       PresentMonProvider_Application_InputSample(m_presentMonProvider, m_frameIndex, PresentMonProvider_Input_NotSpecified);
 }
 #endif
+
+bool RenderDevice::ShouldCaptureWnd(const int index)
+{
+   WindowCapture& cap = m_wndCapture[index];
+   const uint64_t now = usec();
+   if (now - cap.lastPollUs.load() > 3000000) // Only capture while a consumer is polling
+      return false;
+   if (cap.queued.load() || cap.readbackPending.load()) // A capture is already in flight
+      return false;
+   // Throttle to ~30 captures per second, backing off to ~1 per second when no renderer has been
+   // producing content (e.g. a probed window output that is enabled but never rendered into)
+   if (now - cap.lastCaptureUs < (cap.declined > 90 ? 1000000 : 33000))
+      return false;
+   cap.lastCaptureUs = now;
+   return true;
+}
+
+void RenderDevice::QueueWndCapture(const int index, RenderTarget* rt, const int x, const int y, const int w, const int h)
+{
+   WindowCapture& cap = m_wndCapture[index];
+   if (rt == nullptr || w <= 0 || h <= 0)
+      return;
+   cap.declined = 0;
+   cap.queuedRT = rt;
+   cap.queuedX = static_cast<uint32_t>(x);
+   cap.queuedY = static_cast<uint32_t>(y);
+   cap.queuedW = static_cast<uint32_t>(w);
+   cap.queuedH = static_cast<uint32_t>(h);
+   cap.queued = true;
+}
+
+void RenderDevice::ProcessQueuedWndCaptures()
+{
+   for (int i = 0; i <= VPXWindowId::VPXWINDOW_Topper; i++)
+   {
+      WindowCapture& cap = m_wndCapture[i];
+      if (!cap.queued.load())
+         continue;
+      cap.queued = false;
+      RenderTarget* const rt = cap.queuedRT;
+      if (rt == nullptr || cap.readbackPending.load())
+         continue;
+      const bgfx::TextureFormat::Enum format = rt->GetCoreColorFormat();
+      uint32_t texelSize;
+      switch (format)
+      {
+      case bgfx::TextureFormat::RGBA8:
+      case bgfx::TextureFormat::BGRA8:
+      case bgfx::TextureFormat::RGB10A2: texelSize = 4; break;
+      case bgfx::TextureFormat::RGBA16F: texelSize = 8; break;
+      default:
+         if (cap.loggedFormat != static_cast<int>(format))
+         {
+            cap.loggedFormat = static_cast<int>(format);
+            PLOGW << "Window capture " << i << ": unsupported render target format " << static_cast<int>(format);
+         }
+         continue;
+      }
+      const uint32_t w = cap.queuedW, h = cap.queuedH;
+      if (!bgfx::isValid(cap.readbackTex) || cap.readbackW != w || cap.readbackH != h || cap.readbackFormat != format)
+      {
+         if (bgfx::isValid(cap.readbackTex))
+            bgfx::destroy(cap.readbackTex);
+         cap.readbackTex = bgfx::createTexture2D(static_cast<uint16_t>(w), static_cast<uint16_t>(h), false, 1, format, BGFX_TEXTURE_READ_BACK | BGFX_TEXTURE_BLIT_DST);
+         cap.readbackW = w;
+         cap.readbackH = h;
+         cap.readbackFormat = format;
+      }
+      if (!bgfx::isValid(cap.readbackTex))
+         continue;
+      cap.readbackBuf.resize(static_cast<size_t>(w) * h * texelSize);
+      NextView();
+      bgfx::blit(m_activeViewId, cap.readbackTex, 0, 0, 0, 0, rt->GetColorSampler()->GetCoreTexture(false), 0, static_cast<uint16_t>(cap.queuedX), static_cast<uint16_t>(cap.queuedY), 0,
+         static_cast<uint16_t>(w), static_cast<uint16_t>(h), 1);
+      cap.readbackReadyFrame = bgfx::readTexture(cap.readbackTex, cap.readbackBuf.data());
+      cap.readbackPending = true;
+   }
+}
+
+namespace
+{
+   inline uint8_t LinearToSRGB8(float v)
+   {
+      v = clamp(v, 0.f, 1.f);
+      v = v <= 0.0031308f ? v * 12.92f : 1.055f * powf(v, 1.f / 2.4f) - 0.055f;
+      return static_cast<uint8_t>(v * 255.f + 0.5f);
+   }
+}
+
+void RenderDevice::FinalizeWndCaptures(const uint32_t frameIdx)
+{
+   for (int i = 0; i <= VPXWindowId::VPXWINDOW_Topper; i++)
+   {
+      WindowCapture& cap = m_wndCapture[i];
+      if (!cap.readbackPending.load() || frameIdx < cap.readbackReadyFrame)
+         continue;
+      cap.readbackPending = false;
+      const uint32_t w = cap.readbackW, h = cap.readbackH;
+      std::vector<uint8_t> rgb(static_cast<size_t>(w) * h * 3);
+      const uint8_t* const __restrict src = cap.readbackBuf.data();
+      uint8_t* const __restrict dst = rgb.data();
+      const size_t count = static_cast<size_t>(w) * h;
+      switch (cap.readbackFormat)
+      {
+      // The offscreen backbuffer holds linear pre-tonemapped values, convert to sRGB for display
+      case bgfx::TextureFormat::RGBA16F:
+      {
+         const uint16_t* const __restrict halfs = reinterpret_cast<const uint16_t*>(src);
+         for (size_t j = 0; j < count; j++)
+         {
+            dst[j * 3 + 0] = LinearToSRGB8(bx::halfToFloat(halfs[j * 4 + 0]));
+            dst[j * 3 + 1] = LinearToSRGB8(bx::halfToFloat(halfs[j * 4 + 1]));
+            dst[j * 3 + 2] = LinearToSRGB8(bx::halfToFloat(halfs[j * 4 + 2]));
+         }
+         break;
+      }
+      case bgfx::TextureFormat::RGB10A2:
+         for (size_t j = 0; j < count; j++)
+         {
+            uint32_t px;
+            memcpy(&px, src + j * 4, 4);
+            dst[j * 3 + 0] = LinearToSRGB8(static_cast<float>(px & 0x3FF) / 1023.f);
+            dst[j * 3 + 1] = LinearToSRGB8(static_cast<float>((px >> 10) & 0x3FF) / 1023.f);
+            dst[j * 3 + 2] = LinearToSRGB8(static_cast<float>((px >> 20) & 0x3FF) / 1023.f);
+         }
+         break;
+      case bgfx::TextureFormat::RGBA8:
+         for (size_t j = 0; j < count; j++)
+         {
+            dst[j * 3 + 0] = src[j * 4 + 0];
+            dst[j * 3 + 1] = src[j * 4 + 1];
+            dst[j * 3 + 2] = src[j * 4 + 2];
+         }
+         break;
+      case bgfx::TextureFormat::BGRA8:
+         for (size_t j = 0; j < count; j++)
+         {
+            dst[j * 3 + 0] = src[j * 4 + 2];
+            dst[j * 3 + 1] = src[j * 4 + 1];
+            dst[j * 3 + 2] = src[j * 4 + 0];
+         }
+         break;
+      default: continue;
+      }
+      std::lock_guard lock(cap.mutex);
+      cap.backFrame = std::move(rgb);
+      cap.backWidth = w;
+      cap.backHeight = h;
+      cap.captureId++;
+      cap.hasNewFrame = true;
+   }
+}
+
+const uint8_t* RenderDevice::GetWindowCaptureFrame(const int index, unsigned int& width, unsigned int& height, unsigned int& frameId)
+{
+   WindowCapture& cap = m_wndCapture[index];
+   cap.lastPollUs = usec();
+   std::lock_guard lock(cap.mutex);
+   if (cap.hasNewFrame)
+   {
+      cap.serveFrame.swap(cap.backFrame);
+      cap.serveWidth = cap.backWidth;
+      cap.serveHeight = cap.backHeight;
+      cap.serveId = cap.captureId;
+      cap.hasNewFrame = false;
+   }
+   if (cap.serveFrame.empty())
+      return nullptr;
+   width = cap.serveWidth;
+   height = cap.serveHeight;
+   frameId = cap.serveId;
+   return cap.serveFrame.data();
+}
+
+// Returns the capture resolution of a window: the window's aspect ratio at a size clamped for
+// cheap readback/encode/transfer. The renderers scale their output to the requested context size,
+// so the capture does not need to match the window's actual pixel resolution.
+// May be called from any thread: it only reads integral window configuration that is stable while
+// the player is running, guarded against the player being torn down.
+bool RenderDevice::GetWndCaptureSize(const int index, unsigned int& width, unsigned int& height) const
+{
+   if (g_pplayer == nullptr)
+      return false;
+   if (index == VPXWindowId::VPXWINDOW_Playfield)
+   {
+      if (m_outputWnd.empty())
+         return false;
+      width = static_cast<unsigned int>(m_outputWnd[0]->GetPixelWidth());
+      height = static_cast<unsigned int>(m_outputWnd[0]->GetPixelHeight());
+   }
+   else
+   {
+      const VPX::RenderOutput* const outputs[3] = { &g_pplayer->m_backglassOutput, &g_pplayer->m_scoreViewOutput, &g_pplayer->m_topperOutput };
+      const VPX::RenderOutput& output = *outputs[index - VPXWindowId::VPXWINDOW_Backglass];
+      if (output.GetMode() == VPX::RenderOutput::OM_WINDOW && output.GetWindow())
+      {
+         width = static_cast<unsigned int>(output.GetWindow()->GetPixelWidth());
+         height = static_cast<unsigned int>(output.GetWindow()->GetPixelHeight());
+      }
+      else if (output.GetMode() == VPX::RenderOutput::OM_EMBEDDED && output.GetEmbeddedWindow() && !m_outputWnd.empty())
+      {
+         const VPX::Window* const container = m_outputWnd[0];
+         const float sx = static_cast<float>(container->GetPixelWidth()) / static_cast<float>(container->GetWidth());
+         const float sy = static_cast<float>(container->GetPixelHeight()) / static_cast<float>(container->GetHeight());
+         width = static_cast<unsigned int>(static_cast<float>(output.GetEmbeddedWindow()->GetWidth()) * sx);
+         height = static_cast<unsigned int>(static_cast<float>(output.GetEmbeddedWindow()->GetHeight()) * sy);
+      }
+      else
+      {
+         return false;
+      }
+   }
+   if (const unsigned int dim = std::max(width, height); dim > m_wndCaptureMaxDim)
+   {
+      const float scale = static_cast<float>(m_wndCaptureMaxDim) / static_cast<float>(dim);
+      width = std::max(1u, static_cast<unsigned int>(static_cast<float>(width) * scale + 0.5f));
+      height = std::max(1u, static_cast<unsigned int>(static_cast<float>(height) * scale + 0.5f));
+   }
+   return width != 0 && height != 0;
+}
 
 #elif defined(ENABLE_OPENGL)
 GLuint RenderDevice::m_samplerStateCache[3 * 3 * 5];
@@ -2215,6 +2445,7 @@ void RenderDevice::SubmitAndFlipFrame(bool present)
    const uint32_t frameIdx = bgfx::frame(present ? BGFX_FRAME_NONE : BGFX_FRAME_FLUSH);
    if (present)
       m_lastPresentFrameIdx = frameIdx;
+   FinalizeWndCaptures(frameIdx);
    ResetActiveView();
 }
 #endif
@@ -2592,6 +2823,9 @@ void RenderDevice::SubmitRenderFrame()
    const bool rendered = m_renderFrame->Execute(m_logNextFrame);
    if (rendered)
       m_logNextFrame = false;
+   #ifdef ENABLE_BGFX
+   ProcessQueuedWndCaptures();
+   #endif
    m_lastPresentFrameTick = usec();
 }
 

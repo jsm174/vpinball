@@ -58,6 +58,10 @@ typedef struct
 static std::map<uint64_t, DisplayProvider> displayGetters;
 static unsigned int treeId = 0;
 
+// Reserved mapping range for VPX window captures (playfield, backglass, scoreview, topper),
+// served through VPXPluginAPI::GetWindowCaptureFrame instead of a bus display source
+static constexpr uint64_t wndCaptureMappingBase = 0xFFFFFFFFFFFFFF00ull;
+
 void UpdateTreeCache()
 {
    treeId++;
@@ -94,6 +98,45 @@ void UpdateTreeCache()
    msgApi->ReleaseMsgID(getControllersId);
 
    json tree = json::array();
+
+   // VPX window captures, served on demand through the VPX plugin API
+   if (vpxApi)
+   {
+      static constexpr std::pair<VPXWindowId, const char*> windows[] = {
+         { VPXWindowId::VPXWINDOW_Playfield, "Playfield" },
+         { VPXWindowId::VPXWINDOW_Backglass, "Backglass" },
+         { VPXWindowId::VPXWINDOW_ScoreView, "Score View" },
+         { VPXWindowId::VPXWINDOW_Topper, "Topper" },
+      };
+      json catNode = json::object();
+      catNode["name"s] = "Windows";
+      catNode["type"s] = "category";
+      catNode["children"s] = json::array();
+      for (const auto& [window, name] : windows)
+      {
+         unsigned int width, height;
+         if (!vpxApi->GetWindowCaptureState(window, &width, &height))
+            continue;
+         json item = json::object();
+         item["name"s] = std::format("{} {}x{}", name, width, height);
+         item["type"s] = "display";
+         item["mapping"s] = std::to_string(wndCaptureMappingBase + static_cast<uint64_t>(window));
+         item["format"s] = CTLPI_DISPLAY_FORMAT_SRGB888;
+         item["hardware"s] = 0;
+         catNode["children"s].push_back(item);
+      }
+      if (!catNode["children"s].empty())
+      {
+         json wndNode = json::object();
+         wndNode["id"s] = 0;
+         wndNode["name"s] = "VPX Windows";
+         wndNode["type"s] = "controller";
+         wndNode["game"s] = "";
+         wndNode["children"s] = json::array();
+         wndNode["children"s].push_back(catNode);
+         tree.push_back(wndNode);
+      }
+   }
 
    if (controllerDefs.empty())
    {
@@ -369,16 +412,35 @@ namespace
 
 bool IsDisplayKnown(uint64_t mapping)
 {
+   if ((mapping & ~0xFFull) == wndCaptureMappingBase)
+   {
+      unsigned int width, height;
+      return vpxApi && vpxApi->GetWindowCaptureState(static_cast<VPXWindowId>(mapping & 0xFF), &width, &height) != 0;
+   }
    std::lock_guard lock(deviceStatesMutex);
    return displayGetters.find(mapping) != displayGetters.end();
 }
 
 // Looks up the display registered under `mapping` (the same CtlResId.id sent to the client as
-// the display node's "mapping" field) and returns its current frame as a top-down RGB24 buffer.
-// Returns an empty vector if the mapping is unknown, the source has no frame yet, or the frame
-// format isn't supported.
+// the display node's "mapping" field, or a reserved ancillary window mapping) and returns its
+// current frame as a top-down RGB24 buffer. Returns an empty vector if the mapping is unknown,
+// the source has no frame yet, or the frame format isn't supported.
 std::vector<uint8_t> GetDisplayFrameRGB(uint64_t mapping, uint32_t& width, uint32_t& height, uint32_t& frameId)
 {
+   if ((mapping & ~0xFFull) == wndCaptureMappingBase)
+   {
+      if (vpxApi == nullptr)
+         return { };
+      unsigned int w, h, id;
+      const uint8_t* const frame = vpxApi->GetWindowCaptureFrame(static_cast<VPXWindowId>(mapping & 0xFF), &w, &h, &id);
+      if (frame == nullptr)
+         return { };
+      width = w;
+      height = h;
+      frameId = id;
+      return std::vector<uint8_t>(frame, frame + static_cast<size_t>(w) * h * 3);
+   }
+
    DisplayProvider provider;
    {
       std::lock_guard lock(deviceStatesMutex);

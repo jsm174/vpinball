@@ -244,7 +244,10 @@ private:
    void ClearEmbeddedAncillaryWindow(VPXWindowId window, const VPX::RenderOutput& output, RenderTarget* embedRT);
    void DrawEmbeddedQuad(RenderTarget* outputRT, int x, int y, int w, int h, float r, float g, float b);
    void RenderAncillaryWindow(VPXWindowId window, const VPX::RenderOutput& output, RenderTarget* embedRT, const vector<AncillaryRendererDef>& ancillaryWndRenderers);
+   void RenderWindowCapture(VPXWindowId window, const vector<AncillaryRendererDef>& ancillaryWndRenderers);
+   void RenderPlayfieldCapture(RenderTarget* renderedRT);
    std::unique_ptr<RenderTarget> m_ancillaryWndHdrRT[VPXWindowId::VPXWINDOW_Topper + 1];
+   std::unique_ptr<RenderTarget> m_wndCaptureRT[VPXWindowId::VPXWINDOW_Topper + 1];
    bool m_ancillaryWndRendered[VPXWindowId::VPXWINDOW_Topper + 1] = {}; // Whether a renderer claimed the window on the last frame
    struct AncillaryRenderSetup
    {

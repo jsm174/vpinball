@@ -108,6 +108,12 @@ Renderer::Renderer(PinTable* const table, VPX::Window* wnd, VideoSyncMode& syncM
       m_bloomOff = true;
    }
 
+   #if defined(ENABLE_BGFX)
+   Settings::GetRegistry().Register(std::make_unique<VPX::Properties::IntPropertyDef>("Player"s, "WindowCaptureMaxSize"s, "Window Capture Max Size",
+      "Longest dimension used when capturing window content for plugins (e.g. the inspector's live display streams)", false, 64, 4096, 640));
+   m_renderDevice->m_wndCaptureMaxDim = static_cast<unsigned int>(table->m_settings.GetInt(Settings::GetRegistry().GetPropertyId("Player"s, "WindowCaptureMaxSize"s).value()));
+   #endif
+
    if (m_stereo3D == STEREO_VR)
    {
       // For VR, renders at the HMD native eye resolution (preview will reuse and scale/stretch it)
@@ -358,7 +364,10 @@ Renderer::~Renderer()
    delete m_pOffscreenVRLeft;
    delete m_pOffscreenVRRight;
    for (int window = 0; window <= VPXWindowId::VPXWINDOW_Topper; window++)
+   {
       m_ancillaryWndHdrRT[window] = nullptr;
+      m_wndCaptureRT[window] = nullptr;
+   }
    #if defined(ENABLE_DX9) || defined(__OPENGLES__) || defined(__APPLE__) || (defined(__ANDROID__) && defined(ENABLE_XR))
    m_envRadianceTexture.reset();
    #else
@@ -3014,6 +3023,11 @@ void Renderer::RenderFrame()
    RenderAncillaryWindow(VPXWindowId::VPXWINDOW_ScoreView, g_pplayer->m_scoreViewOutput, renderedRT, g_pplayer->m_ancillaryWndRenderers[VPXWindowId::VPXWINDOW_ScoreView]);
    RenderAncillaryWindow(VPXWindowId::VPXWINDOW_Topper, g_pplayer->m_topperOutput, renderedRT, g_pplayer->m_ancillaryWndRenderers[VPXWindowId::VPXWINDOW_Topper]);
 
+   RenderWindowCapture(VPXWindowId::VPXWINDOW_Backglass, g_pplayer->m_ancillaryWndRenderers[VPXWindowId::VPXWINDOW_Backglass]);
+   RenderWindowCapture(VPXWindowId::VPXWINDOW_ScoreView, g_pplayer->m_ancillaryWndRenderers[VPXWindowId::VPXWINDOW_ScoreView]);
+   RenderWindowCapture(VPXWindowId::VPXWINDOW_Topper, g_pplayer->m_ancillaryWndRenderers[VPXWindowId::VPXWINDOW_Topper]);
+   RenderPlayfieldCapture(renderedRT);
+
    const bool hasAntialiasPass = m_FXAA != Disabled;
    const bool hasSharpenPass = m_sharpen != 0;
    const bool hasUpscalerPass = m_renderWidth < GetBackBufferTexture()->GetWidth();
@@ -3501,6 +3515,97 @@ void Renderer::RenderAncillaryWindow(VPXWindowId window, const VPX::RenderOutput
    }
 
    UpdateBasicShaderMatrix();
+}
+
+// Renders a window's ancillary renderers into a private offscreen target (the same way EXT_RENDER
+// flashers re-render them onto the playfield) and schedules an asynchronous CPU readback, making the
+// composed content available through the plugin API (see VPXPluginAPIImpl) independently of the
+// window's output mode and without touching presentation.
+void Renderer::RenderWindowCapture(VPXWindowId window, const vector<AncillaryRendererDef>& ancillaryWndRenderers)
+{
+#if defined(ENABLE_BGFX)
+   assert(VPXWindowId::VPXWINDOW_Backglass <= window && window <= VPXWindowId::VPXWINDOW_Topper);
+   static const std::array<string, 3> passNames = { "Backglass Capture"s, "ScoreView Capture"s, "Topper Capture"s };
+   const int index = window - VPXWindowId::VPXWINDOW_Backglass;
+   if (ancillaryWndRenderers.empty() || g_pplayer->IsVR() || m_stereo3D != StereoMode::STEREO_OFF)
+      return;
+   RenderDevice* const rd = m_renderDevice;
+   unsigned int width, height;
+   if (!rd->GetWndCaptureSize(window, width, height) || !rd->ShouldCaptureWnd(window))
+      return;
+
+   std::unique_ptr<RenderTarget>& captureRT = m_wndCaptureRT[window];
+   if (captureRT == nullptr || captureRT->GetWidth() != static_cast<int>(width) || captureRT->GetHeight() != static_cast<int>(height))
+      captureRT = std::make_unique<RenderTarget>(rd, SurfaceType::RT_DEFAULT, passNames[index] + " Buffer", static_cast<int>(width), static_cast<int>(height), colorFormat::RGBA8, false, 1,
+         "Fatal Error: unable to create ancillary window capture buffer");
+
+   rd->ResetRenderState();
+   rd->SetRenderState(RenderState::ZENABLE, RenderState::RS_FALSE);
+   rd->SetRenderTarget(passNames[index], captureRT.get(), false, true);
+   rd->Clear(clearType::TARGET, 0x00000000);
+
+   Matrix3D matWorldViewProj[1];
+   matWorldViewProj[0] = Matrix3D::MatrixIdentity();
+   matWorldViewProj[0]._11 = 2.f;
+   matWorldViewProj[0]._41 = -1.f;
+   matWorldViewProj[0]._22 = -2.f;
+   matWorldViewProj[0]._42 = 1.f;
+   const vec4 cameraPosWorld[1] = { { 0.f, 0.f, 0.f, 0.f } };
+   rd->m_basicShader->SetMatrix(SHADER_matRotViewProj, &matWorldViewProj[0], 1);
+   rd->m_basicShader->SetVector(SHADER_cameraPosWorld, &cameraPosWorld[0], 1);
+   rd->m_DMDShader->SetMatrix(SHADER_matRotViewProj, &matWorldViewProj[0], 1);
+   rd->m_DMDShader->SetVector(SHADER_cameraPosWorld, &cameraPosWorld[0], 1);
+   rd->m_basicShader->SetFloat(SHADER_alphaTestValue, -1.0f);
+   rd->m_basicShader->SetTechnique(SHADER_TECHNIQUE_bg_decal_with_texture);
+   rd->m_DMDShader->SetFloat(SHADER_alphaTestValue, -1.0f);
+
+   VPXRenderContext2D& context = GetAncillaryRenderContext(window, static_cast<float>(width), static_cast<float>(height), true, false, 0.f);
+   bool rendered = false;
+   for (const auto& renderer : ancillaryWndRenderers)
+   {
+      rendered = renderer.Render(&context, renderer.context);
+      if (rendered)
+         break;
+   }
+   if (rendered)
+   {
+      rd->GetCurrentPass()->m_forceExecution = true;
+      rd->QueueWndCapture(window, captureRT.get(), 0, 0, static_cast<int>(width), static_cast<int>(height));
+   }
+   else
+   {
+      rd->GetCurrentPass()->ClearCommands();
+      rd->OnWndCaptureDeclined(window);
+   }
+
+   UpdateBasicShaderMatrix();
+#endif
+}
+
+// Downscales the rendered playfield into a private offscreen target and schedules an asynchronous
+// CPU readback, feeding the same capture pipeline as the ancillary windows. Unlike them, the
+// playfield is not re-rendered: the already rendered frame is tonemapped into the capture target
+// so the capture matches the displayed image (bloom, AO, color grading,...).
+void Renderer::RenderPlayfieldCapture(RenderTarget* renderedRT)
+{
+#if defined(ENABLE_BGFX)
+   if (g_pplayer->IsVR() || m_stereo3D != StereoMode::STEREO_OFF)
+      return;
+   RenderDevice* const rd = m_renderDevice;
+   unsigned int width, height;
+   if (!rd->GetWndCaptureSize(VPXWindowId::VPXWINDOW_Playfield, width, height) || !rd->ShouldCaptureWnd(VPXWindowId::VPXWINDOW_Playfield))
+      return;
+
+   std::unique_ptr<RenderTarget>& captureRT = m_wndCaptureRT[VPXWindowId::VPXWINDOW_Playfield];
+   if (captureRT == nullptr || captureRT->GetWidth() != static_cast<int>(width) || captureRT->GetHeight() != static_cast<int>(height))
+      captureRT = std::make_unique<RenderTarget>(rd, SurfaceType::RT_DEFAULT, "Playfield Capture Buffer"s, static_cast<int>(width), static_cast<int>(height), colorFormat::RGBA8, false, 1,
+         "Fatal Error: unable to create playfield capture buffer");
+
+   SetupTonemapping(renderedRT, captureRT.get(), true);
+   rd->GetCurrentPass()->m_forceExecution = true;
+   rd->DrawFullscreenTexturedQuad(rd->m_FBShader);
+   rd->QueueWndCapture(VPXWindowId::VPXWINDOW_Playfield, captureRT.get(), 0, 0, static_cast<int>(width), static_cast<int>(height));
+#endif
 }
 
 RenderProbe::ReflectionMode Renderer::GetMaxReflectionMode() const

@@ -306,6 +306,13 @@
 
     <div id="tune" class="chrome">
         <div class="row">
+            <label>Scaling</label>
+            <div class="toggle" id="scaleToggle">
+                <button data-v="fit">Fit</button>
+                <button data-v="native">1:1</button>
+            </div>
+        </div>
+        <div class="row">
             <label>Dot shape</label>
             <div class="toggle" id="shapeToggle">
                 <button data-v="round">Round</button>
@@ -367,6 +374,7 @@
         bright: 100,
         unlit: 25,
         shape: 'round',
+        scale: 'fit',
         mapping: null,
     };
 
@@ -388,6 +396,7 @@
             qs.set('unlit', settings.unlit);
         }
         qs.set('bright', settings.bright);
+        qs.set('scale', settings.scale);
         lastHash = '#' + qs.toString();
         history.replaceState(null, '', lastHash);
     }
@@ -403,6 +412,7 @@
         if ('bright' in h && !isNaN(+h.bright)) settings.bright = clamp(h.bright, 40, 200);
         if ('unlit' in h && !isNaN(+h.unlit)) settings.unlit = clamp(h.unlit, 0, 60);
         if (h.shape === 'round' || h.shape === 'square') settings.shape = h.shape;
+        if (h.scale === 'fit' || h.scale === 'native') settings.scale = h.scale;
         if ('display' in h) settings.mapping = h.display;
     }
 
@@ -509,7 +519,8 @@
         const availW = rect.width - pad * 2;
         const availH = rect.height - pad * 2;
         const dpr = window.devicePixelRatio || 1;
-        const cssPitch = Math.min(availW / sourceW, availH / sourceH);
+        let cssPitch = Math.min(availW / sourceW, availH / sourceH);
+        if (settings.scale === 'native') cssPitch = Math.min(cssPitch, 1);
         devicePitch = Math.max(1, Math.floor(cssPitch * dpr));
         const bw = sourceW * devicePitch;
         const bh = sourceH * devicePitch;
@@ -908,6 +919,7 @@
     }
 
     bindToggle('shapeToggle', 'shape', () => { rebuildPatterns(); render(); });
+    bindToggle('scaleToggle', 'scale', layout);
 
     const fsBtn = document.getElementById('fsBtn');
     function toggleFullscreen() {

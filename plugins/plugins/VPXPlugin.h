@@ -295,4 +295,19 @@ typedef struct VPXPluginAPI
    // Thread safe
    void(MSGPIAPI* DeleteTexture)(VPXTexture texture);
 
+   // Window capture
+
+   // Returns 1 and the capture size of a window (Playfield/Backglass/ScoreView/Topper) when its
+   // output is enabled, 0 otherwise.
+   // Thread safe
+   int(MSGPIAPI* GetWindowCaptureState)(VPXWindowId window, unsigned int* width, unsigned int* height);
+
+   // Returns the latest composed frame of a window (Playfield/Backglass/ScoreView/Topper) as a
+   // top-down SRGB888 buffer, or null if none is available yet. Polling arms the capture: while
+   // polled, the window's content is captured to an offscreen buffer and read back asynchronously
+   // (at most ~30 fps), so the first frames of a polling session return null.
+   // The returned buffer stays valid until the next call for the same window.
+   // Thread safe
+   const uint8_t*(MSGPIAPI* GetWindowCaptureFrame)(VPXWindowId window, unsigned int* width, unsigned int* height, unsigned int* frameId);
+
 } VPXPluginAPI;

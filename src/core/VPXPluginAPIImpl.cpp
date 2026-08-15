@@ -653,6 +653,32 @@ DisplayFrame VPXPluginAPIImpl::ControllerOnGetRenderDMD(const CtlResId id)
    return result;
 }
 
+int MSGPIAPI VPXPluginAPIImpl::GetWindowCaptureState(VPXWindowId window, unsigned int* width, unsigned int* height)
+{
+#if defined(ENABLE_BGFX)
+   if (g_pplayer == nullptr || g_pplayer->m_renderer == nullptr || g_pplayer->m_renderer->m_renderDevice == nullptr)
+      return 0;
+   if (window > VPXWindowId::VPXWINDOW_Topper)
+      return 0;
+   return g_pplayer->m_renderer->m_renderDevice->GetWndCaptureSize(window, *width, *height) ? 1 : 0;
+#else
+   return 0;
+#endif
+}
+
+const uint8_t* MSGPIAPI VPXPluginAPIImpl::GetWindowCaptureFrame(VPXWindowId window, unsigned int* width, unsigned int* height, unsigned int* frameId)
+{
+#if defined(ENABLE_BGFX)
+   if (g_pplayer == nullptr || g_pplayer->m_renderer == nullptr || g_pplayer->m_renderer->m_renderDevice == nullptr)
+      return nullptr;
+   if (window > VPXWindowId::VPXWINDOW_Topper)
+      return nullptr;
+   return g_pplayer->m_renderer->m_renderDevice->GetWindowCaptureFrame(window, *width, *height, *frameId);
+#else
+   return nullptr;
+#endif
+}
+
 void VPXPluginAPIImpl::ControllerOnGetDMDSrc(const unsigned int msgId, void* userData, void* msgData)
 {
    GetDisplaySrcMsg& msg = *static_cast<GetDisplaySrcMsg*>(msgData);
@@ -731,6 +757,9 @@ VPXPluginAPIImpl::VPXPluginAPIImpl(MsgPI::MsgPluginManager& pluginManager)
    m_api.UpdateTexture = UpdateTexture;
    m_api.GetTextureInfo = GetTextureInfo;
    m_api.DeleteTexture = DeleteTexture;
+
+   m_api.GetWindowCaptureState = GetWindowCaptureState;
+   m_api.GetWindowCaptureFrame = GetWindowCaptureFrame;
 
    m_vpxPlugin = pluginManager.RegisterPlugin(
       "vpx"s, "VPX"s, "Visual Pinball X"s, ""s, ""s, "https://github.com/vpinball/vpinball"s, //
