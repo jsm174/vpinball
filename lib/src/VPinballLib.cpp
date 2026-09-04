@@ -217,15 +217,6 @@ void VPinballLib::SetEventCallback(VPinballEventCallback callback)
                jsonData = jsonString.c_str();
                break;
             }
-            case VPINBALL_EVENT_RUMBLE: {
-               RumbleData* rumbleData = (RumbleData*)data;
-               j["lowFrequencyRumble"] = rumbleData->lowFrequencyRumble;
-               j["highFrequencyRumble"] = rumbleData->highFrequencyRumble;
-               j["durationMs"] = rumbleData->durationMs;
-               jsonString = j.dump();
-               jsonData = jsonString.c_str();
-               break;
-            }
             case VPINBALL_EVENT_WEB_SERVER: {
                WebServerData* webServerData = (WebServerData*)data;
                j["url"] = webServerData->url;

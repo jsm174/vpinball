@@ -20,12 +20,6 @@ struct ProgressData {
    unsigned int progress;
 };
 
-struct RumbleData {
-   uint16_t lowFrequencyRumble;
-   uint16_t highFrequencyRumble;
-   uint32_t durationMs;
-};
-
 struct WebServerData {
    string url;
 };
@@ -56,6 +50,12 @@ public:
    string GetVersionStringFull() { return VP_VERSION_STRING_FULL_LITERAL; };
    void Init(VPinballEventCallback callback);
    static void SendEvent(VPINBALL_EVENT event, void* data);
+   void SetRumbleCallback(VPinballRumbleCallback callback) { m_rumbleCallback = callback; }
+   static void PlayRumble(float lowFrequencySpeed, float highFrequencySpeed, unsigned int durationMs)
+   {
+      if (const auto callback = Instance().m_rumbleCallback)
+         callback(lowFrequencySpeed, highFrequencySpeed, durationMs);
+   }
    void Log(VPINBALL_LOG_LEVEL level, const string& message);
    void ResetLog();
    int LoadValueInt(const string& sectionName, const string& key, int defaultValue);
@@ -90,6 +90,7 @@ private:
 #endif
    WebServer m_webServer;
    std::function<void*(VPINBALL_EVENT, void*)> m_eventCallback = nullptr;
+   VPinballRumbleCallback m_rumbleCallback = nullptr;
    std::function<void()> m_gameLoop = nullptr;
    std::queue<SDL_Event> m_eventQueue;
    std::mutex m_eventMutex;

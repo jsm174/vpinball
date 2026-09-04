@@ -43,6 +43,11 @@ VPINBALLAPI void VPinballInit(VPinballEventCallback callback)
    VPinballLib::VPinballLib::Instance().Init(callback);
 }
 
+VPINBALLAPI void VPinballSetRumbleCallback(VPinballRumbleCallback callback)
+{
+   VPinballLib::VPinballLib::Instance().SetRumbleCallback(callback);
+}
+
 VPINBALLAPI void VPinballLog(VPINBALL_LOG_LEVEL level, const char* pMessage)
 {
    if (pMessage != nullptr)
