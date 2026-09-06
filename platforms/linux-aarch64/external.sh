@@ -182,7 +182,11 @@ if [ "${OPENXR_EXPECTED_SHA}" != "${OPENXR_FOUND_SHA}" ]; then
    mv OpenXR-SDK-Source-${OPENXR_SHA} openxr
    cd openxr
    cmake \
+      -DBUILD_WITH_SYSTEM_JSONCPP=OFF \
       -DBUILD_TESTS=OFF \
+      -DBUILD_API_LAYERS=OFF \
+      -DCMAKE_DISABLE_FIND_PACKAGE_OpenGL=ON \
+      -DCMAKE_DISABLE_FIND_PACKAGE_OpenGLES=ON \
       -DDYNAMIC_LOADER=ON \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
@@ -430,7 +434,8 @@ fi
 #
 
 cp -a openxr/openxr/build/src/loader/libopenxr_loader.so* ../../../third-party/runtime-libs/linux-aarch64
-cp -r openxr/openxr/include/openxr ../../../third-party/include
+mkdir -p ../../../third-party/include/openxr
+cp openxr/openxr/build/include/openxr/*.h ../../../third-party/include/openxr
 
 cp -a SDL3/SDL/build/libSDL3.{so,so.*} ../../../third-party/runtime-libs/linux-aarch64
 cp -r SDL3/SDL/include/SDL3 ../../../third-party/include/
