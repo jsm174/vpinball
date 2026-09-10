@@ -159,6 +159,30 @@ When adding, removing, or renaming source files:
 - Update **both** `CMakeLists.txt` and the relevant `.vcxproj` file.
 - Do not leave one build system ahead of the other.
 
+### CMake layout
+
+The root `CMakeLists.txt` resolves the target (`RENDERER`, `PLATFORM`, `ARCH`), sets the toolchain
+options shared by everything, then includes the rest of the build from `make/`:
+
+| File | Contents |
+| --- | --- |
+| `make/CMakeLists_sources.txt` | application source lists |
+| `make/CMakeLists_app.txt` | the `vpinball` application target |
+| `make/CMakeLists_plugins.txt` | plugin staging directory, then one include per plugin |
+| `make/CMakeLists_plugin_<Name>.txt` | one plugin target |
+
+The plugins are always built — on iOS and Android they are static libraries linked into the
+application. The application is optional, so a plugin can be worked on without building it:
+
+```sh
+cmake -DPLATFORM=macos -DARCH=arm64 -DBUILD_APP=OFF -B build
+```
+
+Built plugins are staged as `<name>/plugin.cfg` plus the plugin library, which is the layout
+`MsgPluginManager` scans for. They go next to the application, or into `<build>/plugins` when
+there is no application in the build tree — copy that directory into an installed VPX to test
+a plugin-only build.
+
 ---
 
 *These guidelines were derived from the [Godot Engine contributing guidelines](https://contributing.godotengine.org/en/latest/pull_requests/pull_request_guidelines.html),
