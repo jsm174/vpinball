@@ -45,6 +45,7 @@ public:
    bool IsShowingFPSDetails() const { return m_perfUI.GetPerfMode() != PerfUI::PerfMode::PM_DISABLED; }
    
    void ShowTouchOverlay(bool show) { m_showTouchOverlay = show; }
+   bool IsTouchUI() const { return m_touchUI; }
 
    unsigned int PushNotification(const string &message, const int lengthMs, const unsigned int reuseId = 0) { return m_notificationOverlay.PushNotification(message, lengthMs, reuseId); }
 
@@ -66,7 +67,7 @@ public:
    static ImGuiKey GetImGuiKeyFromSDLScancode(const SDL_Scancode sdlk);
    static void CenteredText(const string &text);
 
-   void HandleSDLEvent(SDL_Event &e) const;
+   void HandleSDLEvent(SDL_Event &e);
 
 private:
    void SetupImGuiStyle(const bool isEditor) const;
@@ -83,6 +84,8 @@ private:
    // Touch UI overlay
    void UpdateTouchUI();
    bool m_showTouchOverlay;
+   bool m_touchUI = false;
+   bool m_lastPointerWasTouch = false;
 
    // Emulated plumb overlay
    PlumbOverlay m_plumbOverlay;
@@ -106,6 +109,7 @@ private:
    RenderDevice* const m_rd;
    int m_rotate = 0;
    float m_uiScale = 0.f;
+   float m_fontScale = 0.f;
    ImFont *m_baseFont = nullptr;
    ImFont *m_overlayBoldFont = nullptr;
    ImFont *m_overlayFont = nullptr;

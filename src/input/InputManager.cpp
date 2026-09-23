@@ -644,6 +644,10 @@ void InputManager::PushTouchEvent(float relativeX, float relativeY, uint64_t tim
    if (m_player->IsVR())
       return;
 
+   // While the in-game UI is opened, touch regions must not trigger game actions (only releases are processed to clear pending states)
+   if (isPressed && m_player->m_liveUI && m_player->m_liveUI->IsInGameUIOpened())
+      return;
+
    POINT point;
    point.x = (int)((float)m_player->m_playfieldWnd->GetWidth() * relativeX);
    point.y = (int)((float)m_player->m_playfieldWnd->GetHeight() * relativeY);

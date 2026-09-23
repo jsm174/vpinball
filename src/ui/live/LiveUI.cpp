@@ -51,6 +51,7 @@ LiveUI::LiveUI(RenderDevice *const rd)
    SetupImGuiStyle(false);
 
    UpdateScale();
+   m_fontScale = m_uiScale;
 
    // UI fonts
    m_baseFont = io.Fonts->AddFontFromMemoryCompressedTTF(droidsans_compressed_data, droidsans_compressed_size, 13.0f * m_uiScale);
@@ -250,10 +251,11 @@ void LiveUI::UpdateScale()
          m_uiScale = max(m_uiScale, static_cast<float>(min(m_player->m_playfieldWnd->GetWidth(), m_player->m_playfieldWnd->GetHeight())) / 750.f);
       }
    }
-   m_uiScale = min(m_uiScale, 10.f); // To avoid texture size overflows
 #ifdef __LIBVPINBALL__
    m_uiScale *= 1.35f;
 #endif
+   m_uiScale *= m_player->m_ptable->m_settings.GetPlayer_UIScale();
+   m_uiScale = min(m_uiScale, 10.f); // To avoid texture size overflows
    if (m_uiScale != prevDPI)
    {
       m_perfUI.SetUIScale(overlayScale);
@@ -276,16 +278,27 @@ void LiveUI::AddMousePosEvent(bool isTouch, float x, float y) const
    }
 }
 
-void LiveUI::HandleSDLEvent(SDL_Event &e) const
+void LiveUI::HandleSDLEvent(SDL_Event &e)
 {
-   if (e.type == SDL_EVENT_MOUSE_MOTION)
+   switch (e.type)
    {
+   case SDL_EVENT_MOUSE_MOTION:
       // Custom implementation of ImGui_ImplSDL3_ProcessEvent supporting screen rotation and event filtering
-      AddMousePosEvent(e.motion.which == SDL_TOUCH_MOUSEID, e.motion.x, e.motion.y);
-   }
-   else
-   {
+      m_lastPointerWasTouch = e.motion.which == SDL_TOUCH_MOUSEID;
+      AddMousePosEvent(m_lastPointerWasTouch, e.motion.x, e.motion.y);
+      break;
+   case SDL_EVENT_MOUSE_BUTTON_DOWN:
+   case SDL_EVENT_MOUSE_BUTTON_UP:
+      m_lastPointerWasTouch = e.button.which == SDL_TOUCH_MOUSEID;
       ImGui_ImplSDL3_ProcessEvent(&e);
+      break;
+   case SDL_EVENT_FINGER_DOWN:
+      m_lastPointerWasTouch = true;
+      ImGui_ImplSDL3_ProcessEvent(&e);
+      break;
+   default:
+      ImGui_ImplSDL3_ProcessEvent(&e);
+      break;
    }
 }
 
@@ -344,7 +357,11 @@ void LiveUI::NewFrame()
       SDL_CaptureMouse(want_capture);
    }
 
+   const int touchUIMode = m_player->m_ptable->m_settings.GetPlayer_TouchUI();
+   m_touchUI = (touchUIMode == 2) || (touchUIMode == 0 && (g_isMobile || m_lastPointerWasTouch));
+
    // Late mouse position update to latest (async) global state (needed when dragging main windows)
+   if (!m_lastPointerWasTouch)
    {
       SDL_Point windowPos;
       SDL_FPoint globalMouse;
@@ -667,6 +684,7 @@ void LiveUI::SetupImGuiStyle(const bool isEditor) const
    style.SelectableTextAlign = ImVec2(0.0f, 0.0f);
 
    ImGui::GetStyle().ScaleAllSizes(m_uiScale);
+   style.FontScaleMain = m_fontScale > 0.f ? m_uiScale / m_fontScale : 1.f;
 
    style.Colors[ImGuiCol_Text] = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
    style.Colors[ImGuiCol_TextDisabled] = ImVec4(0.592f, 0.592f, 0.592f, 1.0f);

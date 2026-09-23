@@ -23,6 +23,7 @@
 #include "TableMiscPage.h"
 #include "TableOptionsPage.h"
 #include "TableRulesPage.h"
+#include "UISettingsPage.h"
 #include "VRSettingsPage.h"
 #include "SystemInfoPage.h"
 #include "parts/ball.h"
@@ -43,6 +44,7 @@ InGameUI::InGameUI(LiveUI &liveUI)
    AddPage("settings/input"s, []() { return std::make_unique<InputSettingsPage>(); });
    AddPage("settings/logging"s, []() { return std::make_unique<LoggingSettingsPage>(); });
    AddPage("settings/misc"s, []() { return std::make_unique<MiscSettingsPage>(); });
+   AddPage("settings/ui"s, []() { return std::make_unique<UISettingsPage>(); });
    AddPage("settings/nudge"s, []() { return std::make_unique<NudgeSettingsPage>(); });
    AddPage("settings/plunger"s, []() { return std::make_unique<PlungerSettingsPage>(); });
    AddPage("settings/pov"s, []() { return std::make_unique<PointOfViewSettingsPage>(); });
@@ -64,6 +66,8 @@ void InGameUI::Navigate(const string &path, bool isBack)
 {
    if (!m_activePages.empty() && m_activePages.back()->IsActive())
    {
+      if (!isBack && !m_navigationHistory.empty())
+         m_pageStates[m_navigationHistory.back()] = m_activePages.back()->GetNavState();
       m_activePages.back()->Close(isBack);
    }
    auto it = m_pages.find(path);
@@ -78,6 +82,14 @@ void InGameUI::Navigate(const string &path, bool isBack)
    {
       m_navigationHistory.push_back(path);
       m_activePages.back()->Open(isBack);
+      if (isBack)
+      {
+         if (auto state = m_pageStates.find(path); state != m_pageStates.end())
+         {
+            m_activePages.back()->SetNavState(state->second);
+            m_pageStates.erase(state);
+         }
+      }
    }
    else
    {
@@ -114,6 +126,7 @@ void InGameUI::Open(const string& page)
 
 void InGameUI::Close()
 {
+   m_pageStates.clear();
    if (GetActivePage())
       GetActivePage()->Close(false);
    if (!m_player->IsPlaying(false))

@@ -50,6 +50,7 @@ private:
    uint32_t m_flipperNavStart = 0;
    ankerl::unordered_dense::map<string, std::function<std::unique_ptr<InGameUIPage>()>> m_pages;
    vector<string> m_navigationHistory;
+   ankerl::unordered_dense::map<string, InGameUIPage::NavState> m_pageStates;
    vector<std::unique_ptr<InGameUIPage>> m_activePages;
    uint32_t m_lastRenderMs = 0;
 };
