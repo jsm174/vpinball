@@ -18,7 +18,6 @@ import org.vpinball.app.jni.VPinballLogLevel
 import org.vpinball.app.jni.VPinballPath
 import org.vpinball.app.jni.VPinballProgressData
 import org.vpinball.app.jni.VPinballSettingsSection
-import org.vpinball.app.jni.VPinballSettingsSection.STANDALONE
 import org.vpinball.app.jni.VPinballStatus
 import org.vpinball.app.jni.VPinballWebServerData
 import org.vpinball.app.ui.screens.landing.LandingScreenViewModel
@@ -57,6 +56,7 @@ object VPinballManager : KoinComponent {
         displaySize = if (width > height) Size(height, width) else Size(width, height)
 
         SAFFileSystem.initialize(context)
+        GpuDriverManager.initialize(context)
     }
 
     fun onActivityReady(activity: VPinballActivity) {
@@ -83,6 +83,8 @@ object VPinballManager : KoinComponent {
                 VPinballEvent.INIT_COMPLETE -> {
                     CoroutineScope(Dispatchers.IO).launch {
                         runCatching { FileUtils.copyAssets(context.assets, "", File(vpinballJNI.VPinballGetPath(VPinballPath.ROOT.value))) }
+
+                        withContext(Dispatchers.Main) { GpuDriverManager.applySelectedDriver() }
 
                         synchronized(initLock) {
                             initState = InitState.INITIALIZED
@@ -116,6 +118,7 @@ object VPinballManager : KoinComponent {
                 VPinballEvent.PLAYER_STARTED -> {
                     lastProgressEvent = null
                     lastProgress = null
+                    GpuDriverManager.onPlayerStarted()
                     CoroutineScope(Dispatchers.Main).launch {
                         viewModel.isPlaying = true
                         delay(500)
@@ -307,6 +310,7 @@ object VPinballManager : KoinComponent {
             return
         }
 
+        GpuDriverManager.onPlayerStarting()
         vpinballJNI.VPinballPlay()
     }
 

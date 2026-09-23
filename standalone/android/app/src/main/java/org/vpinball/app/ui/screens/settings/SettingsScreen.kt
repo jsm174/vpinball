@@ -74,6 +74,7 @@ import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 import org.vpinball.app.BuildConfig
 import org.vpinball.app.Credit
+import org.vpinball.app.GpuDriverOption
 import org.vpinball.app.Link
 import org.vpinball.app.R
 import org.vpinball.app.VPinballManager
@@ -106,6 +107,11 @@ fun SettingsScreen(
             uri?.let { viewModel.handleCustomStorageUri(it) }
         }
 
+    val gpuDriverPickerLauncher =
+        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            uri?.let { viewModel.handleInstallGpuDriver(it) }
+        }
+
     LaunchedEffect(Unit) { viewModel.loadSettings() }
 
     Scaffold(
@@ -132,7 +138,69 @@ fun SettingsScreen(
                                 option = viewModel.gfxBackend,
                                 onOptionChanged = { viewModel.handleGfxBackend(value = it) },
                             )
+
+                            if (viewModel.gpuDriverSupported && viewModel.gfxBackend == VPinballGfxBackend.VULKAN) {
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                EnumMenuRow(
+                                    label = "GPU Driver",
+                                    options = viewModel.gpuDriverOptions,
+                                    option = viewModel.gpuDriverOption,
+                                    onOptionChanged = { viewModel.handleGpuDriver(option = it) },
+                                )
+
+                                viewModel.gpuDriverInfo?.let { info ->
+                                    Text(
+                                        text = info,
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(bottom = 8.dp),
+                                    )
+                                }
+
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                ActionRow(
+                                    label = "Install Driver...",
+                                    onClick = {
+                                        gpuDriverPickerLauncher.launch(
+                                            arrayOf("application/zip", "application/x-zip-compressed", "application/octet-stream")
+                                        )
+                                    },
+                                )
+
+                                if (viewModel.gpuDriverOption is GpuDriverOption.Custom) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                    ActionRow(
+                                        label = "Remove Driver",
+                                        onClick = { viewModel.handleUninstallGpuDriver() },
+                                        showDisclosure = false,
+                                        labelColor = Color.VpxRed,
+                                    )
+                                }
+                            }
                         }
+                    }
+
+                    if (!BuildConfig.IS_QUEST && viewModel.gpuDriverSupported && viewModel.gfxBackend == VPinballGfxBackend.VULKAN) {
+                        Text(
+                            text =
+                                buildAnnotatedString {
+                                    append(
+                                        "Replace the Qualcomm Vulkan driver with a custom driver such as Mesa Turnip. Driver packages are available from "
+                                    )
+                                    withLink(
+                                        LinkAnnotation.Url(Link.ADRENOTOOLS_DRIVERS.url, TextLinkStyles(style = SpanStyle(color = Color.VpxRed)))
+                                    ) {
+                                        append("AdrenoToolsDrivers")
+                                    }
+                                    append(".")
+                                },
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp).padding(top = 8.dp),
+                        )
                     }
                 }
 
@@ -385,6 +453,15 @@ fun SettingsScreen(
             }
         },
     )
+
+    viewModel.gpuDriverError?.let { message ->
+        AlertDialog(
+            onDismissRequest = { viewModel.clearGpuDriverError() },
+            title = { Text("GPU Driver") },
+            text = { Text(message) },
+            confirmButton = { TextButton(onClick = { viewModel.clearGpuDriverError() }) { Text("OK", color = Color.VpxRed) } },
+        )
+    }
 
     if (showResetDialog) {
         val coroutineScope = rememberCoroutineScope()

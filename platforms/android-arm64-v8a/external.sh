@@ -19,6 +19,8 @@ echo "  LIBDOF_SHA: ${LIBDOF_SHA}"
 echo "  LIBWINEVBS_SHA: ${LIBWINEVBS_SHA}"
 echo "  FFMPEG_SHA: ${FFMPEG_SHA}"
 echo "  LIBZIP_SHA: ${LIBZIP_SHA}"
+echo "  LIBADRENOTOOLS_SHA: ${LIBADRENOTOOLS_SHA}"
+echo "  LINKERNSBYPASS_SHA: ${LINKERNSBYPASS_SHA}"
 echo ""
 
 if [[ $(uname) == "Linux" ]]; then
@@ -473,6 +475,43 @@ if [ "${LIBZIP_EXPECTED_SHA}" != "${LIBZIP_FOUND_SHA}" ]; then
 fi
 
 #
+# build libadrenotools
+#
+
+LIBADRENOTOOLS_EXPECTED_SHA="${LIBADRENOTOOLS_SHA}-${LINKERNSBYPASS_SHA}_001"
+LIBADRENOTOOLS_FOUND_SHA="$([ -f libadrenotools/cache.txt ] && cat libadrenotools/cache.txt || echo "")"
+
+if [ "${LIBADRENOTOOLS_EXPECTED_SHA}" != "${LIBADRENOTOOLS_FOUND_SHA}" ]; then
+   echo "Building libadrenotools. Expected: ${LIBADRENOTOOLS_EXPECTED_SHA}, Found: ${LIBADRENOTOOLS_FOUND_SHA}"
+
+   rm -rf libadrenotools
+   mkdir libadrenotools
+   cd libadrenotools
+
+   curl -sL https://github.com/bylaws/libadrenotools/archive/${LIBADRENOTOOLS_SHA}.tar.gz -o libadrenotools-${LIBADRENOTOOLS_SHA}.tar.gz
+   tar xzf libadrenotools-${LIBADRENOTOOLS_SHA}.tar.gz
+   mv libadrenotools-${LIBADRENOTOOLS_SHA} libadrenotools
+   curl -sL https://github.com/bylaws/liblinkernsbypass/archive/${LINKERNSBYPASS_SHA}.tar.gz -o liblinkernsbypass-${LINKERNSBYPASS_SHA}.tar.gz
+   tar xzf liblinkernsbypass-${LINKERNSBYPASS_SHA}.tar.gz
+   rm -rf libadrenotools/lib/linkernsbypass
+   mv liblinkernsbypass-${LINKERNSBYPASS_SHA} libadrenotools/lib/linkernsbypass
+   cd libadrenotools
+   cmake \
+      -DCMAKE_SYSTEM_NAME=Android \
+      -DCMAKE_SYSTEM_VERSION=33 \
+      -DCMAKE_ANDROID_ARCH_ABI=arm64-v8a \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=ON \
+      -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
+      -B build
+   cmake --build build -- -j${NUM_PROCS}
+   cd ..
+
+   echo "$LIBADRENOTOOLS_EXPECTED_SHA" > cache.txt
+
+   cd ..
+fi
+
+#
 # copy libraries
 #
 
@@ -496,6 +535,12 @@ cp bgfx/bgfx.cmake/build/cmake/bimg/libbimg_encode.a ../../../third-party/build-
 cp -r bgfx/bgfx.cmake/bimg/include/bimg ../../../third-party/include/
 cp bgfx/bgfx.cmake/build/cmake/bx/libbx.a ../../../third-party/build-libs/android-arm64-v8a
 cp -r bgfx/bgfx.cmake/bx/include/bx ../../../third-party/include/
+
+cp libadrenotools/libadrenotools/build/libadrenotools.a ../../../third-party/build-libs/android-arm64-v8a
+cp libadrenotools/libadrenotools/build/lib/linkernsbypass/liblinkernsbypass.a ../../../third-party/build-libs/android-arm64-v8a
+cp -r libadrenotools/libadrenotools/include/adrenotools ../../../third-party/include/
+cp libadrenotools/libadrenotools/build/src/hook/libhook_impl.so ../../../third-party/runtime-libs/android-arm64-v8a
+cp libadrenotools/libadrenotools/build/src/hook/libmain_hook.so ../../../third-party/runtime-libs/android-arm64-v8a
 
 cp pinmame/pinmame/build/libpinmame.so ../../../third-party/runtime-libs/android-arm64-v8a
 mkdir -p ../../../third-party/include/pinmame

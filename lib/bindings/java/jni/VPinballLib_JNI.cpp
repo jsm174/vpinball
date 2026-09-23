@@ -4,6 +4,7 @@
 
 #include "../../../include/vpinball/VPinballLib_C.h"
 #include "../../../src/VPinballLib.h"
+#include "../../../src/VPinballLib_Android.h"
 
 #include <SDL3/SDL_system.h>
 #include <jni.h>
@@ -144,6 +145,23 @@ JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballSaveValueBo
 JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballResetIni(JNIEnv* env, jobject obj)
 {
    return VPinballResetIni();
+}
+
+JNIEXPORT jboolean JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballInitGpuDriver(JNIEnv* env, jobject obj, jstring hookLibDir, jstring driverDir, jstring driverLibName)
+{
+   const char* pHookLibDir = env->GetStringUTFChars(hookLibDir, nullptr);
+   const char* pDriverDir = env->GetStringUTFChars(driverDir, nullptr);
+   const char* pDriverLibName = env->GetStringUTFChars(driverLibName, nullptr);
+   bool result = InitGpuDriver(pHookLibDir, pDriverDir, pDriverLibName);
+   env->ReleaseStringUTFChars(driverLibName, pDriverLibName);
+   env->ReleaseStringUTFChars(driverDir, pDriverDir);
+   env->ReleaseStringUTFChars(hookLibDir, pHookLibDir);
+   return result;
+}
+
+JNIEXPORT jstring JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballGetGpuDriverInfo(JNIEnv* env, jobject obj)
+{
+   return env->NewStringUTF(GetGpuDriverInfo().c_str());
 }
 
 JNIEXPORT void JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballUpdateWebServer(JNIEnv* env, jobject obj)

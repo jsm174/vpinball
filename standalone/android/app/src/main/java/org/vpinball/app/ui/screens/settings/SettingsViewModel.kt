@@ -1,5 +1,6 @@
 package org.vpinball.app.ui.screens.settings
 
+import android.net.Uri
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -8,6 +9,10 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.vpinball.app.GpuDriverInstallResult
+import org.vpinball.app.GpuDriverManager
+import org.vpinball.app.GpuDriverOption
 import org.vpinball.app.SAFFileSystem
 import org.vpinball.app.VPinballManager
 import org.vpinball.app.jni.VPinballExternalDMD
@@ -27,6 +32,21 @@ class SettingsViewModel : ViewModel() {
         private set
 
     var gfxBackend by mutableStateOf(VPinballGfxBackend.OPENGLES)
+        private set
+
+    val gpuDriverSupported: Boolean
+        get() = GpuDriverManager.isSupported
+
+    var gpuDriverOptions by mutableStateOf<List<GpuDriverOption>>(listOf(GpuDriverOption.System))
+        private set
+
+    var gpuDriverOption by mutableStateOf<GpuDriverOption>(GpuDriverOption.System)
+        private set
+
+    var gpuDriverInfo by mutableStateOf<String?>(null)
+        private set
+
+    var gpuDriverError by mutableStateOf<String?>(null)
         private set
 
     var storageMode by mutableStateOf(VPinballStorageMode.INTERNAL)
@@ -72,6 +92,8 @@ class SettingsViewModel : ViewModel() {
 
         renderingModeOverride = (VPinballManager.loadValue(STANDALONE, "RenderingModeOverride", -1) == 2)
         gfxBackend = VPinballGfxBackend.fromString(VPinballManager.loadValue(PLAYER, "GfxBackend", VPinballGfxBackend.OPENGLES.value))
+
+        loadGpuDrivers()
 
         val savedSAFPath = VPinballManager.loadValue(STANDALONE, "SAFPath", "")
         storageMode = VPinballStorageMode.fromSAFPath(savedSAFPath)
@@ -125,6 +147,53 @@ class SettingsViewModel : ViewModel() {
     fun handleGfxBackend(value: VPinballGfxBackend) {
         gfxBackend = value
         VPinballManager.saveValue(PLAYER, "GfxBackend", value.value)
+    }
+
+    fun handleGpuDriver(option: GpuDriverOption) {
+        val driver = (option as? GpuDriverOption.Custom)?.driver
+        if (!GpuDriverManager.select(driver)) {
+            GpuDriverManager.select(null)
+            gpuDriverError = "Unable to load the selected GPU driver. The system driver will be used instead."
+        }
+        loadGpuDrivers()
+    }
+
+    fun handleInstallGpuDriver(uri: Uri) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val result = GpuDriverManager.install(uri)
+            withContext(Dispatchers.Main) {
+                when (result) {
+                    is GpuDriverInstallResult.Success -> handleGpuDriver(GpuDriverOption.Custom(result.driver))
+                    is GpuDriverInstallResult.Error -> gpuDriverError = result.message
+                }
+            }
+        }
+    }
+
+    fun handleUninstallGpuDriver() {
+        (gpuDriverOption as? GpuDriverOption.Custom)?.let { GpuDriverManager.uninstall(it.driver) }
+        loadGpuDrivers()
+    }
+
+    fun clearGpuDriverError() {
+        gpuDriverError = null
+    }
+
+    private fun loadGpuDrivers() {
+        if (!gpuDriverSupported) {
+            return
+        }
+
+        val drivers = GpuDriverManager.installedDrivers()
+        val selectedId = GpuDriverManager.selectedDriverId()
+        gpuDriverOptions = listOf(GpuDriverOption.System) + drivers.map { GpuDriverOption.Custom(it) }
+        gpuDriverOption = drivers.firstOrNull { it.id == selectedId }?.let { GpuDriverOption.Custom(it) } ?: GpuDriverOption.System
+
+        gpuDriverInfo = null
+        CoroutineScope(Dispatchers.IO).launch {
+            val info = runCatching { GpuDriverManager.driverInfo().summary }.getOrNull()
+            withContext(Dispatchers.Main) { gpuDriverInfo = info }
+        }
     }
 
     fun handleStorageMode(mode: VPinballStorageMode) {

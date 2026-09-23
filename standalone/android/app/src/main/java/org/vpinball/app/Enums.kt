@@ -20,6 +20,7 @@ enum class Link(val url: String) {
     LIBDOF("https://github.com/vpinball/libdof"),
     LIBVNI("https://github.com/PPUC/libvni"),
     LIBWINEVBS("https://github.com/vpinball/libwinevbs"),
+    ADRENOTOOLS_DRIVERS("https://github.com/K11MCH1/AdrenoToolsDrivers/releases"),
     THIRDPARTY("https://github.com/vpinball/vpinball/blob/master/third-party/README.md");
 
     fun open(context: Context) {

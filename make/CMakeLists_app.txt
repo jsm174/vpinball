@@ -656,6 +656,8 @@ elseif(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator" OR PLATFORM 
 
    if(PLATFORM STREQUAL "android")
       list(APPEND VPINBALL_SOURCES
+         lib/src/VPinballLib_Android.h
+         lib/src/VPinballLib_Android.cpp
          lib/bindings/java/jni/VPinballLib_JNI.cpp
       )
    endif()
@@ -788,11 +790,17 @@ elseif(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator" OR PLATFORM 
       )
    elseif(PLATFORM STREQUAL "android")
       target_link_libraries(vpinball PUBLIC
+         adrenotools
+         linkernsbypass
          android
          log
          EGL
          GLESv3
          vulkan
+      )
+      target_link_options(vpinball PRIVATE
+         -Wl,--wrap=dlopen
+         -Wl,--wrap=dlclose
       )
    endif()
 
