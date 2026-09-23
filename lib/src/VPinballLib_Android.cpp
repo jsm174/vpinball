@@ -5,7 +5,6 @@
 
 #include <dlfcn.h>
 #include <mutex>
-#include <cstring>
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
@@ -14,9 +13,6 @@
 #if defined(__aarch64__)
 #include <adrenotools/driver.h>
 #endif
-
-extern "C" void* __real_dlopen(const char* filename, int flags);
-extern "C" int __real_dlclose(void* handle);
 
 namespace {
 
@@ -31,24 +27,10 @@ std::string VulkanVersionString(uint32_t version)
 
 }
 
-extern "C" void* __wrap_dlopen(const char* filename, int flags)
+extern "C" void* bgfx_android_vulkan_library()
 {
-   if (filename && strcmp(filename, "libvulkan.so") == 0) {
-      std::lock_guard<std::mutex> lock(g_gpuDriverMutex);
-      if (g_gpuDriverLibrary)
-         return g_gpuDriverLibrary;
-   }
-   return __real_dlopen(filename, flags);
-}
-
-extern "C" int __wrap_dlclose(void* handle)
-{
-   {
-      std::lock_guard<std::mutex> lock(g_gpuDriverMutex);
-      if (handle && handle == g_gpuDriverLibrary)
-         return 0;
-   }
-   return __real_dlclose(handle);
+   std::lock_guard<std::mutex> lock(g_gpuDriverMutex);
+   return g_gpuDriverLibrary;
 }
 
 namespace VPinballLib {
@@ -98,7 +80,7 @@ std::string GetGpuDriverInfo()
 
    const bool opened = lib == nullptr;
    if (opened)
-      lib = __real_dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
+      lib = dlopen("libvulkan.so", RTLD_NOW | RTLD_LOCAL);
 
    if (!lib) {
       j["error"] = "libvulkan.so not available";
@@ -111,7 +93,7 @@ std::string GetGpuDriverInfo()
    if (!createInstance) {
       j["error"] = "vkCreateInstance not available";
       if (opened)
-         __real_dlclose(lib);
+         dlclose(lib);
       return j.dump();
    }
 
@@ -126,7 +108,7 @@ std::string GetGpuDriverInfo()
    if (createInstance(&createInfo, nullptr, &instance) != VK_SUCCESS || instance == VK_NULL_HANDLE) {
       j["error"] = "vkCreateInstance failed";
       if (opened)
-         __real_dlclose(lib);
+         dlclose(lib);
       return j.dump();
    }
 
@@ -169,7 +151,7 @@ std::string GetGpuDriverInfo()
       destroyInstance(instance, nullptr);
 
    if (opened)
-      __real_dlclose(lib);
+      dlclose(lib);
 
    return j.dump();
 }

@@ -798,10 +798,6 @@ elseif(PLATFORM STREQUAL "ios" OR PLATFORM STREQUAL "ios-simulator" OR PLATFORM 
          GLESv3
          vulkan
       )
-      target_link_options(vpinball PRIVATE
-         -Wl,--wrap=dlopen
-         -Wl,--wrap=dlclose
-      )
    endif()
 
    add_custom_command(TARGET vpinball POST_BUILD
