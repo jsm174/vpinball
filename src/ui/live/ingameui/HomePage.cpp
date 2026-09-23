@@ -111,6 +111,8 @@ void HomePage::BuildPage()
 
    AddItem(std::make_unique<InGameUIItem>("Input Settings"s, ""s, "settings/input"s));
 
+   AddItem(std::make_unique<InGameUIItem>("UI Settings"s, ""s, "settings/ui"s));
+
    AddItem(std::make_unique<InGameUIItem>("Plunger Settings"s, ""s, "settings/plunger"s));
 
    AddItem(std::make_unique<InGameUIItem>("Nudge & Tilt Settings"s, ""s, "settings/nudge"s));

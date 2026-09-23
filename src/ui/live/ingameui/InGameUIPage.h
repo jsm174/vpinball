@@ -14,6 +14,11 @@ class InGameUIPage
 {
 public:
    enum class SaveMode { None, Global, Table, Both };
+   struct NavState
+   {
+      int selectedItem = 0;
+      float scrollY = 0.f;
+   };
 
    InGameUIPage(const string& title, const string& info, SaveMode saveMode);
    virtual ~InGameUIPage() = default;
@@ -44,6 +49,15 @@ public:
    virtual bool IsFlipperNavNeeded() const { return false; }
 
    InGameUIItem* GetItem(const string& label) const;
+
+   void SelectItem(int index) { m_selectedItem = index; }
+   NavState GetNavState() const { return { m_selectedItem, m_scrollY }; }
+   void SetNavState(const NavState& state)
+   {
+      m_selectedItem = state.selectedItem;
+      m_pendingScrollY = state.scrollY;
+      m_pendingScrollFrames = 0;
+   }
 
    virtual bool IsPlayerPauseAllowed() const { return true; }
 
@@ -81,9 +95,22 @@ private:
    uint32_t m_pressStartMs = 0;
    string m_pressedItemLabel;
    float m_pressedItemScroll = 0.f;
-   bool m_isDraggingScroll = false;
+   float m_scrollY = 0.f;
+   float m_pendingScrollY = -1.f;
+   int m_pendingScrollFrames = 0;
+
+   // Touch gestures
+   enum class Gesture { None, Pending, Scroll, Adjust, Done };
+   Gesture m_gesture = Gesture::None;
+   ImVec2 m_gestureStartPos = ImVec2(0.f, 0.f);
+   uint32_t m_gestureStartMs = 0;
+   int m_gestureItem = -1;
+   float m_gestureStartValue = 0.f;
    float m_dragScrollVelocity = 0.f; // px/s, positive = scroll down
-   ImVec2 m_dragScrollStartPos = ImVec2(0.f, 0.f);
+   bool m_pressedOutside = false;
+   void StepItem(int itemIndex, int direction);
+   void OpenEnumPicker(int itemIndex);
+
    vector<std::unique_ptr<InGameUIItem>> m_items;
    int m_selectedItem = 0;
    unsigned int m_resetNotifId = 0;
@@ -94,7 +121,7 @@ private:
    bool m_defineActionPopup = false;
    InGameUIItem* m_defineActionItem = nullptr;
 
-   static void RenderToggle(const string& label, const ImVec2& size, bool& v);
+   static void RenderToggle(const string& label, const ImVec2& size, bool& v, bool interactive = true, bool highlighted = false, ImU32 onColor = IM_COL32(64, 180, 32, 255));
    static void TextWithEllipsis(const string& text, float maxWidth);
 };
 
