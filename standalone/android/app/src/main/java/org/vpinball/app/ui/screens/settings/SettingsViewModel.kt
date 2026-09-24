@@ -49,6 +49,9 @@ class SettingsViewModel : ViewModel() {
     var gpuDriverEnvironment by mutableStateOf("")
         private set
 
+    var gpuDriverRestartRequired by mutableStateOf(false)
+        private set
+
     var gpuDriverError by mutableStateOf<String?>(null)
         private set
 
@@ -153,12 +156,12 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun handleGpuDriver(option: GpuDriverOption) {
-        val driver = (option as? GpuDriverOption.Custom)?.driver
-        if (!GpuDriverManager.select(driver)) {
-            GpuDriverManager.select(null)
-            gpuDriverError = "Unable to load the selected GPU driver. The system driver will be used instead."
-        }
+        GpuDriverManager.select((option as? GpuDriverOption.Custom)?.driver)
         loadGpuDrivers()
+    }
+
+    fun handleRestartApp(context: android.content.Context) {
+        GpuDriverManager.restartApp(context)
     }
 
     fun handleInstallGpuDriver(uri: Uri) {
@@ -174,10 +177,7 @@ class SettingsViewModel : ViewModel() {
     }
 
     fun handleGpuDriverEnvironment(value: String) {
-        if (!GpuDriverManager.setEnvironment(value)) {
-            GpuDriverManager.select(null)
-            gpuDriverError = "Unable to reload the GPU driver with the new environment. The system driver will be used instead."
-        }
+        GpuDriverManager.setEnvironment(value)
         loadGpuDrivers()
     }
 
@@ -200,6 +200,10 @@ class SettingsViewModel : ViewModel() {
         gpuDriverOptions = listOf(GpuDriverOption.System) + drivers.map { GpuDriverOption.Custom(it) }
         gpuDriverOption = drivers.firstOrNull { it.id == selectedId }?.let { GpuDriverOption.Custom(it) } ?: GpuDriverOption.System
         gpuDriverEnvironment = GpuDriverManager.environment()
+        gpuDriverRestartRequired = GpuDriverManager.restartRequired
+        if (gpuDriverError == null && !gpuDriverRestartRequired) {
+            gpuDriverError = GpuDriverManager.lastLoadError
+        }
 
         gpuDriverInfo = null
         CoroutineScope(Dispatchers.IO).launch {

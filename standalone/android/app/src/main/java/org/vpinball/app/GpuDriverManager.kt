@@ -1,6 +1,7 @@
 package org.vpinball.app
 
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import java.io.File
@@ -69,6 +70,14 @@ object GpuDriverManager {
     private const val MAX_ID_LENGTH = 64
 
     private lateinit var context: Context
+    private var loadedDriverId: String? = null
+    private var loadedEnvironment: String? = null
+
+    var lastLoadError: String? = null
+        private set
+
+    val restartRequired: Boolean
+        get() = loadedDriverId != null && (loadedDriverId != selectedDriverId() || loadedEnvironment != environment())
 
     val isSupported: Boolean by lazy { !BuildConfig.IS_QUEST && Build.SUPPORTED_64_BIT_ABIS.contains("arm64-v8a") && File("/dev/kgsl-3d0").exists() }
 
@@ -80,9 +89,8 @@ object GpuDriverManager {
 
     fun environment(): String = VPinballManager.loadValue(PLAYER, ENVIRONMENT_SETTING_KEY, "")
 
-    fun setEnvironment(value: String): Boolean {
+    fun setEnvironment(value: String) {
         VPinballManager.saveValue(PLAYER, ENVIRONMENT_SETTING_KEY, value.trim())
-        return loadDriver(selectedDriver())
     }
 
     fun selectedDriver(): GpuDriver? = selectedDriverId().takeIf { it.isNotEmpty() }?.let { parseDriver(File(driversDir(), it)) }
@@ -111,12 +119,21 @@ object GpuDriverManager {
             VPinballManager.saveValue(PLAYER, SETTING_KEY, "")
         }
 
-        loadDriver(driver)
+        val environment = environment()
+        val loaded = loadDriver(driver, environment)
+        loadedDriverId = if (loaded) driver?.id ?: "" else ""
+        loadedEnvironment = environment
+        lastLoadError = if (loaded) null else "Unable to load the GPU driver \"${driver?.name}\". The system driver is being used instead."
     }
 
-    fun select(driver: GpuDriver?): Boolean {
+    fun select(driver: GpuDriver?) {
         VPinballManager.saveValue(PLAYER, SETTING_KEY, driver?.id ?: "")
-        return loadDriver(driver)
+    }
+
+    fun restartApp(context: Context) {
+        val intent = context.packageManager.getLaunchIntentForPackage(context.packageName) ?: return
+        context.startActivity(Intent.makeRestartActivityTask(intent.component))
+        Runtime.getRuntime().exit(0)
     }
 
     fun onPlayerStarting() {
@@ -224,10 +241,10 @@ object GpuDriverManager {
         return GpuDriverInstallResult.Success(driver)
     }
 
-    private fun loadDriver(driver: GpuDriver?): Boolean {
+    private fun loadDriver(driver: GpuDriver?, environment: String): Boolean {
         val hookLibDir = context.applicationInfo.nativeLibraryDir + File.separator
         val driverDir = driver?.let { it.dir.absolutePath + File.separator } ?: ""
-        val loaded = VPinballManager.vpinballJNI.VPinballInitGpuDriver(hookLibDir, driverDir, driver?.libraryName ?: "", environment())
+        val loaded = VPinballManager.vpinballJNI.VPinballInitGpuDriver(hookLibDir, driverDir, driver?.libraryName ?: "", environment)
         if (!loaded) {
             VPinballManager.log(VPinballLogLevel.ERROR, "Unable to load GPU driver: ${driver?.name}")
         }

@@ -151,7 +151,7 @@ fun SettingsScreen(
 
                                 viewModel.gpuDriverInfo?.let { info ->
                                     Text(
-                                        text = info,
+                                        text = "Active: $info",
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         modifier = Modifier.padding(bottom = 8.dp),
@@ -184,6 +184,17 @@ fun SettingsScreen(
                                     ActionRow(
                                         label = "Remove Driver",
                                         onClick = { viewModel.handleUninstallGpuDriver() },
+                                        showDisclosure = false,
+                                        labelColor = Color.VpxRed,
+                                    )
+                                }
+
+                                if (viewModel.gpuDriverRestartRequired) {
+                                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
+                                    ActionRow(
+                                        label = "Restart to Apply Driver Changes",
+                                        onClick = { viewModel.handleRestartApp(context) },
                                         showDisclosure = false,
                                         labelColor = Color.VpxRed,
                                     )
