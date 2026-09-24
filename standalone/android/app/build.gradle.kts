@@ -116,6 +116,14 @@ android {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfig = signingConfigs.getByName("release")
         }
+        create("diagnostic") {
+            initWith(getByName("release"))
+            isDebuggable = true
+            isMinifyEnabled = false
+            isShrinkResources = false
+            signingConfig = signingConfigs.getByName("release")
+            matchingFallbacks += "release"
+        }
     }
 
     sourceSets { named("main") { jniLibs.srcDir("src/main/jniLibs") } }

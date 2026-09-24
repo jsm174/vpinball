@@ -147,12 +147,14 @@ JNIEXPORT jint JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballResetIni(JN
    return VPinballResetIni();
 }
 
-JNIEXPORT jboolean JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballInitGpuDriver(JNIEnv* env, jobject obj, jstring hookLibDir, jstring driverDir, jstring driverLibName)
+JNIEXPORT jboolean JNICALL Java_org_vpinball_app_jni_VPinballJNI_VPinballInitGpuDriver(JNIEnv* env, jobject obj, jstring hookLibDir, jstring driverDir, jstring driverLibName, jstring environment)
 {
    const char* pHookLibDir = env->GetStringUTFChars(hookLibDir, nullptr);
    const char* pDriverDir = env->GetStringUTFChars(driverDir, nullptr);
    const char* pDriverLibName = env->GetStringUTFChars(driverLibName, nullptr);
-   bool result = InitGpuDriver(pHookLibDir, pDriverDir, pDriverLibName);
+   const char* pEnvironment = env->GetStringUTFChars(environment, nullptr);
+   bool result = InitGpuDriver(pHookLibDir, pDriverDir, pDriverLibName, pEnvironment);
+   env->ReleaseStringUTFChars(environment, pEnvironment);
    env->ReleaseStringUTFChars(driverLibName, pDriverLibName);
    env->ReleaseStringUTFChars(driverDir, pDriverDir);
    env->ReleaseStringUTFChars(hookLibDir, pHookLibDir);

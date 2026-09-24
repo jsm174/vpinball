@@ -61,6 +61,7 @@ sealed class GpuDriverInstallResult {
 
 object GpuDriverManager {
     private const val SETTING_KEY = "GpuDriver"
+    private const val ENVIRONMENT_SETTING_KEY = "GpuDriverEnv"
     private const val META_FILE = "meta.json"
     private const val DRIVERS_DIR = "gpu_drivers"
     private const val PENDING_MARKER = "gpu_driver_pending"
@@ -76,6 +77,13 @@ object GpuDriverManager {
     }
 
     fun selectedDriverId(): String = VPinballManager.loadValue(PLAYER, SETTING_KEY, "")
+
+    fun environment(): String = VPinballManager.loadValue(PLAYER, ENVIRONMENT_SETTING_KEY, "")
+
+    fun setEnvironment(value: String): Boolean {
+        VPinballManager.saveValue(PLAYER, ENVIRONMENT_SETTING_KEY, value.trim())
+        return loadDriver(selectedDriver())
+    }
 
     fun selectedDriver(): GpuDriver? = selectedDriverId().takeIf { it.isNotEmpty() }?.let { parseDriver(File(driversDir(), it)) }
 
@@ -219,7 +227,7 @@ object GpuDriverManager {
     private fun loadDriver(driver: GpuDriver?): Boolean {
         val hookLibDir = context.applicationInfo.nativeLibraryDir + File.separator
         val driverDir = driver?.let { it.dir.absolutePath + File.separator } ?: ""
-        val loaded = VPinballManager.vpinballJNI.VPinballInitGpuDriver(hookLibDir, driverDir, driver?.libraryName ?: "")
+        val loaded = VPinballManager.vpinballJNI.VPinballInitGpuDriver(hookLibDir, driverDir, driver?.libraryName ?: "", environment())
         if (!loaded) {
             VPinballManager.log(VPinballLogLevel.ERROR, "Unable to load GPU driver: ${driver?.name}")
         }

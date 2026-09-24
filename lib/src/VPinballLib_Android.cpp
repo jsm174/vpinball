@@ -5,6 +5,8 @@
 
 #include <dlfcn.h>
 #include <mutex>
+#include <set>
+#include <sstream>
 
 #define VK_NO_PROTOTYPES
 #include <vulkan/vulkan.h>
@@ -19,6 +21,27 @@ namespace {
 std::mutex g_gpuDriverMutex;
 void* g_gpuDriverLibrary = nullptr;
 std::string g_gpuDriverName;
+std::set<std::string> g_gpuDriverEnvKeys;
+
+void ApplyGpuDriverEnvironment(const std::string& environment)
+{
+   for (const std::string& key : g_gpuDriverEnvKeys)
+      unsetenv(key.c_str());
+   g_gpuDriverEnvKeys.clear();
+
+   std::istringstream stream(environment);
+   std::string token;
+   while (stream >> token) {
+      const size_t eq = token.find('=');
+      if (eq == 0 || eq == std::string::npos)
+         continue;
+      const std::string key = token.substr(0, eq);
+      const std::string value = token.substr(eq + 1);
+      setenv(key.c_str(), value.c_str(), 1);
+      g_gpuDriverEnvKeys.insert(key);
+      PLOGI << "GPU driver: environment " << key << '=' << value;
+   }
+}
 
 std::string VulkanVersionString(uint32_t version)
 {
@@ -35,9 +58,11 @@ extern "C" void* bgfx_android_vulkan_library()
 
 namespace VPinballLib {
 
-bool InitGpuDriver(const std::string& hookLibDir, const std::string& driverDir, const std::string& driverLibName)
+bool InitGpuDriver(const std::string& hookLibDir, const std::string& driverDir, const std::string& driverLibName, const std::string& environment)
 {
    std::lock_guard<std::mutex> lock(g_gpuDriverMutex);
+
+   ApplyGpuDriverEnvironment(environment);
 
    if (driverLibName.empty()) {
       g_gpuDriverLibrary = nullptr;

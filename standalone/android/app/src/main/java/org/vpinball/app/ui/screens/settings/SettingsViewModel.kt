@@ -46,6 +46,9 @@ class SettingsViewModel : ViewModel() {
     var gpuDriverInfo by mutableStateOf<String?>(null)
         private set
 
+    var gpuDriverEnvironment by mutableStateOf("")
+        private set
+
     var gpuDriverError by mutableStateOf<String?>(null)
         private set
 
@@ -170,6 +173,14 @@ class SettingsViewModel : ViewModel() {
         }
     }
 
+    fun handleGpuDriverEnvironment(value: String) {
+        if (!GpuDriverManager.setEnvironment(value)) {
+            GpuDriverManager.select(null)
+            gpuDriverError = "Unable to reload the GPU driver with the new environment. The system driver will be used instead."
+        }
+        loadGpuDrivers()
+    }
+
     fun handleUninstallGpuDriver() {
         (gpuDriverOption as? GpuDriverOption.Custom)?.let { GpuDriverManager.uninstall(it.driver) }
         loadGpuDrivers()
@@ -188,6 +199,7 @@ class SettingsViewModel : ViewModel() {
         val selectedId = GpuDriverManager.selectedDriverId()
         gpuDriverOptions = listOf(GpuDriverOption.System) + drivers.map { GpuDriverOption.Custom(it) }
         gpuDriverOption = drivers.firstOrNull { it.id == selectedId }?.let { GpuDriverOption.Custom(it) } ?: GpuDriverOption.System
+        gpuDriverEnvironment = GpuDriverManager.environment()
 
         gpuDriverInfo = null
         CoroutineScope(Dispatchers.IO).launch {

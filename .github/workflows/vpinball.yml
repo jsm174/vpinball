@@ -633,6 +633,7 @@ jobs:
           ./gradlew \
             assemble${FLAVOR_CAPITALIZED}${{ matrix.config }} \
             bundle${FLAVOR_CAPITALIZED}${{ matrix.config }} \
+            assemble${FLAVOR_CAPITALIZED}Diagnostic \
             -PversionName="${{ needs.version.outputs.version_full }}" \
             -Psha_short="${{ needs.version.outputs.sha_short }}"
       - if: needs.context.outputs.is_pr == 'true' || github.repository != 'vpinball/vpinball'
@@ -653,6 +654,7 @@ jobs:
           ./gradlew \
             assemble${FLAVOR_CAPITALIZED}${{ matrix.config }} \
             bundle${FLAVOR_CAPITALIZED}${{ matrix.config }} \
+            assemble${FLAVOR_CAPITALIZED}Diagnostic \
             -PversionName="${{ needs.version.outputs.version_full }}" \
             -Psha_short="${{ needs.version.outputs.sha_short }}"
       - name: Stage apk/aab artifacts
@@ -661,6 +663,8 @@ jobs:
           FLAVOR_LC=$(echo "${{ matrix.flavor }}" | tr '[:upper:]' '[:lower:]')
           mkdir tmp-apk
           cp standalone/android/app/build/outputs/apk/${FLAVOR_LC}/${CONFIG_LC}/*.apk tmp-apk/VPinballX_BGFX-${{ needs.version.outputs.tag }}-android-${{ matrix.flavor }}-${{ matrix.config }}.apk
+          mkdir tmp-apk-diagnostic
+          cp standalone/android/app/build/outputs/apk/${FLAVOR_LC}/diagnostic/*.apk tmp-apk-diagnostic/VPinballX_BGFX-${{ needs.version.outputs.tag }}-android-${{ matrix.flavor }}-Diagnostic.apk
           if [[ "${{ github.repository }}" == "vpinball/vpinball" ]]; then
              mkdir tmp-aab
              cp standalone/android/app/build/outputs/bundle/${FLAVOR_LC}${{ matrix.config }}/*.aab tmp-aab/VPinballX_BGFX-${{ needs.version.outputs.tag }}-android-${{ matrix.flavor }}-${{ matrix.config }}.aab
@@ -670,6 +674,12 @@ jobs:
         with:
           name: VPinballX_BGFX-${{ needs.version.outputs.tag }}-android-${{ matrix.flavor }}-${{ matrix.config }}-apk
           path: tmp-apk/*
+          archive: false
+      - name: Upload diagnostic apk
+        uses: actions/upload-artifact@v7
+        with:
+          name: VPinballX_BGFX-${{ needs.version.outputs.tag }}-android-${{ matrix.flavor }}-Diagnostic-apk
+          path: tmp-apk-diagnostic/*
           archive: false
       - if: github.repository == 'vpinball/vpinball'
         name: Upload aab

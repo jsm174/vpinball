@@ -160,6 +160,15 @@ fun SettingsScreen(
 
                                 HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
 
+                                TextInputRow(
+                                    label = "Driver Environment",
+                                    value = viewModel.gpuDriverEnvironment,
+                                    placeholder = "TU_DEBUG=sysmem,noubwc",
+                                    onValueChange = { viewModel.handleGpuDriverEnvironment(value = it) },
+                                )
+
+                                HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+
                                 ActionRow(
                                     label = "Install Driver...",
                                     onClick = {
@@ -788,6 +797,76 @@ private fun IPAddressPortInputRow(
                             } else {
                                 Color.Gray
                             },
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { isDialogOpen = false }) {
+                    Text(
+                        text = "Cancel",
+                        color = Color.VpxRed,
+                        fontSize = MaterialTheme.typography.titleMedium.fontSize,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+            },
+        )
+    }
+}
+
+@Composable
+private fun TextInputRow(label: String, value: String, placeholder: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+    var isDialogOpen by remember { mutableStateOf(false) }
+    var tempValue by remember(value) { mutableStateOf(TextFieldValue(value)) }
+    val focusRequester = remember { FocusRequester() }
+
+    Row(verticalAlignment = Alignment.CenterVertically, modifier = modifier.padding(vertical = 8.dp).clickable { isDialogOpen = true }) {
+        Text(text = label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+
+        Text(
+            text = value.ifEmpty { "None" },
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier = Modifier.padding(start = 16.dp),
+        )
+    }
+
+    if (isDialogOpen) {
+        AlertDialog(
+            title = { Text(text = label, style = MaterialTheme.typography.titleMedium) },
+            text = {
+                OutlinedTextField(
+                    value = tempValue,
+                    onValueChange = { tempValue = it },
+                    placeholder = { Text(placeholder, color = MaterialTheme.colorScheme.onSurfaceVariant) },
+                    colors =
+                        OutlinedTextFieldDefaults.colors(
+                            cursorColor = Color.VpxRed,
+                            selectionColors = TextSelectionColors(handleColor = Color.Transparent, backgroundColor = Color.VpxRed.copy(alpha = 0.5f)),
+                            focusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    minLines = 3,
+                    modifier = Modifier.focusRequester(focusRequester),
+                )
+                LaunchedEffect(Unit) {
+                    tempValue = tempValue.copy(selection = TextRange(tempValue.text.length))
+                    focusRequester.requestFocus()
+                }
+            },
+            onDismissRequest = {},
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onValueChange(tempValue.text)
+                        isDialogOpen = false
+                    }
+                ) {
+                    Text(
+                        text = "OK",
+                        color = Color.VpxRed,
                         fontSize = MaterialTheme.typography.titleMedium.fontSize,
                         fontWeight = FontWeight.SemiBold,
                     )
