@@ -104,9 +104,6 @@ if(BUILD_SHARED AND NOT (PLATFORM STREQUAL "windows" AND NOT MSVC))
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/serum64.dll" "${PLUGINS_DIR}/dmdutil/serum64.dll"
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/pupdmd64.dll" "${PLUGINS_DIR}/dmdutil/pupdmd64.dll"
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/vni64.dll" "${PLUGINS_DIR}/dmdutil/vni64.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libgcc_s_seh-1.dll" "${PLUGINS_DIR}/dmdutil/libgcc_s_seh-1.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libstdc++-6.dll" "${PLUGINS_DIR}/dmdutil/libstdc++-6.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libwinpthread-1.dll" "${PLUGINS_DIR}/dmdutil/libwinpthread-1.dll"
             )
          elseif (ARCH STREQUAL "x86")
             add_custom_command(TARGET DMDUtilPlugin POST_BUILD
@@ -119,9 +116,6 @@ if(BUILD_SHARED AND NOT (PLATFORM STREQUAL "windows" AND NOT MSVC))
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/serum.dll" "${PLUGINS_DIR}/dmdutil/serum.dll"
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/pupdmd.dll" "${PLUGINS_DIR}/dmdutil/pupdmd.dll"
                COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/vni.dll" "${PLUGINS_DIR}/dmdutil/vni.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libgcc_s_dw2-1.dll" "${PLUGINS_DIR}/dmdutil/libgcc_s_dw2-1.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libstdc++-6.dll" "${PLUGINS_DIR}/dmdutil/libstdc++-6.dll"
-               COMMAND "${CMAKE_COMMAND}" -E copy "${RUNTIME_LIBS_DIR}/libwinpthread-1.dll" "${PLUGINS_DIR}/dmdutil/libwinpthread-1.dll"
             )
          endif()
       elseif(PLATFORM STREQUAL "windows-mingw")

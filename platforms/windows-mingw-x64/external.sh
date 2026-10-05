@@ -49,6 +49,8 @@ if [ "${SDL3_EXPECTED_SHA}" != "${SDL3_FOUND_SHA}" ]; then
       -DSDL_SHARED=ON \
       -DSDL_STATIC=OFF \
       -DSDL_TEST_LIBRARY=OFF \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -68,6 +70,8 @@ if [ "${SDL3_EXPECTED_SHA}" != "${SDL3_FOUND_SHA}" ]; then
       -DSDLIMAGE_AVIF=OFF \
       -DSDLIMAGE_WEBP=OFF \
       -DSDL3_DIR=../SDL/build \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -85,6 +89,8 @@ if [ "${SDL3_EXPECTED_SHA}" != "${SDL3_FOUND_SHA}" ]; then
       -DSDLTTF_VENDORED=ON \
       -DSDLTTF_HARFBUZZ=ON \
       -DSDL3_DIR=../SDL/build \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -122,6 +128,8 @@ if [ "${FREEIMAGE_EXPECTED_SHA}" != "${FREEIMAGE_FOUND_SHA}" ]; then
       -DBUILD_STATIC=OFF \
       '-DCMAKE_C_FLAGS=-DWIN32_LEAN_AND_MEAN -D__MINGW64_TOOLCHAIN__' \
       '-DCMAKE_CXX_FLAGS=-DWIN32_LEAN_AND_MEAN' \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -163,6 +171,8 @@ if [ "${BGFX_EXPECTED_SHA}" != "${BGFX_FOUND_SHA}" ]; then
       -DBGFX_BUILD_EXAMPLES=OFF \
       -DBGFX_CONFIG_MULTITHREADED=ON \
       -DBGFX_CONFIG_MAX_FRAME_BUFFERS=256 \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -198,6 +208,8 @@ if [ "${PINMAME_EXPECTED_SHA}" != "${PINMAME_FOUND_SHA}" ]; then
       -DARCH=x64 \
       -DBUILD_SHARED=ON \
       -DBUILD_STATIC=OFF \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -234,6 +246,8 @@ if [ "${OPENXR_EXPECTED_SHA}" != "${OPENXR_FOUND_SHA}" ]; then
       -DBUILD_API_LAYERS=OFF \
       -DDYNAMIC_LOADER=ON \
       -DOPENXR_DEBUG_POSTFIX='' \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -268,6 +282,8 @@ if [ "${LIBDMDUTIL_EXPECTED_SHA}" != "${LIBDMDUTIL_FOUND_SHA}" ]; then
       -DARCH=x64 \
       -DBUILD_SHARED=ON \
       -DBUILD_STATIC=OFF \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -301,6 +317,8 @@ if [ "${LIBALTSOUND_EXPECTED_SHA}" != "${LIBALTSOUND_FOUND_SHA}" ]; then
       -DARCH=x64 \
       -DBUILD_SHARED=ON \
       -DBUILD_STATIC=OFF \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -335,6 +353,8 @@ if [ "${LIBDOF_EXPECTED_SHA}" != "${LIBDOF_FOUND_SHA}" ]; then
       -DARCH=x64 \
       -DBUILD_SHARED=ON \
       -DBUILD_STATIC=OFF \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -367,6 +387,8 @@ if [ "${LIBWINEVBS_EXPECTED_SHA}" != "${LIBWINEVBS_FOUND_SHA}" ]; then
       -DBUILD_SHARED=ON \
       -DPLATFORM=win-mingw \
       -DARCH=x64 \
+      "-DCMAKE_EXE_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
+      "-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       -DCMAKE_BUILD_TYPE=${BUILD_TYPE} \
       -B build
    cmake --build build -- -j${NUM_PROCS}
@@ -403,6 +425,7 @@ if [ "${FFMPEG_EXPECTED_SHA}" != "${FFMPEG_FOUND_SHA}" ]; then
       --disable-avdevice \
       --disable-avfilter \
       --arch="x86_64" \
+      --extra-ldflags="-static-libgcc -static-libstdc++ -Wl,--exclude-libs,libgcc_eh.a" \
       --build-suffix=64
    make -j${NUM_PROCS}
    cd ..

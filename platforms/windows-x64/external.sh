@@ -374,6 +374,7 @@ if [ "${FFMPEG_EXPECTED_SHA}" != "${FFMPEG_FOUND_SHA}" ]; then
          --disable-avdevice \
          --disable-avfilter \
          --arch=\"x86_64\" \
+         --extra-ldflags=\"-static-libgcc\" \
          --build-suffix=64 &&
       make -j$(nproc)
    "
@@ -473,5 +474,3 @@ cp "${MSYS2_PATH}/ucrt64/bin/libiconv-2.dll" ../../../third-party/runtime-libs/w
 cp "${MSYS2_PATH}/ucrt64/bin/libwinpthread-1.dll" ../../../third-party/runtime-libs/windows-x64
 cp "${MSYS2_PATH}/ucrt64/bin/liblzma-5.dll" ../../../third-party/runtime-libs/windows-x64
 cp "${MSYS2_PATH}/ucrt64/bin/libbz2-1.dll" ../../../third-party/runtime-libs/windows-x64
-cp "${MSYS2_PATH}/ucrt64/bin/libgcc_s_seh-1.dll" ../../../third-party/runtime-libs/windows-x64
-cp "${MSYS2_PATH}/ucrt64/bin/libstdc++-6.dll" ../../../third-party/runtime-libs/windows-x64

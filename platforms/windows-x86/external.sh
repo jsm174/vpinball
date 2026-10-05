@@ -376,7 +376,7 @@ if [ "${FFMPEG_EXPECTED_SHA}" != "${FFMPEG_FOUND_SHA}" ]; then
          --disable-avfilter \
          --arch=\"x86\" \
          --extra-cflags=\"-m32\" \
-         --extra-ldflags=\"-m32\" &&
+         --extra-ldflags=\"-m32 -static-libgcc\" &&
       make -j$(nproc)
    "
    cd ..
@@ -475,5 +475,3 @@ cp "${MSYS2_PATH}/mingw32/bin/libiconv-2.dll" ../../../third-party/runtime-libs/
 cp "${MSYS2_PATH}/mingw32/bin/libwinpthread-1.dll" ../../../third-party/runtime-libs/windows-x86
 cp "${MSYS2_PATH}/mingw32/bin/liblzma-5.dll" ../../../third-party/runtime-libs/windows-x86
 cp "${MSYS2_PATH}/mingw32/bin/libbz2-1.dll" ../../../third-party/runtime-libs/windows-x86
-cp "${MSYS2_PATH}/mingw32/bin/libgcc_s_dw2-1.dll" ../../../third-party/runtime-libs/windows-x86
-cp "${MSYS2_PATH}/mingw32/bin/libstdc++-6.dll" ../../../third-party/runtime-libs/windows-x86
