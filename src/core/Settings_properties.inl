@@ -1507,3 +1507,8 @@ PropInt(CVEdit, ShowVPcore_FontWeight, "ShowVPcore_FontWeight"s, ""s, 0, 1000, 4
 PropBool(CVEdit, ShowVPcore_FontItalic, "ShowVPcore_FontItalic"s, ""s, false);
 PropBool(CVEdit, ShowVPcore_FontUnderline, "ShowVPcore_FontUnderline"s, ""s, false);
 PropBool(CVEdit, ShowVPcore_FontStrike, "ShowVPcore"s, ""s, false);
+
+// MCP server (AI assistant automation)
+PropBool(MCP, Enable, "Enable MCP Server"s, "Expose a Model Context Protocol endpoint for AI assistants on the local loopback interface"s, false);
+PropInt(MCP, Port, "MCP Server Port"s, "Loopback TCP port of the MCP endpoint"s, 1024, 65535, 2114);
+PropString(MCP, Token, "MCP Access Token"s, "Bearer token clients must send with each request, empty to accept any local client"s, ""s);

@@ -5,6 +5,7 @@
 
 #include "core/editablereg.h"
 #include "core/vpversion.h"
+#include "mcp/McpServer.h"
 #include "core/VPXPluginAPIImpl.h"
 #include "parts/Collection.h"
 #include "plugins/VPXPlugin.h"
@@ -248,6 +249,7 @@ VPApp::VPApp()
 
 VPApp::~VPApp()
 {
+   VPX::MCP::McpServer::Get().Stop();
    #ifdef VPX_HAS_WIN32_SDK
       SDL_UnregisterApp();
    #endif
@@ -368,4 +370,6 @@ void VPApp::InitInstance(bool isPlay)
 
    g_settingsService.GetAppSettings().SetVersion_VPinball(string(VP_VERSION_STRING_DIGITS), false);
    g_settingsService.GetAppSettings().Save();
+
+   VPX::MCP::McpServer::ApplySettings();
 }

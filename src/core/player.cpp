@@ -12,6 +12,7 @@
 #include "audio/AudioPlayer.h"
 #include "core/editablereg.h"
 #include "core/VPApp.h"
+#include "mcp/McpServer.h"
 #include "core/VPXPluginAPIImpl.h"
 #include "parts/ball.h"
 #include "parts/flasher.h"
@@ -429,6 +430,9 @@ void Player::InitTableSession(const bool isInitial)
    constexpr float progressRendererLength = 30.f;
 
    // Prepare table for playing
+
+   if (!isInitial)
+      m_loadProgress->SetProgress("Starting Table Session..."s, 0.f);
 
    PLOGI << "Compiling script"; // For profiling
 
@@ -1153,6 +1157,10 @@ void Player::ShutdownTableSession()
       editable->TimerRelease(m_vht);
    }
    m_vht.clear();
+   // Runtime balls are session objects: drop them from the table so that a new session on this table (e.g. getting back from a play test) starts clean
+   for (Ball *const ball : m_vball)
+      if (ball->m_runtimeBall && FindIndexOf(m_ptable->GetParts(), static_cast<IEditable *>(ball)) != -1)
+         m_ptable->RemovePart(ball);
    m_vball.clear();
 
    if (m_implicitPlayfieldMesh)
@@ -1506,7 +1514,7 @@ void Player::OnFocusChanged()
    if (m_closing == CS_CLOSED)
       return;
 
-   SetPlayState(m_wantsToPlay);
+   SetPlayState(m_wantsToPlay, m_pauseTimeTarget == 0 ? 0 : max(1u, m_pauseTimeTarget - min(m_pauseTimeTarget, m_time_msec)));
 
    if (m_playfieldWnd->IsFocused())
    {
@@ -1587,6 +1595,7 @@ void Player::OnScriptError(ScriptInterpreter::ErrorType type, int line, int colu
    const string errorType = (type == ScriptInterpreter::ErrorType::Runtime) ? "Runtime" : "Compile";
    const string desc = string_from_utf8_or_cp1252(description.c_str(), description.length());
    PLOGE << errorType << " error on line " << line << ", col " << column << ": " << desc;
+   VPX::MCP::McpServer::Get().OnScriptError(errorType, line, column, desc);
    if (m_liveUI && m_nScriptErrorNotification < 200)
    {
       m_liveUI->PushNotification(errorType + " error: " + desc, 5000);
@@ -1606,6 +1615,7 @@ Ball *Player::CreateBall(const float x, const float y, const float z, const floa
    CComObject<Ball>::CreateInstance(&pBall);
    pBall->AddRef();
    pBall->Init(x, y, false, true);
+   pBall->m_runtimeBall = true;
    m_ptable->AddPart(pBall);
    pBall->m_hitBall.m_d.m_pos.z = z + radius;
    pBall->m_hitBall.m_d.m_mass = mass;
@@ -2220,6 +2230,8 @@ void Player::UpdateGameLogic()
    }
 
    m_pluginManager.ProcessAsyncCallbacks();
+   if (!m_renderingScene)
+      VPX::MCP::McpServer::Get().ProcessJobs();
 
    #ifdef MSVC_CONCURRENCY_VIEWER
    delete tagSpan;
@@ -2528,7 +2540,10 @@ void Player::PrepareFrame()
    #endif
 
    // Prepare main 3D scene frame, then apply screenspace transforms, including ancillary window rendering (MSAA, AO, AA, stereo, ball motion blur, tonemapping, dithering, bloom,...)
+   // The scene render syncs the game logic midway: automation jobs must not run there since parts they modify are only reinitialized on the next frame
+   m_renderingScene = true;
    m_renderer->Render3DScene();
+   m_renderingScene = false;
 
    m_physics->ResetPerFrameStats();
 

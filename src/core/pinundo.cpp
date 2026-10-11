@@ -45,7 +45,6 @@ UndoRecord::~UndoRecord()
 
 void UndoRecord::MarkForUndo(IEditable *const pie, const bool saveForUndo)
 {
-#ifdef VPX_ENABLE_WIN32_EDITOR
    if (FindIndexOf(m_vieMark, pie) != -1) // Been marked already
       return;
 
@@ -59,10 +58,9 @@ void UndoRecord::MarkForUndo(IEditable *const pie, const bool saveForUndo)
    pstm->Write(&pie, sizeof(IEditable *));
 
    BiffWriter writer(pstm.get(), nullptr);
-   pie->Save(writer, true);
+   pie->Save(writer, saveForUndo);
 
    m_vstm.push_back(std::move(pstm));
-#endif
 }
 
 void UndoRecord::MarkForCreate(IEditable *const pie)
@@ -177,10 +175,17 @@ std::any PinUndo::Undo()
       m_table->Undelete(editable); // Adds the table reference; the record's one is released with the record below
       if (g_pplayer && (g_pplayer->m_ptable == m_table))
       {
-         // Deleted through the LiveUI: restore the player side resources it released (same setup as part creation)
+         // Deleted through the LiveUI: restore the player side resources it released (same setup as part creation). The render release is
+         // deferred to the end of the frame and runs on the render thread: when it is still pending, the render setup is deferred to the
+         // next frame preparation, which runs after the frame (and its deferred commands) has been fully processed
          g_pplayer->TimerSetup(editable);
-         if (IRenderable *const renderable = editable->GetIRenderable(); renderable)
-            renderable->RenderSetup(g_pplayer->m_renderer.get());
+         if (IRenderable *const renderable = editable->GetIRenderable())
+         {
+            if (editable->m_renderReleasePending)
+               g_pplayer->m_renderer->SetupRenderable(renderable);
+            else
+               renderable->RenderSetup(g_pplayer->m_renderer.get());
+         }
          if (editable->GetIHitable())
             g_pplayer->m_physics->Add(editable);
       }
@@ -242,6 +247,7 @@ std::any PinUndo::Undo()
             g_pplayer->m_physics->Remove(pie);
          if (pie->m_phittimer)
             g_pplayer->TimerRelease(pie);
+         g_pplayer->m_renderer->DropRenderable(pie->GetIRenderable());
          pie->AddRef(); // Keep the part alive until its deferred render release has been processed
          g_pplayer->m_renderer->m_renderDevice->AddEndOfFrameCmd(
             [pie]()

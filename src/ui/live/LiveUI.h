@@ -82,6 +82,8 @@ private:
    void NewFrame();
    void AddMousePosEvent(bool isTouch, float x, float y) const;
    void UpdateScale();
+   void UpdatePlayfieldWindowFrame();
+   bool m_playfieldWindowFramed = false;
 
    vector<std::shared_ptr<MeshBuffer>> m_meshBuffers;
 
@@ -94,6 +96,11 @@ private:
 
    // Notifications
    NotificationOverlay m_notificationOverlay;
+
+public:
+   bool m_hideNotifications = false; // Set by automation captures that must show the render only
+
+private:
 
    // MarkDown support
    ImGuiID markdown_start_id;

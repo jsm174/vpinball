@@ -117,12 +117,14 @@ AssetSrc* AssetManager::ResolveSrc(const string& src, AssetSrc* pBaseSrc)
          m_vpxFile = new VPXFile(m_szBasePath + m_szTableFile);
          //log.Info("Path for resolving VPX embedded resources defined to '{0}'", _vpxFile.ToString());
       }
+      if (m_vpxFile == nullptr)
+         LOGE("Embedded VPX image '" + pAssetSrc->GetPath() + "' can not be resolved: the table file '" + m_szBasePath + m_szTableFile + "' does not exist (VPX. names are read from the saved table file; image files on disk can be used instead, relative to ProjectFolder)");
       if (m_vpxFile != nullptr)
       {
          const string& file = m_vpxFile->GetImportFile(pAssetSrc->GetPath());
          if (file.empty())
          {
-            //log.Error("Embedded VPX resource was not found: '{0}'", def.Path);
+            LOGE("Embedded VPX image '" + pAssetSrc->GetPath() + "' was not found in the table file '" + m_szBasePath + m_szTableFile + "' (VPX. names are read from the saved table file, so images added since the last save are missing; image files on disk can be used instead, relative to ProjectFolder)");
          }
          else
          {

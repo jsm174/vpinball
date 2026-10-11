@@ -107,6 +107,8 @@ public:
    void DrawWireframe(IEditable* const renderable, const vec4& fillColor, const vec4& edgeColor, bool withDepthMask);
 
    void ReinitRenderable(IRenderable* part) { if (part) m_renderableToInit.push_back(part); }
+   void SetupRenderable(IRenderable* part) { if (part) m_renderableToSetup.push_back(part); }
+   void DropRenderable(IRenderable* part) { std::erase(m_renderableToInit, part); std::erase(m_renderableToSetup, part); }
 
    void SetTable(PinTable* table); // Rebind to a new table (currently limited to base table / live copy swaps)
 
@@ -216,6 +218,7 @@ public:
    RenderTarget* GetBackBufferTexture() const { return m_pOffscreenBackBufferTexture1; } // Main render target, with MSAA resolved if any, also may have stereo output (2 viewports)
 
    unsigned int GetPlayerModeVisibilityMask() const { return m_visibilityMask; }
+   unsigned int m_visibilityMaskOverride = 0; // Non zero replaces the player mode visibility mask (preview of another play mode)
 
    VPXRenderContext2D& GetAncillaryRenderContext(
       VPXWindowId window, float width, float height, bool is2D, bool isOutputLinear, float depthbias, const Matrix3D& displayTransform = Matrix3D::MatrixIdentity());
@@ -278,6 +281,7 @@ private:
    void SetupShaders();
 
    int m_renderWidth, m_renderHeight; // Render size without supersampling (AAFactor) applied (depends on output VR/Display and stereo mode)
+   int m_renderSourceWidth = 0, m_renderSourceHeight = 0; // Playfield window pixel size the render size was computed from
 
    RenderTarget* m_pOffscreenMSAABackBufferTexture = nullptr;
    RenderTarget* GetMSAABackBufferTexture() const { return m_pOffscreenMSAABackBufferTexture ? m_pOffscreenMSAABackBufferTexture : m_pOffscreenBackBufferTexture1; } // Main render target, may be MSAA enabled and not suited for sampling, also may have stereo output (2 layers)
@@ -286,6 +290,7 @@ private:
    RenderTarget* m_pOffscreenBackBufferTexture2 = nullptr;
    RenderTarget* GetPreviousBackBufferTexture() const { return m_pOffscreenBackBufferTexture2; } // Same as back buffer but for previous frame
    void SwapBackBufferRenderTargets();
+   void ResizeRenderTargets(); // Follows the playfield window size (resizable editor window, mobile rotation)
 
    RenderTarget* m_pAORenderTarget1 = nullptr;
    RenderTarget* m_pAORenderTarget2 = nullptr;
@@ -351,6 +356,7 @@ private:
    unsigned int m_visibilityMask = 0xFFFF;
 
    vector<IRenderable*> m_renderableToInit;
+   vector<IRenderable*> m_renderableToSetup;
 
    bool m_dynamicAO;
    bool m_disableAO;

@@ -502,6 +502,7 @@ public class IDLParserToCpp {
 		StringBuffer buffer = new StringBuffer();
 
 		buffer.append("HRESULT " + idlInterface.getClassName() + "::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {\n");
+		buffer.append("if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);\n");
 
 		buffer.append("static struct {\n");
 		buffer.append("DISPID dispId;\n");
