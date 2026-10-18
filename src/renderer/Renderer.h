@@ -218,6 +218,7 @@ public:
    RenderTarget* GetBackBufferTexture() const { return m_pOffscreenBackBufferTexture1; } // Main render target, with MSAA resolved if any, also may have stereo output (2 viewports)
 
    unsigned int GetPlayerModeVisibilityMask() const { return m_visibilityMask; }
+   unsigned int m_visibilityMaskOverride = 0; // Non zero replaces the player mode visibility mask (preview of another play mode)
 
    VPXRenderContext2D& GetAncillaryRenderContext(
       VPXWindowId window, float width, float height, bool is2D, bool isOutputLinear, float depthbias, const Matrix3D& displayTransform = Matrix3D::MatrixIdentity());

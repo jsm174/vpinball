@@ -16,6 +16,12 @@
     <Filter Include="core">
       <UniqueIdentifier>{fc16eece-2096-4e44-bad4-378fa9352bef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="mcp">
+      <UniqueIdentifier>{6d0c3a41-2f6e-4b1d-9a8e-3c5f7b2e1a90}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="mcp\tools">
+      <UniqueIdentifier>{9b2e4f17-5c3a-4e8d-b1f6-0a7d2c8e4b53}</UniqueIdentifier>
+    </Filter>
     <Filter Include="input">
       <UniqueIdentifier>{250fa71e-34b0-4d55-9f0a-483bf091847f}</UniqueIdentifier>
     </Filter>
@@ -245,6 +251,48 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../src/core/TournamentFile.cpp">
       <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpServer.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpHelpers.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpScript.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpFields.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpGeometry.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpTools.cpp">
+      <Filter>mcp</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsSession.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsSim.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsScript.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsPart.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsAssets.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsLibrary.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsTable.cpp">
+      <Filter>mcp\\tools</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsScreenshot.cpp">
+      <Filter>mcp\\tools</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../src/core/VPApp.cpp">
       <Filter>core</Filter>
@@ -631,6 +679,9 @@
       <Filter>ui\live\ingame</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/HomePage.cpp">
+      <Filter>ui\live\ingame</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/McpSettingsPage.cpp">
       <Filter>ui\live\ingame</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIItem.cpp">
@@ -1082,6 +1133,9 @@
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../third-party/include/imgui/imgui_stdlib.cpp">
       <Filter>third-party\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="$(SolutionDir)/../../third-party/include/mongoose/mongoose.c">
+      <Filter>third-party</Filter>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../third-party/include/miniz/miniz.c">
       <Filter>third-party</Filter>
@@ -1743,6 +1797,9 @@
       <Filter>ui\live\ingame</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/HomePage.h">
+      <Filter>ui\live\ingame</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/McpSettingsPage.h">
       <Filter>ui\live\ingame</Filter>
     </ClInclude>
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIItem.h">
@@ -2677,6 +2734,12 @@
     </ClInclude>
     <ClInclude Include="$(SolutionDir)/../../src/core/VPApp.h">
       <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)/../../src/mcp/McpServer.h">
+      <Filter>mcp</Filter>
+    </ClInclude>
+    <ClInclude Include="$(SolutionDir)/../../src/mcp/McpInternal.h">
+      <Filter>mcp</Filter>
     </ClInclude>
     <ClInclude Include="$(MSBuildThisFileDirectory)..\..\third-party\include\miniaudio\miniaudio.h">
       <Filter>third-party\miniaudio</Filter>

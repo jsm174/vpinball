@@ -376,6 +376,7 @@ void ScriptInterpreter::HandleScriptError(IActiveScriptError *pScriptError, IAct
 
    BSTR bstr = nullptr;
    pScriptError->GetSourceLineText(&bstr);
+   m_lastErrorLineText = bstr ? MakeString(bstr) : string();
    SysFreeString(bstr);
 
    EXCEPINFO exception = {};

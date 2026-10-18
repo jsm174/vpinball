@@ -425,7 +425,7 @@ void LiveUI::RenderUI()
    m_plumbOverlay.Update();
 
    // Display notification overlays except when script has an unaligned rotation
-   m_notificationOverlay.Update(true, m_overlayFont);
+   m_notificationOverlay.Update(!m_hideNotifications, m_overlayFont);
 
    // Display performance overlays
    m_perfUI.Update();

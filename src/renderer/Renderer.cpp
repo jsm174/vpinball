@@ -3230,6 +3230,12 @@ void Renderer::Render3DScene()
       m_visibilityMask = PartGroupData::PlayerModeVisibilityMask::PMVM_FSS;
    else if (m_table->GetViewMode() == BG_DESKTOP)
       m_visibilityMask = PartGroupData::PlayerModeVisibilityMask::PMVM_DESKTOP;
+   if (m_visibilityMaskOverride != 0)
+   {
+      m_visibilityMask = m_visibilityMaskOverride;
+      if (m_visibilityMaskOverride & (PartGroupData::PlayerModeVisibilityMask::PMVM_VIRTUAL_REALITY | PartGroupData::PlayerModeVisibilityMask::PMVM_MIXED_REALITY))
+         m_noBackdrop = true;
+   }
 
    // Setup ball rendering: collect all lights that can reflect on balls
    m_ballTrailMeshBufferPos = 0;

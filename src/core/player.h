@@ -85,7 +85,7 @@ public:
    string GetPerfInfo();
 
    void SetPlayState(const bool isPlaying, const uint32_t delayBeforePauseMs = 0); // Allow to play/pause during UI interaction or to perform timed simulation steps (still needs the player window to be focused).
-   bool IsPlaying(const bool applyWndFocus = true) const { return (m_playMode == PlayMode::CaptureAttract) || (m_wantsToPlay && (applyWndFocus ? m_playfieldWnd->IsFocused() : true) && !IsEditorMode()); }
+   bool IsPlaying(const bool applyWndFocus = true) const { return (m_playMode == PlayMode::CaptureAttract) || (m_wantsToPlay && ((applyWndFocus && !m_ignoreWndFocus) ? m_playfieldWnd->IsFocused() : true) && !IsEditorMode()); }
    void OnFocusChanged(); // On focus lost, pause player and show mouse cursor
 
    uint32_t m_pauseTimeTarget = 0;
@@ -95,6 +95,7 @@ public:
    bool m_tblMirrorEnabled = false; // Mirror tables left to right.  This is activated by a cheat during table selection.
 
    bool IsEditorMode() const { return m_playMode == PlayMode::FullEdit; }
+   bool m_ignoreWndFocus = false; // Set by automation (MCP) to keep playing while the window is not focused; stays set for the rest of the process once automation drove the player
    PlayMode m_playMode;
 
    // Request to replace the played table with a new one. The given reference on the table is adopted by
@@ -193,6 +194,7 @@ public:
    void GameLoop();
 
    void UpdateGameLogic();
+   bool m_renderingScene = false;
 
    VideoSyncMode GetVideoSyncMode() const { return m_playMode == Player::PlayMode::CaptureAttract ? VideoSyncMode::VSM_NONE : m_videoSyncMode; }
    void SetVideoSyncMode(VideoSyncMode mode) { m_videoSyncMode = mode; }

@@ -402,6 +402,76 @@ Vertex2D EditorUI::GetUIVisibleFraction() const
    return Vertex2D(max(0.1f, 1.f - 2.f * marginX / io.DisplaySize.x), max(0.1f, 1.f - 2.f * marginY / io.DisplaySize.y));
 }
 
+namespace
+{
+struct EditorViewState
+{
+   int camMode;
+   bool perspectiveCam;
+   int predefinedView;
+   Renderer::ShadeMode shadeMode;
+   Matrix3D camView;
+   float camDistance;
+   bool flyMode;
+   int physOverlay;
+};
+}
+
+std::any EditorUI::SaveViewState() const
+{
+   return EditorViewState { static_cast<int>(m_camMode), m_perspectiveCam, static_cast<int>(m_predefinedView), m_shadeMode, m_camView, m_camDistance, m_flyMode, static_cast<int>(m_physOverlay) };
+}
+
+void EditorUI::RestoreViewState(const std::any &state)
+{
+   const EditorViewState *const s = std::any_cast<EditorViewState>(&state);
+   if (s == nullptr)
+      return;
+   m_camMode = static_cast<ViewMode>(s->camMode);
+   m_perspectiveCam = s->perspectiveCam;
+   m_predefinedView = static_cast<PredefinedView>(s->predefinedView);
+   m_shadeMode = s->shadeMode;
+   m_camView = s->camView;
+   m_camDistance = s->camDistance;
+   m_flyMode = s->flyMode;
+   m_physOverlay = static_cast<PhysicOverlay>(s->physOverlay);
+   m_fitPlayfieldCamera = false;
+}
+
+void EditorUI::ShowTopView(bool textured, bool colliders)
+{
+   m_camMode = ViewMode::EditorCam;
+   m_perspectiveCam = false;
+   m_predefinedView = PredefinedView::Top;
+   m_shadeMode = textured ? Renderer::ShadeMode::Default : Renderer::ShadeMode::Wireframe;
+   m_flyMode = true;
+   m_physOverlay = colliders ? PhysicOverlay::All : PhysicOverlay::None;
+   m_fitPlayfieldCamera = true;
+}
+
+void EditorUI::ShowCameraView(const vec3 &eye, const vec3 &target)
+{
+   m_camMode = ViewMode::EditorCam;
+   m_perspectiveCam = true;
+   m_predefinedView = PredefinedView::None;
+   m_shadeMode = Renderer::ShadeMode::Default;
+   m_flyMode = true;
+   m_physOverlay = PhysicOverlay::None;
+   m_fitPlayfieldCamera = false;
+   const vec3 renderEye(eye.x, eye.y, -eye.z), renderTarget(target.x, target.y, -target.z);
+   m_camDistance = (renderEye - renderTarget).Length();
+   m_camView = Matrix3D::MatrixLookAtRH(renderEye, renderTarget, vec3(0.f, 0.f, -1.f));
+}
+
+void EditorUI::ShowPlayView()
+{
+   m_camMode = ViewMode::PreviewCam;
+   m_shadeMode = Renderer::ShadeMode::Default;
+   m_flyMode = true;
+   m_physOverlay = PhysicOverlay::None;
+   m_fitPlayfieldCamera = false;
+}
+
 void EditorUI::SetPlayfieldCamera()
 {
    // Setup the editor camera to frame the playfield bounds from a top view (table XY plane, Y axis going down)
@@ -786,6 +856,9 @@ void EditorUI::RenderUI()
                pho->DrawUI(project, overlayDrawList, true);
          ImGui::PopStyleColor(2);
       }
+
+      if (m_externalOverlay)
+         m_externalOverlay([&ctx](const Vertex3Ds &v) { return ctx.Project(v); }, overlayDrawList);
    }
 
    // Handle uncaught mouse & keyboard shortcuts
@@ -1375,6 +1448,124 @@ void EditorUI::PushUndo(IEditable *part, unsigned int undoId)
    m_undo.EndUndo();
 }
 
+vector<IEditable *> EditorUI::ImportPack(const std::filesystem::path &path, string &error)
+{
+   if (m_table->IsLocked() || IsInspectMode())
+   {
+      error = "The table is locked or a playtest is running"s;
+      return {};
+   }
+   CComObject<PinTable> *temp;
+   CComObject<PinTable>::CreateInstance(&temp);
+   temp->AddRef();
+   VPXFileFeedback feedback;
+   const std::unique_ptr<JSONSerializer::Deserializer> pack = m_table->CreateImportDeserializer(path, PartImportMergeStrategy::RenameConflict);
+   const HRESULT hr = pack != nullptr ? temp->LoadGameFromJSONPack(*pack, feedback) : E_FAIL;
+   if (FAILED(hr) && (hr != APPX_E_BLOCK_HASH_INVALID) && (hr != APPX_E_CORRUPT_CONTENT))
+   {
+      temp->Release();
+      error = "Failed to read the pack "s + PathToUTF8(path);
+      return {};
+   }
+   m_undo.BeginUndo();
+   PartGroup *const target = GetPartGroupForNewPart();
+   const vector<IEditable *> imported = m_table->ImportParts(temp, target);
+   temp->Release();
+   for (IEditable *const part : imported)
+   {
+      part->AddRef(); // Created parts keep a creation reference, released by the undo record (see PinTable::Uncreate)
+      m_undo.MarkForCreate(part);
+      // The pack's root groups stay root groups: nesting them under the current group would make them inherit its visibility and lock state
+      if (part->GetItemType() == eItemPartGroup && target != nullptr && part->GetPartGroup() == target)
+         part->SetPartGroup(nullptr);
+   }
+   for (IEditable *const part : imported)
+   {
+      if (part->GetItemType() == eItemBall)
+         m_player->m_vball.push_back(static_cast<Ball *>(part));
+      m_player->TimerSetup(part);
+      if (auto *const renderable = part->GetIRenderable(); renderable)
+         renderable->RenderSetup(m_renderer.get());
+      if (part->GetIHitable())
+         m_player->m_physics->Add(part);
+   }
+   m_undo.EndUndo();
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   UpdateEditableList();
+   m_multiSel.clear();
+   for (IEditable *const part : imported)
+      if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+         m_multiSel.push_back(it->second);
+   if (!m_multiSel.empty())
+      m_selection = Selection(m_multiSel.back());
+   return imported;
+}
+
+void EditorUI::BeginPartEdit(IEditable *part)
+{
+   if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+      it->second->RestorePartVisibility();
+}
+
+void EditorUI::EndPartEdit(IEditable *part)
+{
+   if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+      it->second->CaptureVisibility();
+}
+
+void EditorUI::RecordPartEdit(IEditable *part, bool withMesh)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+   m_undo.MarkForUndo(part, !withMesh);
+   m_undo.EndUndo();
+}
+
+void EditorUI::RecordUndoAction(std::function<void()> undo)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+   m_undo.MarkForAction(std::move(undo));
+   m_undo.EndUndo();
+}
+
+void EditorUI::BeginUndoGroup()
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+}
+
+void EditorUI::EndUndoGroup(bool keep)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_undo.EndUndo();
+   if (!keep)
+      m_undo.Discard();
+}
+
+void EditorUI::Undo()
+{
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   if (m_table->m_liveBaseTable)
+      return;
+   const std::any state = m_undo.Undo();
+   if (state.has_value())
+      RestoreUndoSelection(std::any_cast<const UndoSelectionState &>(state));
+   UpdateEditableList();
+}
+
 bool EditorUI::IsPartSelected(const std::shared_ptr<EditorUIPart> &part) const { return part != nullptr && std::ranges::find(m_multiSel, part) != m_multiSel.end(); }
 
 bool EditorUI::IsEditableSelected(const IEditable *editable) const
@@ -1698,11 +1889,11 @@ void EditorUI::BoxSelectParts(const ImVec2 &cornerA, const ImVec2 &cornerB, bool
       m_selection = Selection(m_multiSel.back());
 }
 
-void EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
+IEditable *EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
 {
    IEditable *const pie = EditableRegistry::CreateAndInit(type, m_table, pos.x, pos.y);
    if (pie == nullptr)
-      return;
+      return nullptr;
 
    // Same initialization sequence as the WinUI editor
    if (auto *const scriptable = pie->GetIScriptable(); scriptable)
@@ -1731,6 +1922,7 @@ void EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
       SetSelection(Selection(it->second));
       m_outlinerAnchor = it->second;
    }
+   return pie;
 }
 
 void EditorUI::CreateCollection(bool fromSelection)
@@ -1936,7 +2128,12 @@ void EditorUI::DeleteSelection()
          for (IEditable *const edit : m_table->GetParts())
             if (edit->GetPartGroup() == partsToDelete[i] && edit->GetItemType() != eItemBall && std::ranges::find(partsToDelete, edit) == partsToDelete.end())
                partsToDelete.push_back(edit);
-   if (partsToDelete.empty())
+   DeleteParts(partsToDelete);
+}
+
+void EditorUI::DeleteParts(const vector<IEditable *> &partsToDelete)
+{
+   if (partsToDelete.empty() || m_table->IsLocked() || IsInspectMode())
       return;
 
    // Begun before the selection changes, so that undoing restores the deleted parts as selected

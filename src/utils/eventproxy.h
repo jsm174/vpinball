@@ -6,6 +6,9 @@ class Collection;
 class EventProxyBase
 {
 public:
+   // Optional observer of every fired event (automation, debugging); called on the thread firing the event
+   static inline std::function<void(EventProxyBase*, int)> s_eventListener;
+
    virtual HRESULT FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) = 0;
 
    void FireVoidEvent(const int dispid)
@@ -90,6 +93,8 @@ public:
    final
    #endif
    {
+      if (EventProxyBase::s_eventListener)
+         EventProxyBase::s_eventListener(this, dispid);
       if (dispid != DISPID_TimerEvents_Timer && g_frameProfiler)
          g_frameProfiler->EnterScriptSection(dispid, string());
       T* const pT = static_cast<T*>(this);
