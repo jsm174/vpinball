@@ -525,10 +525,13 @@ bool BaseTexture::Save(const std::filesystem::path& filepath) const
       if (bitmap)
       {
          uint8_t* const __restrict bits = (uint8_t*)FreeImage_GetBits(bitmap);
-         if (m_format == SRGB)
-            copy_bgr_rgb(bits, m_data, m_width * m_height);
-         else
-            copy_bgra_rgba<false>((unsigned int*)bits, (const unsigned int*)m_data, m_width * m_height);
+         const unsigned int dstPitch = FreeImage_GetPitch(bitmap);
+         const unsigned int srcPitch = pitch();
+         for (unsigned int y = 0; y < m_height; y++)
+            if (m_format == SRGB)
+               copy_bgr_rgb(bits + y * dstPitch, static_cast<const uint8_t*>(m_data) + y * srcPitch, m_width);
+            else
+               copy_bgra_rgba<false>((unsigned int*)(bits + y * dstPitch), (const unsigned int*)(static_cast<const uint8_t*>(m_data) + y * srcPitch), m_width);
          FreeImage_FlipVertical(bitmap);
          #ifdef _WIN32
          const auto save = [&](FREE_IMAGE_FORMAT fif, int flags) { return FreeImage_SaveU(fif, bitmap, filepath.c_str(), flags); }; // Wide path
