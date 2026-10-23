@@ -5,6 +5,7 @@
 
 #include "math/matrix.h"
 #include "parts/Collection.h"
+#include "utils/color.h"
 #include "utils/denormals.h"
 
 #ifdef _MSC_VER
@@ -122,6 +123,43 @@ void RenderDevice::tBGFXCallback::screenShot(
    m_rd.OnScreenshotCaptured(_filePath, _width, _height, _pitch, _format, _data, _size, _yflip);
 }
 
+static void ConvertPQBT2020ToSRGBA(uint32_t* dst, const uint8_t* src, unsigned int width, unsigned int height, unsigned int pitch, float sdrWhiteNits)
+{
+   static const std::array<float, 1024> pqToLinear = []
+   {
+      constexpr double m1 = 2610. / 16384., m2 = 2523. / 4096. * 128., c1 = 3424. / 4096., c2 = 2413. / 4096. * 32., c3 = 2392. / 4096. * 32.;
+      std::array<float, 1024> lut;
+      for (int i = 0; i < 1024; i++)
+      {
+         const double e = pow(i / 1023., 1. / m2);
+         lut[i] = static_cast<float>(10000. * pow(max(e - c1, 0.) / (c2 - c3 * e), 1. / m1));
+      }
+      return lut;
+   }();
+   static const std::array<uint8_t, 4096> linearToSRGB = []
+   {
+      std::array<uint8_t, 4096> lut;
+      for (int i = 0; i < 4096; i++)
+         lut[i] = static_cast<uint8_t>(clamp(sRGB(i / 4095.f) * 255.f + 0.5f, 0.f, 255.f));
+      return lut;
+   }();
+   const float scale = 4095.f / sdrWhiteNits;
+   const auto encode = [scale](float v) { return static_cast<uint32_t>(linearToSRGB[static_cast<int>(clamp(v * scale, 0.f, 4095.f) + 0.5f)]); };
+   for (unsigned int y = 0; y < height; y++)
+   {
+      const uint32_t* row = reinterpret_cast<const uint32_t*>(src + y * pitch);
+      for (unsigned int x = 0; x < width; x++)
+      {
+         const uint32_t c = row[x];
+         const float r = pqToLinear[c & 0x3FF], g = pqToLinear[(c >> 10) & 0x3FF], b = pqToLinear[(c >> 20) & 0x3FF];
+         const float r709 = 1.660491f * r - 0.587641f * g - 0.072850f * b;
+         const float g709 = -0.124551f * r + 1.132900f * g - 0.008349f * b;
+         const float b709 = -0.018151f * r - 0.100579f * g + 1.118730f * b;
+         *dst++ = encode(r709) | (encode(g709) << 8) | (encode(b709) << 16) | 0xFF000000u;
+      }
+   }
+}
+
 void RenderDevice::OnScreenshotCaptured(const char* _filePath, uint32_t _width, uint32_t _height, uint32_t _pitch, bgfx::TextureFormat::Enum _format, const void* _data, uint32_t _size, bool _yflip)
 {
    // Note that BGFX has a few bugs regarding screenshots:
@@ -148,6 +186,7 @@ void RenderDevice::OnScreenshotCaptured(const char* _filePath, uint32_t _width, 
       // that was already re-issued by the timeout path), instead of saving them again or double-firing.
       if (index < 0)
          return;
+      const VPX::Window* const wnd = index < (int)m_screenshotWindow.size() ? m_screenshotWindow[index] : nullptr;
       m_screenshotFilename.erase(m_screenshotFilename.begin() + index);
       // Keep the window list in sync so that each entry still maps to its capture file (used by the request loop, notably for capture retries)
       if (index < (int)m_screenshotWindow.size())
@@ -181,6 +220,11 @@ void RenderDevice::OnScreenshotCaptured(const char* _filePath, uint32_t _width, 
                   copy_bgra_rgba<false>(dst, src, _width);
                }
             }
+            success = true;
+            break;
+
+         case bgfx::TextureFormat::RGB10A2:
+            ConvertPQBT2020ToSRGBA(static_cast<uint32_t*>(tex->data()), static_cast<const uint8_t*>(_data), _width, _height, _pitch, (wnd ? wnd->GetSDRWhitePoint() : 2.5f) * 80.f);
             success = true;
             break;
 
