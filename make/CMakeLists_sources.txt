@@ -71,6 +71,36 @@ set(VPX_SOURCES
    src/core/VPXPluginAPIImpl.cpp
    src/core/VPXPluginPagedUI.h
    src/core/VPXPluginPagedUI.cpp
+   src/mcp/McpServer.h
+   src/mcp/McpInternal.h
+   src/mcp/McpServer.cpp
+   src/mcp/McpHelpers.cpp
+   src/mcp/McpScript.cpp
+   src/mcp/McpFields.cpp
+   src/mcp/McpGeometry.cpp
+   src/mcp/McpWireform.cpp
+   src/mcp/McpRamp.cpp
+   src/mcp/McpTools.cpp
+   src/mcp/tools/ToolsSession.cpp
+   src/mcp/tools/ToolsSim.cpp
+   src/mcp/tools/ToolsScript.cpp
+   src/mcp/tools/ToolsPart.cpp
+   src/mcp/tools/ToolsAssets.cpp
+   src/mcp/tools/ToolsLibrary.cpp
+   src/mcp/tools/ToolsTable.cpp
+   src/mcp/tools/ToolsScreenshot.cpp
+   src/mcp/tools/ToolsNotes.cpp
+   src/mcp/tools/ToolsChanges.cpp
+   src/mcp/tools/ToolsProposals.cpp
+   src/mcp/McpProposals.h
+   src/mcp/McpProposals.cpp
+   src/mcp/McpLocks.cpp
+   src/mcp/tools/ToolsLayers.cpp
+   src/mcp/tools/ToolsBookmarks.cpp
+   src/mcp/McpBookmarks.h
+   src/mcp/McpBookmarks.cpp
+   third-party/include/mongoose/mongoose.c
+   third-party/include/mongoose/mongoose.h
 
    src/input/ButtonMapping.h
    src/input/InputAction.h
@@ -323,6 +353,26 @@ set(VPX_SOURCES
    src/ui/live/editor/parts/DecalUIPart.cpp
    src/ui/live/editor/parts/DispReelUIPart.h
    src/ui/live/editor/parts/DispReelUIPart.cpp
+   src/ui/live/editor/SketchStore.h
+   src/ui/live/editor/SketchStore.cpp
+   src/ui/live/editor/SketchDraw.h
+   src/ui/live/editor/SketchDraw.cpp
+   src/ui/live/editor/SketchTool.h
+   src/ui/live/editor/SketchTool.cpp
+   src/ui/live/editor/ProposalStore.h
+   src/ui/live/editor/ProposalStore.cpp
+   src/ui/live/editor/ProposalDraw.h
+   src/ui/live/editor/ProposalDraw.cpp
+   src/ui/live/editor/ProposalPanel.h
+   src/ui/live/editor/ProposalPanel.cpp
+   src/ui/live/editor/LockStore.h
+   src/ui/live/editor/LockStore.cpp
+   src/ui/live/editor/LockUI.h
+   src/ui/live/editor/LockUI.cpp
+   src/ui/live/editor/HeatStore.h
+   src/ui/live/editor/HeatStore.cpp
+   src/ui/live/editor/LayersPanel.h
+   src/ui/live/editor/LayersPanel.cpp
    src/ui/live/editor/EditorAreaView.h
    src/ui/live/editor/EditorChrome.h
    src/ui/live/editor/EditorChrome.cpp
@@ -429,6 +479,8 @@ set(VPX_SOURCES
    src/ui/live/ingameui/LoggingSettingsPage.cpp
    src/ui/live/ingameui/MiscSettingsPage.h
    src/ui/live/ingameui/MiscSettingsPage.cpp
+   src/ui/live/ingameui/McpSettingsPage.h
+   src/ui/live/ingameui/McpSettingsPage.cpp
    src/ui/live/ingameui/NudgeSensorSettingsPage.h
    src/ui/live/ingameui/NudgeSensorSettingsPage.cpp
    src/ui/live/ingameui/NudgeSettingsPage.h
@@ -874,9 +926,6 @@ set(VPX_LIB_SOURCES
    lib/src/VPinballLib_C.cpp
    lib/src/VPXProgress.h
    lib/src/VPXProgress.cpp
-
-   third-party/include/mongoose/mongoose.c
-   third-party/include/mongoose/mongoose.h
 )
 
 set(VPX_GL_SHADERS

@@ -1,0 +1,300 @@
+[
+  {
+    "name": "metal3",
+    "path": "E:\\Pinball\\Tables\\!Fire\\Images\\metal3.jpg",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "4c0dae35babeb96543047eb484d37db3"
+  },
+  {
+    "name": "bumper-cap-t5",
+    "path": "C:\\UPin\\bumper-cap-t5.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "9e47d0cd91967cfd27c8fd961fad5631"
+  },
+  {
+    "name": "emkicker-t1",
+    "path": "C:\\UPin\\emkicker-t1.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "70859f3d47b22cc0158d649ab74b11f7"
+  },
+  {
+    "name": "bumper-cap-t2(2)",
+    "path": "C:\\UPin\\bumper-cap-t2(2).png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "0ba131620f0599754672b14b1b811b50"
+  },
+  {
+    "name": "bumper-cap-t3",
+    "path": "C:\\UPin\\bumper-cap-t3.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "739ae7c48c4f8aac3f58a11bb4222875"
+  },
+  {
+    "name": "Scratches",
+    "path": "C:\\Models\\Scratches.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "f732457588d60ccb2ab1cde82f35b94b"
+  },
+  {
+    "name": "bumper-cap-t2",
+    "path": "C:\\UPin\\bumper-cap-t2.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "2f55b2c73ced35fcd4fb1bb73bd9be9b"
+  },
+  {
+    "name": "sidewood._h",
+    "path": "C:\\UPin\\sidewood_h.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "jpeg_name": "sidewood_h",
+    "md5_hash": "39d2959bd88472486ed2bed2639da32f"
+  },
+  {
+    "name": "bumper-cap-t4",
+    "path": "C:\\UPin\\bumper-cap-t4.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "de5d14521786c1ba3b64ba68b02d607b"
+  },
+  {
+    "name": "sidewood",
+    "path": "C:\\UPin\\sidewood.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "a09e69de4a8eefe3b0b9af321ac3fe01"
+  },
+  {
+    "name": "rubber-emwheel",
+    "path": "C:\\Program Files (x86)\\Pinball\\Tables\\vp10 materials\\rubber-emwheel.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "2959706e1a543daafe49c9adc3c0bd89"
+  },
+  {
+    "name": "CustomWhiteTip",
+    "path": "D:\\temp\\CustomWhiteTip.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "0e954302358774cd969a88e6f8793304"
+  },
+  {
+    "name": "purple peg",
+    "path": "E:\\Pinball\\Tables\\!Fire\\Images\\Red peg.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "jpeg_name": "Red peg",
+    "md5_hash": "6c16cdec673d1b5bd9f1dda527b56f3c"
+  },
+  {
+    "name": "aluminum",
+    "path": "E:\\Pinball\\Tables\\!Fire\\Images\\aluminum.jpg",
+    "alpha_test_value": 1.0,
+    "is_opaque": true,
+    "md5_hash": "7fbdb1a8cd89968bbe9978e62a6fada2"
+  },
+  {
+    "name": "ballshadow",
+    "path": "C:\\Users\\HP i7\\Downloads\\VP_old\\makeover stuff\\ballshadow.png",
+    "alpha_test_value": 1.0,
+    "is_opaque": false,
+    "md5_hash": "db06e6a4052e7f4f5770c08ac143720a"
+  },
+  {
+    "name": "Left_rail_brighter",
+    "path": "E:\\Pinball\\Tables\\Materials\\Left_rail_brighter.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "f03e1fc8b8b78d299399bd5d8aa57bbc"
+  },
+  {
+    "name": "Right_rail_brighter",
+    "path": "E:\\Pinball\\Tables\\Materials\\Right_rail_brighter.png",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "8e22a6def37e0882a56beb8d884f75cf"
+  },
+  {
+    "name": "flippers_shadow",
+    "path": "C:\\Users\\HP i7\\Downloads\\VP_old\\makeover stuff\\flippers_shadow.png",
+    "alpha_test_value": 1.0,
+    "is_opaque": false,
+    "md5_hash": "259574a38a4463f4bd39bdcf2427102c"
+  },
+  {
+    "name": "LockdownBarreal-JR",
+    "path": "C:\\Visual Pinball\\LockdownBarreal-JR.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "c0b918cdff5900359116d21d3f58db0b"
+  },
+  {
+    "name": "Playfield Beachwood",
+    "path": "E:\\pinballArtwork\\PBTextures\\p1-beachwood.jpg",
+    "alpha_test_value": 1.0,
+    "is_opaque": true,
+    "jpeg_name": "p1-beachwood",
+    "md5_hash": "5f580eab851e69dcad1889f8fe82fc13"
+  },
+  {
+    "name": "PlungerCover",
+    "path": "C:\\Visual Pinball\\PlungerCover.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "eaa7f415fcd49d36943946a9909171c6"
+  },
+  {
+    "name": "bally_miniflipper_left",
+    "path": "C:\\Users\\borgd\\Documents\\OneDrive\\Pinball\\_Resources\\flippers\\bally_miniflipper\\bally_miniflipper_left.jpg",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "1123ed50fd7e3a6753db21fe55a188c3"
+  },
+  {
+    "name": "gottlieb_flipper_red",
+    "path": "C:\\Users\\borgd\\Documents\\OneDrive\\Pinball\\_Resources\\flippers\\newer_gottlieb_flipper\\gottlieb_flipper_red.jpg",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "f5d9b0e8b1e6b664f19971c940bde733"
+  },
+  {
+    "name": "bally_miniflipper_right",
+    "path": "C:\\Users\\borgd\\Documents\\OneDrive\\Pinball\\_Resources\\flippers\\bally_miniflipper\\bally_miniflipper_right.jpg",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "ff6f9e120c272888cc2bbac17ce0080e"
+  },
+  {
+    "name": "angle",
+    "path": "C:\\Visual Pinball\\angle.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "e0a126f15d73cbf159cde41149b4ecf5"
+  },
+  {
+    "name": "mm",
+    "path": "C:\\Visual Pinball\\mm.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "10c21528f3de92e0ae57d5d26b3c6f2f"
+  },
+  {
+    "name": "flipper_williams_logo_Left",
+    "path": "C:\\Visual Pinball\\flipper_williams_logo_Left.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "f1a869cc77a13f97ef84c013925e1361"
+  },
+  {
+    "name": "flipper_yellow_red_Right",
+    "path": "C:\\Visual Pinball\\flipper_yellow_red_Right.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "19f9172d284b7e3c350b829d1f96cf3f"
+  },
+  {
+    "name": "ApronGenericWilliams",
+    "path": "C:\\Visual Pinball\\ApronGenericWilliams.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "912837eac0c0889c401a5c0f33982644"
+  },
+  {
+    "name": "ballUVs",
+    "path": "C:\\Visual Pinball\\ballUVs.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "ce6144b2d262b6524c9ffbb77509cbe2"
+  },
+  {
+    "name": "inches",
+    "path": "C:\\Visual Pinball\\inches.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": false,
+    "md5_hash": "534f295c01cecf032e1a8eb036200d21"
+  },
+  {
+    "name": "inchesandmm",
+    "path": "C:\\Visual Pinball\\inchesandmm.webp",
+    "alpha_test_value": 128.0,
+    "is_opaque": true,
+    "md5_hash": "9dba55641d5fc53fe3c778ba7a742522"
+  },
+  {
+    "name": "flipper_gottlieb_left",
+    "path": "C:\\Visual Pinball\\flipper_gottlieb_left2.webp",
+    "alpha_test_value": 1.0,
+    "is_opaque": true,
+    "jpeg_name": "flipper_gottlieb_left2",
+    "md5_hash": "391f8aed24b3ae8c4fffa86108d619df"
+  },
+  {
+    "name": "Playfield Maple",
+    "path": "C:\\Visual Pinball\\Natural-Maple.webp",
+    "alpha_test_value": 1.0,
+    "is_opaque": true,
+    "jpeg_name": "Natural-Maple",
+    "md5_hash": "fd5815ceaab9a8ccace14f98831ae7d4"
+  },
+  {
+    "name": "abandoned_games_room_02_1k_35p",
+    "path": "C:\\Users\\Vincent\\Downloads\\abandoned_games_room_02_1k_35p.exr",
+    "alpha_test_value": 1.0,
+    "is_opaque": true,
+    "md5_hash": "f620f4d3158069ccbedd8d0c9b0c2c01"
+  },
+  {
+    "name": "abandoned_games_room_02_1k_17p",
+    "path": "C:\\Users\\Vincent\\Downloads\\abandoned_games_room_02_1k_17p.exr",
+    "is_opaque": true,
+    "md5_hash": "b7a2cf250ac26fa657d85e4d3392a866"
+  },
+  {
+    "name": "Cabinet",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\Cabinet.webp",
+    "is_opaque": false,
+    "md5_hash": "216342202f06b7368f0369dd5a6009a0"
+  },
+  {
+    "name": "Backbox",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\Backbox.webp",
+    "is_opaque": true,
+    "md5_hash": "2ae35ed7d7f156ee51009b122e9db385"
+  },
+  {
+    "name": "Backglass",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\Backglass.webp",
+    "is_opaque": true,
+    "md5_hash": "014fa7d7aadddf4b806e9334680ee060"
+  },
+  {
+    "name": "backboxtransparents",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\backboxtransparents.png",
+    "is_opaque": false,
+    "md5_hash": "af56a4904af4fcaede0361f61c9416dd"
+  },
+  {
+    "name": "wood_floor_diff_1k",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\textures\\wood_floor_diff_1k.webp",
+    "is_opaque": true,
+    "md5_hash": "afd59ebd4f051d073d649d93386e454f"
+  },
+  {
+    "name": "plastered_wall_05_diff_1k",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\textures\\plastered_wall_05_diff_1k.webp",
+    "is_opaque": true,
+    "md5_hash": "4804c825bf3c6f3647b36c19eecfaa64"
+  },
+  {
+    "name": "CabGroundShadow",
+    "path": "C:\\Users\\vcbou\\Desktop\\Cabinet\\CabGroundShadow.webp",
+    "is_opaque": false,
+    "md5_hash": "1d6206cddcb34c1fbc5855ee052b71fc"
+  }
+]

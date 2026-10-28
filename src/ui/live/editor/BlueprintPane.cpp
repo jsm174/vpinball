@@ -19,6 +19,12 @@
 #include "parts/pintable.h"
 #include "renderer/RenderDevice.h"
 #include "utils/color.h"
+#include "SketchDraw.h"
+#include "SketchTool.h"
+#include "ProposalDraw.h"
+#include "LockUI.h"
+#include "HeatStore.h"
+#include "mcp/McpBookmarks.h"
 
 namespace VPX::EditorUI
 {
@@ -102,6 +108,35 @@ void BlueprintPane::FrameSelection()
    if (m_imageRect.Width() > 0.f && m_imageRect.Height() > 0.f)
       m_zoom = clamp(0.8f * min(m_imageRect.Width() / w, m_imageRect.Height() / h), 0.1f, 64.f);
    m_setupValid = true;
+}
+
+// What the sketch tool (and Ask Assistant) needs from this pane: the mapping between screen and playfield, the snapping, the undo history
+VPX::Sketch::Env BlueprintPane::SketchEnv()
+{
+   using namespace VPX::Sketch;
+   EditorUI& editor = m_editor;
+   Env env;
+   env.owner = this;
+   env.store = &Store::For(editor.m_table);
+   env.mouse = ImGui::GetMousePos();
+   env.unproject = [this](ImVec2 pos) { const Vertex2D v = Unproject(pos); return Point { v.x, v.y }; };
+   env.project = [this](Point p) { return Project(Vertex2D(p.x, p.y)); };
+   env.dpi = editor.m_liveUI.GetDPI();
+   env.canStart = m_hovered && !ImGuizmo::IsOver() && editor.m_fileOp == nullptr;
+   env.snapActive = editor.IsSnapActive(EditorUI::SnapKind::Move);
+   env.snapEnabled = editor.IsSnappingEnabled();
+   env.snapToParts = [this, &editor](Point& q)
+   {
+      Vertex2D v(q.x, q.y);
+      if (!editor.SnapPlanePoint(v, [this](const Vertex2D& a) { return Project(a); }))
+         return false;
+      q = { v.x, v.y };
+      return true;
+   };
+   env.toggleSnap = [&editor]() { editor.ToggleSnappingPublic(); };
+   env.recordUndo = [&editor](std::function<void()> undo, std::function<std::function<void()>()> redo, const std::string& label)
+   { editor.RecordUndoAction(std::move(undo), std::move(redo), label); };
+   return env;
 }
 
 nlohmann::json BlueprintPane::SaveSetup() const
@@ -432,12 +467,28 @@ void BlueprintPane::RenderPane(const AreaRect& rect, const int leafId)
             ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
          ImGui::PushID(static_cast<int>(mode.operation));
          if (IconButtonInk(mode.icon, "##EditMode"))
+         {
+            VPX::Sketch::Tool::Get().SetActive(false);
             SetGizmoOperation(mode.operation);
+         }
          ImGui::PopID();
          if (active)
             ImGui::PopStyleColor();
          if (ImGui::IsItemHovered())
             ImGui::SetTooltip("%s", mode.tooltip);
+         ImGui::SameLine();
+      }
+      {
+         // Sketch mode: draw notes on the playfield (shared with the assistant through vpx_notes)
+         VPX::Sketch::Tool& sketch = VPX::Sketch::Tool::Get();
+         if (sketch.Active())
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive));
+         if (ImGui::Button(ICON_LC_ROUTE))
+            sketch.SetActive(!sketch.Active());
+         if (sketch.Active())
+            ImGui::PopStyleColor();
+         if (ImGui::IsItemHovered())
+            ImGui::SetTooltip("Sketch: draw notes on the playfield");
          ImGui::SameLine();
       }
       ImGui::Separator();
@@ -585,6 +636,22 @@ void BlueprintPane::RenderPane(const AreaRect& rect, const int leafId)
    ImGui::PopStyleVar(3);
 }
 
+void BlueprintPane::RenderCapture(const AreaRect& rect, const float zoom, const Vertex2D& offset, ImDrawList* const drawList)
+{
+   m_imageRect = rect;
+   m_hovered = false;
+   m_active = false;
+   if (zoom > 0.f)
+   {
+      m_zoom = zoom;
+      m_offset = offset;
+      m_setupValid = true;
+   }
+   else
+      FitTable();
+   RenderScene(drawList);
+}
+
 void BlueprintPane::RenderUI(ImDrawList* const overlayDrawList)
 {
    if (!m_setupValid)
@@ -694,6 +761,34 @@ void BlueprintPane::RenderUI(ImDrawList* const overlayDrawList)
          overlayDrawList->AddRect(lo, hi, IM_COL32(255, 128, 0, 255));
       }
    }
+   // Sketch layer marks (the user's and the assistant's notes on the playfield), and the sketch tool when it is active. Drawn into the
+   // pane's own window like the schematic (the overlay window may sit below a pane window created after it, and the canvas is opaque)
+   if (m_window != nullptr)
+   {
+      using namespace VPX::Sketch;
+      ImDrawList* const paneDrawList = m_window->DrawList;
+      paneDrawList->PushClipRect(ImVec2(m_imageRect.x0, m_imageRect.y0), ImVec2(m_imageRect.x1, m_imageRect.y1), true);
+      Store& sketchStore = Store::For(editor.m_table);
+      const std::function<ImVec2(Point)> project = [this](Point p) { return Project(Vertex2D(p.x, p.y)); };
+      if (!editor.IsCapturing()) // the capture draws the marks and ghosts itself
+      {
+         VPX::Heat::Draw(paneDrawList, VPX::Heat::Store::For(editor.m_table), project, dpi);
+         VPX::MCP::Bookmarks::DrawPaths(paneDrawList, VPX::MCP::Bookmarks::Store::For(editor.m_table), project, dpi);
+         Draw(paneDrawList, sketchStore, project, dpi);
+         VPX::Proposals::DrawGhosts(paneDrawList, VPX::Proposals::Store::For(editor.m_table), editor.m_table, project, dpi);
+         VPX::Locks::DrawBadges(paneDrawList, editor.m_table, project, dpi);
+      }
+      Tool& sketch = Tool::Get();
+      if (sketch.Active())
+      {
+         sketch.NotePane(this, ImVec2(m_imageRect.x0, m_imageRect.y0), m_hovered, &sketchStore);
+         const Env env = SketchEnv();
+         if (m_hovered || m_active || sketch.OwnedBy(this))
+            sketch.Input(env);
+         sketch.DrawPreview(paneDrawList, project, dpi, this);
+      }
+      paneDrawList->PopClipRect();
+   }
    overlayDrawList->PopClipRect();
 
    // Scene input (the pane under the mouse, or capturing a drag, owns it)
@@ -719,7 +814,7 @@ void BlueprintPane::RenderUI(ImDrawList* const overlayDrawList)
          m_offset.y -= drag.y / m_zoom;
       }
 
-      if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver())
+      if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver() && !VPX::Sketch::Tool::Get().Active())
       {
          m_boxSelectStart = ImGui::GetMousePos();
          if (editor.m_partLibrary.IsPlacementArmed())
@@ -970,7 +1065,8 @@ void BlueprintPane::RenderUI(ImDrawList* const overlayDrawList)
 
       // Right mouse button: completes pending left drags (win32 unstick), applies the win32 right
       // click selection, and records the context menu target (the popup is opened on release)
-      if (ImGui::IsMouseClicked(ImGuiMouseButton_Right))
+      // (a right click that went to a sketch mark opens the mark's menu instead)
+      if (ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !VPX::Sketch::Tool::Get().ConsumedRightPress())
       {
          m_moveDragPending = m_moveDragActive = m_pointDragPending = m_pointDragActive = false;
          m_dragPart.reset();

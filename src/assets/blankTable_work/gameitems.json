@@ -1,0 +1,1521 @@
+[
+  {
+    "file_name": "PartGroup.Plastics.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.Visuals.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.Shadows.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.Rails.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.GI_Lights.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.AllPosts.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.VRCabinet.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.VRRoom.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.VRFeet.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.DTCabinet.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.VRCabShadow.json",
+    "is_locked": false,
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "PartGroup.VRGroundShadow.json",
+    "is_locked": false,
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "PartGroup.StockAssets.json",
+    "is_locked": false,
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "PartGroup.DTBlades.json",
+    "is_locked": false,
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.FlipperRSh.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.FlipperLSh.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Rubber.RSling2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.Pin4.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall7.json",
+    "is_locked": true,
+    "editor_layer": 3,
+    "editor_layer_name": "Rails",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall31.json",
+    "is_locked": true,
+    "editor_layer": 0,
+    "editor_layer_name": "Plastics",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg2.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg1.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.VRRightFlip.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRLeftFlip.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRButtonRings.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRPlungerHousing.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRCrossBar.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRCoinDoor.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.CabGroundShadow.json",
+    "is_locked": true,
+    "editor_layer": 10,
+    "editor_layer_name": "VRCabShadow",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRLegs.json",
+    "is_locked": true,
+    "editor_layer": 8,
+    "editor_layer_name": "VRFeet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Wall.Wall25.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall22.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall17.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Metal_Guide___Angle_1A.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Flasher.AngleProtractor.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Trigger.StopBallControl.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Trigger.StartBallControl.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Timer.BallControlTimer.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.VRBackbox.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Flipper___Gottlieb.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Rubber.LSling.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall30.json",
+    "is_locked": true,
+    "editor_layer": 0,
+    "editor_layer_name": "Plastics",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Primitive5.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Flipper.RightFlipper.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.SideRight.json",
+    "is_locked": false,
+    "editor_layer": 9,
+    "editor_layer_name": "DTCabinet",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.SideLeft.json",
+    "is_locked": false,
+    "editor_layer": 9,
+    "editor_layer_name": "DTCabinet",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Sling1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Sling2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Primitive59.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Screw_2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Screw_3.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Screw_1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Trigger.LeftInlane.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.LeftSlingShot.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall13.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall11.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.VRCab.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Timer.BallShadowUpdate.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallShadow5.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallShadow4.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallShadow3.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallShadow2.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallShadow1.json",
+    "is_locked": false,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Rubber.RSling1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Apron___Top.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Plunger_Cover.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Apron___Sides.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Timer.RollingTimer.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall37.json",
+    "is_locked": true,
+    "editor_layer": 3,
+    "editor_layer_name": "Rails",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.RubberWall3.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.RubberEMWheel.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Trigger.Trigger1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Generic_3_.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRGroundShadowCaster.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "VRGroundShadow",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Primitive9.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Primitive3.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Primitive2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Primitive1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Trigger.RightInlane.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.RightSlingShot.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall19.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall18.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall14.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall24.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall110.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall109.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall112.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.VRRail.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Wall.Wall20.json",
+    "is_locked": true,
+    "editor_layer": 3,
+    "editor_layer_name": "Rails",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Gottlieb_Flipper___newer.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Flipper___Bally_Mini_Right.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Flipper___Bally_Mini_Left.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Flipper___Mini_Gottlieb.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT3.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT4.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT5.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT1Mini.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT5.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT6.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRBackWall.json",
+    "is_locked": false,
+    "editor_layer": 7,
+    "editor_layer_name": "VRRoom",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PlasticTipSlingArm.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.BallyEMSlingArm.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Wall.Wall39.json",
+    "is_locked": true,
+    "editor_layer": 0,
+    "editor_layer_name": "Plastics",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Kicker.Drain.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Plunger.Plunger.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "TextBox.ScoreText.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall10.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall9.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall8.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall12.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.RSling.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.PegPlasticT14.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT8Twin.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT15.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT16.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Gate.Gate.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wood_Rail___Left.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wood_Rail___Right.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Decal.unnamed.json",
+    "is_locked": true,
+    "editor_layer": 2,
+    "editor_layer_name": "Shadows",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Wall.Wood_Rail___Top.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.PegPlasticT44.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT45.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT46.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRCoinDoorKeyHole.json",
+    "is_locked": false,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT17.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT18.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.FlasherT7.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT6.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_Star.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_Dots.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_flower_2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_flower_1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Gottlieb_1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.GottliebEMSlingArm.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Primitive6.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT9.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT10.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT1Mini1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT21.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT22.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT23.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT24.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT25.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT26.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT27.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT37.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Bumper_Cap___Center_1000_Points.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRGround.json",
+    "is_locked": false,
+    "editor_layer": 7,
+    "editor_layer_name": "VRRoom",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRHinges.json",
+    "is_locked": false,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Ramp.Cab_Lockbar.json",
+    "is_locked": true,
+    "editor_layer": 11,
+    "editor_layer_name": "DTBlades",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.RubberTemp.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Kicker.BallRelease.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wood_Rail___Plunger_Lane___Top.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wood_Rail___Plunger_Lane___Bott.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall15.json",
+    "is_locked": false,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.PegPlasticT7.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT8.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT9.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT10.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT11.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRCaster.json",
+    "is_locked": true,
+    "editor_layer": 8,
+    "editor_layer_name": "VRFeet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT38.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT39.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT40.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT41.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.FlasherT1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT8Twin1.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT11.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT12.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT13.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT14.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT15.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT1Mini2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT42.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT43.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Metal_Guide___Angle_1B.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Metal_Guide___Angle_2B.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Metal_Guide___Straight_2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Metal_Guide___Straight_1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Light.gi4.json",
+    "is_locked": true,
+    "editor_layer": 4,
+    "editor_layer_name": "GI_Lights",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Light.gi3.json",
+    "is_locked": true,
+    "editor_layer": 4,
+    "editor_layer_name": "GI_Lights",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Light.gi2.json",
+    "is_locked": true,
+    "editor_layer": 4,
+    "editor_layer_name": "GI_Lights",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Light.gi1.json",
+    "is_locked": true,
+    "editor_layer": 4,
+    "editor_layer_name": "GI_Lights",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT7.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegMetalT8.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRStartButton.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRStartButtonHousing.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRPlunger.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT47.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT48.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT49.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT50.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT51.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT52.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT53.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.FlasherT2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.PegPlasticT8Twin2.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.SidesTop.json",
+    "is_locked": false,
+    "editor_layer": 9,
+    "editor_layer_name": "DTCabinet",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Ramp.Cab_Blade___Right.json",
+    "is_locked": true,
+    "editor_layer": 11,
+    "editor_layer_name": "DTBlades",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Ramp.Cab_Blade___Left.json",
+    "is_locked": true,
+    "editor_layer": 11,
+    "editor_layer_name": "DTBlades",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall5.json",
+    "is_locked": true,
+    "editor_layer": 3,
+    "editor_layer_name": "Rails",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.Pin3.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.LSling2.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Rubber.LSling1.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Flipper.LeftFlipper.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall228.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall113.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall114.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Wall.Wall111.json",
+    "is_locked": true,
+    "editor_layer": 1,
+    "editor_layer_name": "Visuals",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg5.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg6.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.Peg7.json",
+    "is_locked": true,
+    "editor_layer": 5,
+    "editor_layer_name": "AllPosts",
+    "editor_layer_visibility": true
+  },
+  {
+    "file_name": "Primitive.VRBackglass.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.VRBlades.json",
+    "is_locked": true,
+    "editor_layer": 6,
+    "editor_layer_name": "VRCabinet",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Ruler_mm.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Ruler_inches.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  },
+  {
+    "file_name": "Primitive.Ruler_inches_and_mm.json",
+    "is_locked": false,
+    "editor_layer": 11,
+    "editor_layer_name": "StockAssets",
+    "editor_layer_visibility": false
+  }
+]

@@ -2,6 +2,7 @@
 
 #include "core/stdafx.h"
 #include "InputManager.h"
+#include "mcp/McpBookmarks.h"
 
 #include "core/player.h"
 #include "core/TournamentFile.h"
@@ -818,6 +819,14 @@ void InputManager::CreateInputActions()
             if (isPressed)
                m_player->SetPlayState(!m_player->IsPlaying());
          }))->GetActionId();
+
+   // "That felt wrong": keeps the last seconds of the game as a bookmark for the assistant (vpx_bookmarks)
+   AddAction(std::make_unique<InputAction>(this, "Bookmark"s, "Mark Moment for Assistant"s, keyMapping(SDL_SCANCODE_F8),
+      [this](const InputAction&, bool, bool isPressed)
+      {
+         if (isPressed && !m_player->m_liveUI->IsInGameUIOpened())
+            m_player->m_liveUI->PushNotification(VPX::MCP::Bookmarks::Create(*m_player), 2500);
+      }));
 
    m_perfOverlayActionId = AddAction(
       std::make_unique<InputAction>(this, "PerfOverlay"s, "Toggle Perf. Overlay"s, keyMapping(SDL_SCANCODE_F11),

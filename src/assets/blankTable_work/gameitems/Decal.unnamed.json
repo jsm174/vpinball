@@ -1,0 +1,29 @@
+{
+  "Decal": {
+    "center": {
+      "x": 478.58072,
+      "y": 12.129861
+    },
+    "width": 23,
+    "height": 962,
+    "rotation": 90,
+    "image": "sidewood",
+    "surface": "",
+    "name": "Decal001",
+    "text": "",
+    "decal_type": "image",
+    "material": "Plastic with an image",
+    "color": "#ffffff",
+    "sizing_type": "manual_size",
+    "vertical_text": false,
+    "backglass": false,
+    "part_group_name": "Shadows",
+    "font": {
+      "style": [],
+      "weight": 900,
+      "size": 145000,
+      "name": "Arial Black"
+    },
+    "editor_layer_visibility": false
+  }
+}

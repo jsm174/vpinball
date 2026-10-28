@@ -1,0 +1,18 @@
+# VPXTOOL table OBJ file
+# VPXTOOL OBJ file
+# numVerts: 4 numFaces: 2
+o VRGroundShadowCaster
+v 24.601717 -36.07052 -0.185271
+v 24.601717 43.366936 -0.185271
+v -15.117012 -36.07052 -0.185271
+v -15.117012 43.366936 -0.185271
+vt 0 0
+vt 0 1
+vt 1 0
+vt 1 1
+vn -0 -0 -1
+vn -0 -0 -1
+vn -0 -0 -1
+vn -0 -0 -1
+f 3/3/3 2/2/2 1/1/1
+f 3/3/3 4/4/4 2/2/2

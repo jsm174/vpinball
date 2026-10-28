@@ -13,9 +13,7 @@
 #include "ui/live/EditorUI.h"
 #include "ui/live/ImGuiHelpers.h"
 #include "ui/live/LiveUI.h"
-#include "utils/bulb.h"
 
-#include "parts/light.h" // Light States submenu (light state update)
 
 namespace VPX::EditorUI
 {
@@ -304,25 +302,13 @@ void EditorChrome::RenderMenuBar()
          {
             // The editor does not run the table script (which usually sets the lamp states): set the light state of the table or of a collection here
             // (same update as the State property: persisted value + emitted intensity + live play state)
-            const auto setStates = [](const vector<IEditable *> &parts, const float state)
-            {
-               for (IEditable *const part : parts)
-                  if (part->GetItemType() == eItemLight && !part->IsUILocked())
-                  {
-                     Light *const light = static_cast<Light *>(part);
-                     light->m_d.m_state = state;
-                     light->m_currentIntensity = light->m_d.m_intensity * light->m_d.m_intensity_scale * light->m_d.m_state;
-                     light->m_currentFilamentTemperature = bulb_emission_to_filament_temperature(state);
-                     light->setInPlayState(state > 1.f ? (float)LightStateBlinking : state);
-                  }
-            };
             const float states[] = { 0.f, 0.706f, 1.f };
             const char *stateNames[] = { "Off", "0.706 (lamp top)", "On" };
             if (ImGui::BeginMenu("All Lights"))
             {
                for (int i = 0; i < 3; i++)
                   if (ImGui::MenuItem(stateNames[i]))
-                     setStates(editor.m_table->GetParts(), states[i]);
+                     EditorUI::SetLightStates(editor.m_table->GetParts(), states[i]);
                ImGui::EndMenu();
             }
             for (auto *const collection : editor.m_table->GetCollections())
@@ -334,7 +320,7 @@ void EditorChrome::RenderMenuBar()
                {
                   for (int i = 0; i < 3; i++)
                      if (ImGui::MenuItem(stateNames[i]))
-                        setStates(collection->GetParts(), states[i]);
+                        EditorUI::SetLightStates(collection->GetParts(), states[i]);
                   ImGui::EndMenu();
                }
             }

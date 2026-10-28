@@ -1,0 +1,83 @@
+{
+  "Flasher": {
+    "height": 50.0,
+    "pos_x": 1193.4061,
+    "pos_y": 1892.2538,
+    "rot_x": 0.0,
+    "rot_y": 0.0,
+    "rot_z": 0.0,
+    "color": "#ffffff",
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "name": "AngleProtractor",
+    "image_a": "angle",
+    "image_b": "",
+    "alpha": 100,
+    "modulate_vs_add": 0.9,
+    "is_visible": true,
+    "add_blend": "none",
+    "render_mode": "flasher",
+    "render_style": 0,
+    "glass_roughness": 0.0,
+    "glass_ambient": 0,
+    "glass_pad_top": 0.0,
+    "glass_pad_bottom": 0.0,
+    "glass_pad_left": 0.0,
+    "glass_pad_right": 0.0,
+    "image_src_link": "",
+    "display_texture": true,
+    "depth_bias": 0.0,
+    "image_alignment": "wrap",
+    "filter": "overlay",
+    "filter_amount": 100,
+    "light_map": "",
+    "backglass": false,
+    "part_group_name": "StockAssets",
+    "drag_points": [
+      {
+        "x": 1118.4061,
+        "y": 1817.2538,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 1118.4061,
+        "y": 1967.2538,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 1268.406,
+        "y": 1967.2538,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 1268.406,
+        "y": 1817.2538,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ]
+  }
+}

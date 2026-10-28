@@ -1,0 +1,15 @@
+{
+  "table_name": "Visual Pinball Demo Table",
+  "author_name": null,
+  "table_blurb": null,
+  "table_rules": null,
+  "author_email": null,
+  "release_date": null,
+  "table_save_rev": "190",
+  "table_version": "1.3",
+  "author_website": "http://www.vpforums.org/",
+  "table_save_date": "Tue Oct  7 21:23:15 2025",
+  "table_description": "Press C to enable manual Ball Control via the arrow keys and B",
+  "properties": {},
+  "properties_order": []
+}

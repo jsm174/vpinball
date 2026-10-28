@@ -24,6 +24,12 @@
 #include "ui/live/EditorUI.h"
 #include "ui/live/ImGuiHelpers.h"
 #include "ui/live/LiveUI.h"
+#include "SketchDraw.h"
+#include "SketchTool.h"
+#include "ProposalDraw.h"
+#include "LockUI.h"
+#include "HeatStore.h"
+#include "mcp/McpBookmarks.h"
 
 namespace
 {
@@ -888,6 +894,34 @@ void ViewportPane::SetPlayfieldCamera()
    m_viewAnimFrames = 0;
 }
 
+// What the sketch tool (and Ask Assistant) needs from this pane: the mapping between screen and playfield plane, the snapping, the undo history
+VPX::Sketch::Env ViewportPane::SketchEnv()
+{
+   using namespace VPX::Sketch;
+   Env env;
+   env.owner = this;
+   env.store = &Store::For(m_editor.m_table);
+   env.mouse = ImGui::GetMousePos();
+   env.unproject = [this](ImVec2 pos) { const Vertex2D v = UnprojectToPlane(pos, 0.f); return Point { v.x, v.y }; };
+   env.project = [this](Point p) { return Project(Vertex3Ds(p.x, p.y, 0.f)); };
+   env.dpi = m_editor.m_liveUI.GetDPI();
+   env.canStart = m_hovered && !ImGuizmo::IsOver() && !m_viewGizmoHover;
+   env.snapActive = m_editor.IsSnapActive(EditorUI::SnapKind::Move);
+   env.snapEnabled = m_editor.IsSnappingEnabled();
+   env.snapToParts = [this](Point& q)
+   {
+      Vertex2D v(q.x, q.y);
+      if (!m_editor.SnapPlanePoint(v, [this](const Vertex2D& a) { return Project(Vertex3Ds(a.x, a.y, 0.f)); }))
+         return false;
+      q = { v.x, v.y };
+      return true;
+   };
+   env.toggleSnap = [&editor = m_editor]() { editor.ToggleSnappingPublic(); };
+   env.recordUndo = [&editor = m_editor](std::function<void()> undo, std::function<std::function<void()>()> redo, const std::string& label)
+   { editor.RecordUndoAction(std::move(undo), std::move(redo), label); };
+   return env;
+}
+
 nlohmann::json ViewportPane::SaveSetup() const
 {
    nlohmann::json j = nlohmann::json::object();
@@ -1265,6 +1299,45 @@ void ViewportPane::RenderPane(const AreaRect& rect, const int leafId)
    m_view->m_shadeMode = m_shadeMode;
 }
 
+void ViewportPane::RenderCapturePane(const AreaRect& rect)
+{
+   if (m_view == nullptr)
+   {
+      m_view = m_editor.m_renderer->CreateEditorView();
+      m_view->m_outputWnd = m_editor.m_player->m_playfieldWnd;
+      m_view->m_renderOverlay3D = true;
+      m_view->m_applyPostFX = false;
+   }
+   m_view->m_renderScene = true;
+   ImGui::SetNextWindowPos(ImVec2(rect.x0, rect.y0));
+   ImGui::SetNextWindowSize(ImVec2(rect.Width(), rect.Height()));
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+   ImGui::Begin("##CapturePane", nullptr,
+      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus
+         | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings);
+   m_window = ImGui::GetCurrentWindow();
+   m_imageRect = rect;
+   const ImVec2 disp = ImGui::GetIO().DisplaySize;
+   if (rect.Width() > 0.f && rect.Height() > 0.f)
+      m_view->SetOutputArea(vec4(rect.x0 / disp.x, rect.y0 / disp.y, rect.x1 / disp.x, rect.y1 / disp.y));
+   else
+      m_view->m_renderScene = false;
+   m_hovered = false;
+   m_active = false;
+   ImGui::End();
+   ImGui::PopStyleVar(3);
+
+   m_view->m_editorView = m_viewType != ViewMode::PreviewCam;
+   m_view->m_editorBackdropEdit = m_viewType == ViewMode::DesktopBackdrop;
+   const ViewSetupID modeOverride = m_viewType == ViewMode::PreviewCam ? m_viewMode : BG_INVALID;
+   if (m_view->m_viewModeOverride != modeOverride)
+      m_view->m_isStaticPrepassDirty = true;
+   m_view->m_viewModeOverride = modeOverride;
+   m_view->m_shadeMode = m_shadeMode;
+}
+
 void ViewportPane::BoxSelectParts(const ImVec2& cornerA, const ImVec2& cornerB, bool add)
 {
    // Select all the pickable parts whose transform position projects inside the given screen box
@@ -1393,7 +1466,7 @@ void ViewportPane::RenderToolShelf()
    const float button = ToolButtonSize * dpi;
    const float sepHeight = ToolGroupGap * dpi;
    const float estWidth = button + 2.f * pad;
-   const float estHeight = 6.f * button + 4.f * gap + 2.f * sepHeight + 2.f * pad;
+   const float estHeight = 7.f * button + 4.f * gap + 2.f * sepHeight + 2.f * pad;
    // Do not overlap the nav cube side (too narrow viewport) nor the F9 Adjust Last panel at the bottom left (last frame rect, if shown)
    if (rect.Width() < estWidth + 220.f * dpi || pos.y + estHeight > rect.y1 - 8.f * dpi)
       return;
@@ -1421,18 +1494,37 @@ void ViewportPane::RenderToolShelf()
       // like the G / R / S keys, so the buttons stay enabled without any selection
       for (const auto& mode : editModes)
       {
-         const bool active = m_gizmoOperation == mode.operation && !m_measureMode;
+         const bool active = m_gizmoOperation == mode.operation && !m_measureMode && !VPX::Sketch::Tool::Get().Active();
          if (ToolButton(mode.icon, active))
+         {
+            VPX::Sketch::Tool::Get().SetActive(false);
             SetGizmoOperation(mode.operation);
+         }
          Tip(mode.title, mode.shortcut);
       }
 
-      // Measure mode: the last of the modes — click-drag on the playfield plane measures a distance
+      // Measure mode: click-drag on the playfield plane measures a distance
       {
          const bool active = m_measureMode;
          if (ToolButton(ICON_LC_RULER, active))
+         {
+            VPX::Sketch::Tool::Get().SetActive(false);
             SetMeasureMode(!m_measureMode);
+         }
          Tip(active ? "Measure (drag on the playfield)" : "Measure");
+      }
+
+      // Sketch mode: the last of the modes — draw notes on the playfield (shared with the MCP client through vpx_notes)
+      {
+         VPX::Sketch::Tool& sketch = VPX::Sketch::Tool::Get();
+         const bool active = sketch.Active();
+         if (ToolButton(ICON_LC_ROUTE, active))
+         {
+            if (!active)
+               SetMeasureMode(false);
+            sketch.SetActive(!active);
+         }
+         Tip(active ? "Sketch (tools at the top left of the view)" : "Sketch: draw notes on the playfield");
       }
 
       // Separator
@@ -2015,6 +2107,8 @@ DragPoint* ViewportPane::HitTestDragPoint(const ImVec2& mousePos) const
 
 void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
 {
+   if (m_view == nullptr)
+      return; // Not hosted by a shown leaf (released by a close or hidden behind a capture pane): nothing to process
    if (!m_cameraValid)
    {
       // First use: clone the camera of the current target pane (split panes share the setup, like
@@ -2116,6 +2210,18 @@ void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
       }
 
       // The pane's camera is pushed to the render view by Render3D (during the render pass)
+   }
+
+   if (m_captureView)
+   {
+      // Automation capture: the render and the external overlay only (no gizmo, no editor overlays, no interaction)
+      if (m_editor.m_externalOverlay && m_imageRect.Width() > 0.f && m_imageRect.Height() > 0.f)
+      {
+         overlayDrawList->PushClipRect(ImVec2(m_imageRect.x0, m_imageRect.y0), ImVec2(m_imageRect.x1, m_imageRect.y1), true);
+         m_editor.m_externalOverlay([this](const Vertex3Ds& v) { return Project(v); }, overlayDrawList);
+         overlayDrawList->PopClipRect();
+      }
+      return;
    }
 
    // Selection manipulator
@@ -2376,6 +2482,27 @@ void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
             overlayDrawList->AddCircleFilled(p1, 2.5f * dr, col);
             const ImVec2 ts = ImGui::CalcTextSize(label);
             overlayDrawList->AddText(ImVec2(0.5f * (p0.x + p1.x) - 0.5f * ts.x, 0.5f * (p0.y + p1.y) - ts.y - 4.f * dr), col, label);
+         }
+      }
+
+      // Sketch layer marks, projected onto the playfield plane
+      // (not while an automation capture runs: the capture draws the marks itself, through its own camera)
+      if (m_viewType != ViewMode::DesktopBackdrop && !m_editor.IsCapturing())
+      {
+         using namespace VPX::Sketch;
+         Store& sketchStore = Store::For(m_editor.m_table);
+         const float sketchDpi = m_editor.m_liveUI.GetDPI();
+         const std::function<ImVec2(Point)> project = [&ctx](Point p) { return ctx.Project(Vertex3Ds(p.x, p.y, 0.f)); };
+         VPX::Heat::Draw(overlayDrawList, VPX::Heat::Store::For(m_editor.m_table), project, sketchDpi);
+         VPX::MCP::Bookmarks::DrawPaths(overlayDrawList, VPX::MCP::Bookmarks::Store::For(m_editor.m_table), project, sketchDpi);
+         Draw(overlayDrawList, sketchStore, project, sketchDpi);
+         VPX::Proposals::DrawGhosts(overlayDrawList, VPX::Proposals::Store::For(m_editor.m_table), m_editor.m_table, project, sketchDpi);
+         VPX::Locks::DrawBadges(overlayDrawList, m_editor.m_table, project, sketchDpi);
+         Tool& sketch = Tool::Get();
+         if (sketch.Active())
+         {
+            sketch.NotePane(this, ImVec2(m_imageRect.x0, m_imageRect.y0), m_hovered, &sketchStore);
+            sketch.DrawPreview(overlayDrawList, project, sketchDpi, this);
          }
       }
 
@@ -2673,8 +2800,57 @@ void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
             m_measureDragging = true;
          }
       }
-      if (!m_measureMode && !modalMouse && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !(m_editor.m_navAltMiddleButton && io.KeyAlt) && !ImGuizmo::IsOver()
-         && !m_viewGizmoHover) // Alt+click is orbit when Alt acts as the middle button
+      // Sketch tool: draws on the playfield plane
+      if (VPX::Sketch::Tool::Get().Active() && !modalMouse && m_viewType != ViewMode::DesktopBackdrop)
+      {
+         using namespace VPX::Sketch;
+         Tool& sketch = Tool::Get();
+         const Env env = SketchEnv();
+         if (m_hovered || m_active || sketch.OwnedBy(this))
+            sketch.Input(env);
+      }
+      // Right click (not on a sketch mark): Ask Assistant about the spot or the part under the mouse. Opens on the release, when the mouse did not drag
+      if (!modalMouse && m_viewType != ViewMode::DesktopBackdrop)
+      {
+         using namespace VPX::Sketch;
+         if (m_hovered && ImGui::IsMouseClicked(ImGuiMouseButton_Right) && !Tool::Get().ConsumedRightPress() && !ImGuizmo::IsOver() && !m_viewGizmoHover)
+         {
+            m_askArmed = true;
+            m_askPress = ImGui::GetMousePos();
+         }
+         if (m_askArmed && ImGui::IsMouseReleased(ImGuiMouseButton_Right))
+         {
+            m_askArmed = false;
+            const ImVec2 mouse = ImGui::GetMousePos();
+            const float dr = m_editor.m_liveUI.GetDPI();
+            if (hypotf(mouse.x - m_askPress.x, mouse.y - m_askPress.y) < 6.f * dr)
+            {
+               // The nearest part under the mouse (not the table itself)
+               string part;
+               vector<HitTestResult> hits;
+               RayCastParts(m_askPress, hits);
+               float nearest = FLT_MAX;
+               for (const HitTestResult& hr : hits)
+                  if (hr.m_obj != nullptr && hr.m_obj->m_editable != nullptr && hr.m_obj->m_editable != m_editor.m_table && hr.m_time < nearest
+                     && !IsBackdropPart(hr.m_obj->m_editable, m_editor.m_table)) // (a click on the playfield mesh is a click on the spot)
+                  {
+                     nearest = hr.m_time;
+                     part = hr.m_obj->m_editable->GetName();
+                  }
+               const Vertex2D at = UnprojectToPlane(m_askPress, 0.f);
+               nlohmann::json view = nlohmann::json::object();
+               view["pane"] = "viewport";
+               view["perspective"] = m_perspectiveCam;
+               view["predefinedView"] = static_cast<int>(m_predefinedView);
+               view["camDistance"] = m_camDistance;
+               Tool::Get().OpenAskMenu(SketchEnv(), Point { at.x, at.y }, part, view, mouse);
+            }
+         }
+      }
+      if (!ImGui::IsMouseDown(ImGuiMouseButton_Right))
+         m_askArmed = false;
+      if (!m_measureMode && !VPX::Sketch::Tool::Get().Active() && !modalMouse && ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !(m_editor.m_navAltMiddleButton && io.KeyAlt)
+         && !ImGuizmo::IsOver() && !m_viewGizmoHover) // Alt+click is orbit when Alt acts as the middle button
       {
          m_boxSelectStart = ImGui::GetMousePos();
          if (m_editor.m_partLibrary.IsPlacementArmed())

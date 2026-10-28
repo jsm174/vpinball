@@ -1,0 +1,18 @@
+# VPXTOOL table OBJ file
+# VPXTOOL OBJ file
+# numVerts: 4 numFaces: 2
+o BallShadow3
+v 7.956001 7.9707355 0
+v -7.9653597 7.9707355 0
+v -7.9653597 -8.006294 0
+v 7.956001 -8.006294 0
+vt 0 0
+vt 0 1
+vt 1 1
+vt 1 0
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+f 3/3/3 2/2/2 1/1/1
+f 3/3/3 1/1/1 4/4/4

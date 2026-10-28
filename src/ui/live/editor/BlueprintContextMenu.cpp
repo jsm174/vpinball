@@ -17,6 +17,8 @@
 #include "parts/pintable.h"
 #include "renderer/RenderDevice.h"
 #include "ui/EditorClipboard.h"
+#include "SketchTool.h"
+#include "LockUI.h"
 
 namespace VPX::EditorUI
 {
@@ -208,6 +210,9 @@ void BlueprintPane::RenderContextMenu()
          if (ImGui::MenuItem("Lock", nullptr, anyLocked))
             editor.LockElements();
          ImGui::EndDisabled();
+         // Lock for assistant: the MCP server refuses to change the part (not the editor lock above, which stops the user)
+         if (menuEditable != nullptr)
+            VPX::Locks::RenderLockMenu(menuEditable, editor.m_table);
 
          // The stacked parts under the menu position (the win32 menu lists them for picking)
          const vector<std::shared_ptr<EditorUIPart>> hitParts = MenuHitParts();
@@ -237,6 +242,30 @@ void BlueprintPane::RenderContextMenu()
          if (ImGui::MenuItem("Add Part..."))
             editor.RequestAddPartPopup(m_menuPos);
          ImGui::EndDisabled();
+      }
+   }
+   // Ask Assistant about the part under the click (or the spot): a request saved with the sketch notes, read by the assistant with vpx_notes
+   if (m_menuPoint == nullptr)
+   {
+      ImGui::Separator();
+      const vector<std::shared_ptr<EditorUIPart>> hitParts = MenuHitParts();
+      // The topmost part under the click, except the playfield mesh (a click on it is a click on the spot)
+      string part;
+      for (const std::shared_ptr<EditorUIPart>& hit : hitParts)
+         if (IEditable* const editable = hit->GetEditable(); editable != nullptr && !VPX::Sketch::IsBackdropPart(editable, editor.m_table))
+         {
+            part = editable->GetName();
+            break;
+         }
+      const string label = part.empty() ? "Ask Assistant about this spot..." : "Ask Assistant about " + part + "...";
+      if (ImGui::MenuItem(label.c_str()))
+      {
+         const Vertex2D at = Unproject(m_menuPos);
+         nlohmann::json view = nlohmann::json::object();
+         view["pane"] = "blueprint";
+         view["zoom"] = m_zoom;
+         view["center"] = nlohmann::json::array({ m_offset.x, m_offset.y });
+         VPX::Sketch::Tool::Get().BeginAsk(SketchEnv(), VPX::Sketch::Point { at.x, at.y }, part, view, m_menuPos);
       }
    }
    ImGui::EndPopup();

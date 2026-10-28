@@ -167,6 +167,9 @@ public:
 
    PlungerData m_d;
 
+   // Where the rod is while playing, as a fraction of its travel: 0 fully forward (at rest), 1 fully pulled back; 0 when there is no physics object (read only, used by the play bookmarks)
+   float GetPullFraction() const;
+
 private:
    Renderer *m_renderer = nullptr;
    std::shared_ptr<MeshBuffer> m_meshBuffer;

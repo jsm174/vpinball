@@ -2056,6 +2056,12 @@ void RenderView::Render()
       else if ((m_viewModeOverride != BG_INVALID ? m_viewModeOverride : r->m_table->GetViewMode()) == BG_DESKTOP)
          m_visibilityMask = PartGroupData::PlayerModeVisibilityMask::PMVM_DESKTOP;
    }
+   if (r->m_visibilityMaskOverride != 0)
+   {
+      m_visibilityMask = r->m_visibilityMaskOverride;
+      if (r->m_visibilityMaskOverride & (PartGroupData::PlayerModeVisibilityMask::PMVM_VIRTUAL_REALITY | PartGroupData::PlayerModeVisibilityMask::PMVM_MIXED_REALITY))
+         m_noBackdrop = true;
+   }
 
    // We don't need to set the dependency on the previous frame render as this would be a cross frame dependency which does not have any meaning since dependencies are resolved per frame
    // m_renderDevice->AddRenderTargetDependency(m_renderDevice->GetPreviousBackBufferTexture());

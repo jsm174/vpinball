@@ -1006,6 +1006,15 @@ STDMETHODIMP Plunger::Fire()
    return S_OK;
 }
 
+float Plunger::GetPullFraction() const
+{
+   if (m_phitplunger == nullptr)
+      return 0.f;
+   const PlungerMoverObject &mover = m_phitplunger->m_plungerMover;
+   const float range = mover.m_frameStart - mover.m_frameEnd;
+   return range != 0.f ? clamp((mover.m_pos - mover.m_frameEnd) / range, 0.f, 1.f) : 0.f;
+}
+
 STDMETHODIMP Plunger::get_PullSpeed(float *pVal)
 {
    *pVal = m_d.m_speedPull;

@@ -186,7 +186,7 @@ void ReferenceImageOp::OpenAddDialog()
    m_openDialog = true;
 }
 
-void ReferenceImageOp::Add(const string &image, const float width, const float height)
+Flasher *ReferenceImageOp::Add(const string &image, const float width, const float height)
 {
    EditorUI &ed = m_editor;
    PinTable *const table = ed.m_table;
@@ -212,6 +212,7 @@ void ReferenceImageOp::Add(const string &image, const float width, const float h
       OutlinerPanel::m_anchor = it->second;
    }
    ed.Report("Added reference image "s + flasher->GetName() + " (" + image + "), hidden in play");
+   return flasher;
 }
 
 Texture *ReferenceImageOp::ImportFile(const string &file)

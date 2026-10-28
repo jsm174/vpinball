@@ -1,0 +1,43 @@
+{
+  "Flipper": {
+    "center": {
+      "x": 278.2138,
+      "y": 1803.2714
+    },
+    "base_radius": 20.58875,
+    "end_radius": 11.765,
+    "flipper_radius_max": 117.65,
+    "return": 0.05,
+    "start_angle": 120.5,
+    "end_angle": 70.0,
+    "override_physics": 0,
+    "mass": 0.7,
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "surface": "",
+    "material": "Plastic White",
+    "name": "LeftFlipper",
+    "rubber_material": "Red Rubber",
+    "rubber_thickness_int": 5,
+    "rubber_thickness": 5.8825,
+    "rubber_height_int": 17,
+    "rubber_height": 17.6475,
+    "rubber_width_int": 23,
+    "rubber_width": 23.53,
+    "strength": 2600.0,
+    "elasticity": 0.8,
+    "elasticity_falloff": 0.001,
+    "friction": 0.8,
+    "ramp_up": 0.0,
+    "scatter": 0.0,
+    "torque_damping": 0.25,
+    "torque_damping_angle": 6.0,
+    "flipper_radius_min": 0.0,
+    "is_visible": true,
+    "is_enabled": true,
+    "height": 50.0,
+    "image": "flipper_williams_logo_left",
+    "is_reflection_enabled": true,
+    "part_group_name": "Visuals"
+  }
+}

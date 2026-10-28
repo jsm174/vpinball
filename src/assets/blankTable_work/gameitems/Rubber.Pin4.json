@@ -1,0 +1,118 @@
+{
+  "Rubber": {
+    "height": 29.5,
+    "hit_height": 29.5,
+    "thickness": 9,
+    "hit_event": true,
+    "material": "Rubber White",
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "name": "Pin4",
+    "image": "",
+    "elasticity": 0.8,
+    "elasticity_falloff": 0.1,
+    "friction": 0.9,
+    "scatter": 0.05,
+    "is_collidable": true,
+    "is_visible": true,
+    "static_rendering": true,
+    "show_in_editor": false,
+    "rot_x": 0.0,
+    "rot_y": 0.0,
+    "rot_z": 0.0,
+    "is_reflection_enabled": true,
+    "physics_material": "",
+    "overwrite_physics": true,
+    "drag_points": [
+      {
+        "x": 781.95544,
+        "y": 1481.1953,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 776.22784,
+        "y": 1483.5677,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 773.85547,
+        "y": 1489.2953,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 776.22784,
+        "y": 1495.0228,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 781.95544,
+        "y": 1497.3953,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 787.68304,
+        "y": 1495.0228,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 790.0554,
+        "y": 1489.2953,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 787.68304,
+        "y": 1483.5677,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ],
+    "part_group_name": "Visuals"
+  }
+}

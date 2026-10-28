@@ -62,6 +62,9 @@ public:
 
    void DrawUI(std::function<Vertex2D(Vertex3Ds)> project, ImDrawList* drawList, bool fill) const override;
 
+   const Vertex3Ds* GetVertices() const { return m_rgv; }
+   int GetVertexCount() const { return m_cvertex; }
+
 private:
    Vertex3Ds *m_rgv;
    Vertex3Ds m_normal;

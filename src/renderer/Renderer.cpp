@@ -1413,7 +1413,7 @@ void Renderer::RenderItem(IEditable* const editable, bool isNoBackdrop)
    const bool isWireframe = m_activeView->m_shadeMode != ShadeMode::Default && (m_render_mask & (UI_FILL | UI_EDGES | LIGHT_BUFFER | REFLECTION_PASS)) == 0;
    if (editable->GetIRenderable() == nullptr // Not renderable
       || (editable->m_desktopBackdrop && isNoBackdrop) // Don't render backdrop items in reflections or VR & cabinet modes
-      || (!m_activeView->m_editorView // Apply player mode visibility mask (superseded by the editor's UI visibility in editor views)
+      || ((!m_activeView->m_editorView || m_visibilityMaskOverride != 0) // Apply player mode visibility mask (superseded by the editor's UI visibility in editor views, unless a play mode preview is captured)
          && editable->GetPartGroup() != nullptr && (editable->GetPartGroup()->GetPlayerModeVisibilityMask() & m_activeView->m_visibilityMask) == 0))
       return;
 

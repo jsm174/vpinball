@@ -15,6 +15,8 @@ class RenderView;
 struct HitTestResult;
 struct ImDrawList;
 
+namespace VPX::Sketch { struct Env; }
+
 namespace VPX::EditorUI
 {
 
@@ -43,6 +45,11 @@ public:
    void RenderPane(const AreaRect& rect, int leafId) override;
    void OnUnhosted() override;
    void CancelGizmoDrag() override;
+
+   // Automation capture pane (see EditorUI::ShowTopView): not hosted by a layout leaf, drawn over the
+   // whole window without header, status overlay nor interaction, only the editor's external overlay
+   bool m_captureView = false;
+   void RenderCapturePane(const AreaRect& rect);
 
    // Renders the scene parts for this pane's render pass (called by the editor while this pane's
    // render view is being recorded): filtered by the pane's own camera mode and shading setup
@@ -108,6 +115,9 @@ public:
    // interaction, all through the pane projection (see SetupOverlay / PickRay)
    void RenderUI(ImDrawList* overlayDrawList);
 
+   // What the sketch tool and Ask Assistant need from this pane (screen <-> playfield mapping, snapping, undo)
+   VPX::Sketch::Env SketchEnv();
+
    // Helper messages of the status bar while this pane is the context view (active op/drag or hovered)
    void AppendStatusHints(vector<StatusHint>& hints) const override;
 
@@ -130,6 +140,8 @@ public:
    bool m_hovered = false;
    bool m_active = false;
    bool m_flyMode = false; // Fly mode: the pane's 3D view takes the whole window, hiding the editor UI (F shortcut)
+   bool m_askArmed = false; // Right click pressed (Ask Assistant menu opens on the release when the mouse did not drag)
+   ImVec2 m_askPress;
 
    // Measure mode: click-drag on the playfield plane measures a distance (the last measurement stays until a new drag or a mode change)
    bool m_measureMode = false;

@@ -365,6 +365,16 @@ void LiveUI::UpdatePlayfieldWindowFrame()
    m_playfieldWindowFramed = framed;
    SDL_SetWindowBordered(wnd->GetCore(), framed);
    SDL_SetWindowResizable(wnd->GetCore(), framed);
+   if (!framed)
+      return;
+   const SDL_DisplayID display = SDL_GetDisplayForWindow(wnd->GetCore());
+   SDL_Rect usable;
+   int width, height;
+   if (display == 0 || !SDL_GetDisplayUsableBounds(display, &usable) || !SDL_GetWindowSize(wnd->GetCore(), &width, &height) || width < usable.w || height < usable.h)
+      return;
+   SDL_SetWindowSize(wnd->GetCore(), usable.w * 4 / 5, usable.h * 4 / 5);
+   SDL_SetWindowPosition(wnd->GetCore(), SDL_WINDOWPOS_CENTERED_DISPLAY(display), SDL_WINDOWPOS_CENTERED_DISPLAY(display));
+   SDL_MaximizeWindow(wnd->GetCore());
 }
 
 void LiveUI::NewFrame()
@@ -500,7 +510,7 @@ void LiveUI::RenderUI()
    m_plumbOverlay.Update();
 
    // Display notification overlays except when script has an unaligned rotation
-   m_notificationOverlay.Update(true, m_overlayFont);
+   m_notificationOverlay.Update(!m_hideNotifications, m_overlayFont);
 
    // Display performance overlays
    m_perfUI.Update();
@@ -603,7 +613,7 @@ void LiveUI::RenderUI()
       // into the persistent dynamic MeshBuffer as a fallback
       if (static_cast<int>(m_uiGeometry.size()) <= n)
          m_uiGeometry.resize(n + 1);
-      if (m_uiGeometry[n] == nullptr)
+      if (m_uiGeometry[n] == nullptr || m_uiGeometry[n].use_count() > 1) // A snapshot still referenced by the draw commands of a frame being rendered is not rewritten
          m_uiGeometry[n] = std::make_shared<UIListGeometry>();
       const std::shared_ptr<UIListGeometry> &geo = m_uiGeometry[n];
       geo->numVertices = numVertices;

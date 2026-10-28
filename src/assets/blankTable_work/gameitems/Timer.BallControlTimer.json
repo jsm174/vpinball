@@ -1,0 +1,13 @@
+{
+  "Timer": {
+    "center": {
+      "x": 1050.0,
+      "y": 1952.0
+    },
+    "is_timer_enabled": true,
+    "timer_interval": -1,
+    "name": "BallControlTimer",
+    "backglass": false,
+    "part_group_name": "Visuals"
+  }
+}

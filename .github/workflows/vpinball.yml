@@ -91,13 +91,8 @@ jobs:
           if [[ "${{ needs.context.outputs.is_pr }}" != "true" ]]; then
             DESKTOP='{"include":[
               {"os":"windows-2025-vs2026","type":"BGFX","platform":"windows","arch":"x64","config":"Release"},
-              {"os":"windows-2025-vs2026","type":"BGFX","platform":"windows","arch":"x86","config":"Release"},
               {"os":"windows-2025-vs2026","type":"BGFX","platform":"windows-mingw","arch":"x64","config":"Release"},
-              {"os":"macos-15","type":"BGFX","platform":"macos","arch":"arm64","config":"Release"},
-              {"os":"macos-15","type":"BGFX","platform":"macos","arch":"x64","config":"Release"},
-              {"os":"ubuntu-24.04","type":"BGFX","platform":"linux","arch":"x64","config":"Release"},
-              {"os":"windows-2025-vs2026","type":"GL","platform":"windows","arch":"x64","config":"Release"},
-              {"os":"windows-2025-vs2026","type":"GL","platform":"windows","arch":"x86","config":"Release"}
+              {"os":"macos-15","type":"BGFX","platform":"macos","arch":"arm64","config":"Release"}
             ]}'
             SBC='{"include":[
               {"os":"ubuntu-24.04-arm","type":"BGFX","board":"rpi","platform":"linux","arch":"aarch64","config":"Release"},
@@ -320,6 +315,7 @@ jobs:
 
   build-dx:
     name: Build VPinballX-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
+    if: false
     runs-on: windows-2025-vs2026
     needs: [ context, version, matrix ]
     strategy:
@@ -408,6 +404,7 @@ jobs:
 
   build-sbc:
     name: Build VPinballX_${{ matrix.type }}-${{ matrix.board }}-${{ matrix.platform }}-${{ matrix.arch }}-${{ matrix.config }}
+    if: false
     runs-on: ${{ matrix.os }}
     needs: [ context, version, matrix ]
     strategy:
@@ -480,6 +477,7 @@ jobs:
 
   build-ios:
     name: Build VPinballX_BGFX-ios-${{ matrix.config }}
+    if: false
     runs-on: macos-26
     needs: [ context, version ]
     strategy:
@@ -553,6 +551,7 @@ jobs:
 
   build-android:
     name: Build VPinballX_BGFX-android-${{ matrix.flavor }}-${{ matrix.config }}
+    if: false
     runs-on: ubuntu-24.04
     needs: [ context, version, matrix ]
     strategy:
@@ -683,6 +682,7 @@ jobs:
 
   build-wasm:
     name: Build VPinballX_BGFX-wasm-${{ matrix.config }}
+    if: false
     runs-on: ubuntu-24.04
     needs: [ context, version ]
     strategy:
@@ -773,3 +773,83 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+
+  release-mcp:
+    name: Publish mcp-latest release
+    if: always() && github.repository == 'jsm174/vpinball' && github.event_name == 'push' && github.ref_name == 'mcp-server'
+    runs-on: ubuntu-24.04
+    needs: [ version, build-desktop ]
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: mcp-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: tools/mcp-install
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: VPinballX_BGFX-*-windows-x64-Release*
+          skip-decompress: true
+      - uses: actions/download-artifact@v8
+        with:
+          path: artifacts
+          pattern: VPinballX_BGFX-*-macos-arm64-Release*
+          skip-decompress: true
+      - name: Stage release assets
+        run: |
+          mkdir release
+          stage() {
+            FILE=$(find artifacts -type f -name "$1" | head -n 1)
+            if [[ -z "${FILE}" ]]; then
+              echo "Missing build artifact $1" >&2
+              exit 1
+            fi
+            cp "${FILE}" "release/$2"
+          }
+          stage "VPinballX_BGFX-*-windows-x64-Release.zip" VPinballX_BGFX-mcp-windows-x64.zip
+          stage "VPinballX_BGFX-*-macos-arm64-Release.dmg" VPinballX_BGFX-mcp-macos-arm64.dmg
+          cp tools/mcp-install/*.ps1 tools/mcp-install/*.sh release
+          echo "${{ needs.version.outputs.tag }}" > release/version.txt
+      - name: Publish release
+        run: |
+          TITLE="Unofficial MCP build ${{ needs.version.outputs.tag }}"
+          cat > notes.md <<NOTES
+          **Unofficial build.** This is an experimental build for a personal project. It is not an official Visual Pinball release, and it is not endorsed or supported by the Visual Pinball team. Please do not report problems with it to the Visual Pinball project.
+
+          Rolling build of the \`mcp-server\` branch, replaced on every successful push.
+
+          ## Install
+
+          Each command installs or updates this build, starts it, and connects the assistant to its MCP server. Run it again to update.
+
+          ### With Claude Code
+
+          Windows (PowerShell):
+
+              irm https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/install.ps1 | iex
+
+          macOS, Apple silicon (Terminal):
+
+              curl -fsSL https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/install.sh | sh
+
+          ### With Codex
+
+          Windows (PowerShell):
+
+              irm https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/install-codex.ps1 | iex
+
+          macOS, Apple silicon (Terminal):
+
+              curl -fsSL https://github.com/${{ github.repository }}/releases/download/${RELEASE_TAG}/install-codex.sh | sh
+          NOTES
+          sed -i 's/^          //' notes.md
+          if gh release view "${RELEASE_TAG}" --repo "${{ github.repository }}" > /dev/null 2>&1; then
+            gh api -X PATCH "repos/${{ github.repository }}/git/refs/tags/${RELEASE_TAG}" -f sha="${GITHUB_SHA}" -F force=true
+            gh release upload "${RELEASE_TAG}" release/* --clobber --repo "${{ github.repository }}"
+            gh release edit "${RELEASE_TAG}" --title "${TITLE}" --notes-file notes.md --prerelease --repo "${{ github.repository }}"
+          else
+            gh release create "${RELEASE_TAG}" release/* --target "${GITHUB_SHA}" --title "${TITLE}" --notes-file notes.md --prerelease --repo "${{ github.repository }}"
+          fi

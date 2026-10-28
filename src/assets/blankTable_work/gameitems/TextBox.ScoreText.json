@@ -1,0 +1,29 @@
+{
+  "TextBox": {
+    "ver1": {
+      "x": 8.0,
+      "y": 8.0
+    },
+    "ver2": {
+      "x": 278.0,
+      "y": 60.0
+    },
+    "back_color": "#070707",
+    "font_color": "#ce6700",
+    "intensity_scale": 1.5,
+    "text": "VISUAL PINBALL",
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "name": "ScoreText",
+    "align": "right",
+    "is_transparent": false,
+    "is_dmd": false,
+    "font": {
+      "style": [],
+      "weight": 700,
+      "size": 180000,
+      "name": "Lucida Sans Unicode"
+    },
+    "part_group_name": "Visuals"
+  }
+}
