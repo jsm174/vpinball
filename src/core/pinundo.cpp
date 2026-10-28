@@ -4,6 +4,8 @@
 
 #include "pinundo.h"
 
+#include <ctime>
+
 #include "vpversion.h"
 #include "parts/ball.h"
 #include "parts/PartGroup.h"
@@ -43,6 +45,9 @@ public:
    vector<IEditable *> m_vieDelete;
    vector<IEditable *> m_vieMark;
    uint64_t m_id = 0; // Unique id of the record (see PinUndo::TopRecordId)
+   uint64_t m_changeId = 0; // Id of the edit in the change log: shared by a record and the records that undo and redo it
+   string m_source; // who made the edit (user or mcp)
+   string m_time; // local time of the edit
    bool m_ownsCreateRefs = false; // The record holds the creation reference of its created parts (revert of an undelete), released if it is dropped without being applied
    std::any m_editorState; // Editor provided state (e.g. selection) captured when the record was begun
 
@@ -168,6 +173,18 @@ bool PinUndo::MergeLastIntoPrevious()
       prev.m_vieMark.push_back(pie);
       prev.m_vstm.push_back(std::move(last.m_vstm[i]));
    }
+   // The log shows the two edits as one: the parts of the folded record join the previous entry
+   if (ChangeEntry *const folded = FindChange(last.m_changeId))
+   {
+      if (ChangeEntry *const into = FindChange(prev.m_changeId))
+      {
+         for (const auto &part : folded->parts)
+            if (std::ranges::find(into->parts, part) == into->parts.end())
+               into->parts.push_back(part);
+         into->seq = 0;
+      }
+      LogRemove(last.m_changeId);
+   }
    m_undoRecords.pop_back();
    if (m_cleanpoint != NoCleanPoint && m_cleanpoint > m_undoRecords.size())
       m_cleanpoint = NoCleanPoint;
@@ -193,14 +210,102 @@ string PinUndo::RedoLabel(const size_t index) const { return index < m_redoRecor
 
 void PinUndo::SetLabel(const string &label)
 {
-   if (!m_undoRecords.empty())
-      m_undoRecords.back()->m_label = label;
+   if (m_undoRecords.empty())
+      return;
+   m_undoRecords.back()->m_label = label;
+   LogLabel(*m_undoRecords.back());
 }
 
 void PinUndo::SetFieldLabel(const string &field)
 {
-   if (!m_undoRecords.empty())
-      m_undoRecords.back()->m_field = field;
+   if (m_undoRecords.empty())
+      return;
+   m_undoRecords.back()->m_field = field;
+   LogLabel(*m_undoRecords.back());
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Change log
+
+void PinUndo::PublishChanges() const
+{
+   for (ChangeEntry &entry : m_changeLog)
+      if (entry.seq == 0)
+         entry.seq = ++m_changeSeq;
+}
+
+PinUndo::ChangeEntry *PinUndo::FindChange(const uint64_t changeId)
+{
+   for (auto it = m_changeLog.rbegin(); it != m_changeLog.rend(); ++it)
+      if (it->changeId == changeId)
+         return &*it;
+   return nullptr;
+}
+
+// A record has just ended: the edit goes to the log (records that hold nothing, begun by the editor just in case, are skipped)
+void PinUndo::LogEnded(const UndoRecord &record)
+{
+   if (record.m_changeId == 0 || FindChange(record.m_changeId) != nullptr)
+      return;
+   ChangeEntry entry;
+   entry.changeId = record.m_changeId;
+   entry.label = record.Label();
+   entry.field = record.m_field;
+   entry.source = record.m_source;
+   entry.time = record.m_time;
+   entry.actions = record.m_actions.size();
+   const auto addParts = [&entry](const vector<IEditable *> &parts, const char *op)
+   {
+      for (IEditable *const pie : parts)
+         if (pie != nullptr)
+            entry.parts.emplace_back(pie->GetName(), op);
+   };
+   addParts(record.m_vieCreate, "add");
+   addParts(record.m_vieDelete, "delete");
+   addParts(record.m_vieMark, "edit");
+   if (entry.parts.empty() && entry.actions == 0)
+      return;
+   entry.seq = 0;
+   m_changeLog.push_back(std::move(entry));
+   constexpr size_t MAX_LOG = 400;
+   if (m_changeLog.size() > MAX_LOG)
+      m_changeLog.erase(m_changeLog.begin());
+}
+
+// The history label of a record changed after it ended
+void PinUndo::LogLabel(const UndoRecord &record)
+{
+   if (ChangeEntry *const entry = FindChange(record.m_changeId))
+   {
+      const string label = record.Label();
+      if (entry->label != label || entry->field != record.m_field)
+      {
+         entry->label = label;
+         entry->field = record.m_field;
+         entry->seq = 0;
+      }
+   }
+}
+
+// An edit was undone or redone
+void PinUndo::LogStatus(const uint64_t changeId, const bool applied)
+{
+   if (ChangeEntry *const entry = FindChange(changeId))
+   {
+      entry->applied = applied;
+      entry->by = s_editSource;
+      entry->seq = 0;
+   }
+}
+
+// The record is gone without an edit (discarded, or canceled right after it began)
+void PinUndo::LogRemove(const uint64_t changeId)
+{
+   const auto it = std::ranges::find_if(m_changeLog, [changeId](const ChangeEntry &entry) { return entry.changeId == changeId; });
+   if (it != m_changeLog.end())
+   {
+      m_changeLog.erase(it);
+   }
 }
 
 void PinUndo::ClearRedo()
@@ -252,6 +357,20 @@ void PinUndo::BeginUndo()
       m_undoRecords.push_back(std::make_unique<UndoRecord>());
       UndoRecord &record = *m_undoRecords.back();
       record.m_id = ++m_lastRecordId;
+      record.m_changeId = ++m_lastChangeId;
+      record.m_source = s_editSource;
+      {
+         const std::time_t now = std::time(nullptr);
+         std::tm tm {};
+#ifdef _WIN32
+         localtime_s(&tm, &now);
+#else
+         localtime_r(&now, &tm);
+#endif
+         char buf[32];
+         std::strftime(buf, sizeof(buf), "%Y-%m-%dT%H:%M:%S", &tm);
+         record.m_time = buf;
+      }
       record.m_dirtyStateAtBegin = m_dirtyState;
       // A new edit invalidates the redo records. They are set aside in the new record, which restores them if it ends up discarded or canceled (see
       // Discard, and Undo(false) for a canceled modal transform: the editor also begins and discards a record every frame while the mouse is over a
@@ -343,6 +462,10 @@ std::any PinUndo::Undo(const bool keepForRedo)
    }
    else
       ClearRedo(); // Not redoable (non part change): the redo records may depend on the state before it
+   if (keepForRedo)
+      LogStatus(record->m_changeId, false);
+   else
+      LogRemove(record->m_changeId); // canceled right after it began: no edit
    record.reset();
 
    UpdateDirtyAfterMove();
@@ -366,6 +489,7 @@ std::any PinUndo::Redo()
    assert(inverse); // Redo records never hold actions, they are always invertible
    if (inverse)
       m_undoRecords.push_back(std::move(inverse));
+   LogStatus(record->m_changeId, true);
    record.reset();
 
    UpdateDirtyAfterMove();
@@ -382,6 +506,9 @@ std::any PinUndo::ApplyRecord(UndoRecord &record, const bool buildInverse, std::
    {
       inverse = std::make_unique<UndoRecord>();
       inverse->m_id = ++m_lastRecordId;
+      inverse->m_changeId = record.m_changeId;
+      inverse->m_source = record.m_source;
+      inverse->m_time = record.m_time;
       inverse->m_ownsCreateRefs = true;
       if (m_editorStateCapture)
          inverse->m_editorState = m_editorStateCapture(); // Editor state before the revert, given back when the inverse is applied
@@ -541,6 +668,8 @@ void PinUndo::Discard()
       m_cleanpoint = record->m_cleanpointAtBegin;
    }
 
+   LogRemove(record->m_changeId);
+
    // A discarded record leaves no trace: restore the dirty state it changed when ended
    if (m_dirtyState != record->m_dirtyStateAtBegin)
    {
@@ -555,6 +684,8 @@ void PinUndo::EndUndo()
    assert(m_nUndoLayer > 0);
    if (m_nUndoLayer > 0)
       m_nUndoLayer--;
+   if (m_nUndoLayer == 0 && !m_undoRecords.empty())
+      LogEnded(*m_undoRecords.back());
    if (m_nUndoLayer == 0 && (m_dirtyState < SaveDirtyState::Dirty))
    {
       m_dirtyState = SaveDirtyState::Dirty;

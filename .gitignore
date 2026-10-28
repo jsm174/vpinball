@@ -35,3 +35,4 @@ VisualPinball.sln
 /.build
 
 /.cache/
+__pycache__/

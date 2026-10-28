@@ -30,6 +30,7 @@
 #include "parts/PartGroup.h"
 #include "parts/ball.h"
 #include "parts/light.h"
+#include "utils/bulb.h"
 #include "parts/Material.h"
 #include "parts/primitive.h"
 #include "math/dragpoint.h"
@@ -62,6 +63,9 @@
 
 #include "imgui/imgui_stdlib.h"
 #include "imguizmo/ImGuizmo.h"
+#include "editor/SketchTool.h"
+#include "editor/ProposalPanel.h"
+#include "editor/LayersPanel.h"
 #include "imgui_markdown/imgui_markdown.h"
 
 namespace VPX::EditorUI
@@ -110,6 +114,50 @@ EditorUI::EditorUI(LiveUI &liveUI)
    m_snapAffectRotate = settings.GetEditor_SnapAffectRotate();
    m_snapAffectScale = settings.GetEditor_SnapAffectScale();
    m_units = static_cast<Units>(settings.GetLiveEditor_Units());
+}
+
+bool EditorUI::SnapPlanePoint(Vertex2D &pos, const std::function<ImVec2(const Vertex2D &)> &project) const
+{
+   if (!IsSnapActive(SnapKind::Move))
+      return false;
+   if (m_snapTarget != 1)
+   {
+      // Grid increment
+      if (m_snapMove <= 0.f)
+         return false;
+      pos.x = roundf(pos.x / m_snapMove) * m_snapMove;
+      pos.y = roundf(pos.y / m_snapMove) * m_snapMove;
+      return true;
+   }
+   // Center and drag points of the visible parts: the closest one to the mouse on screen
+   const ImVec2 mouse = ImGui::GetMousePos();
+   const float maxDist = 14.f * m_liveUI.GetDPI();
+   float best = maxDist;
+   bool found = false;
+   const auto consider = [&](const Vertex2D &candidate)
+   {
+      const ImVec2 screen = project(candidate);
+      if (screen.x == FLT_MAX)
+         return;
+      const float dist = hypotf(screen.x - mouse.x, screen.y - mouse.y);
+      if (dist < best)
+      {
+         best = dist;
+         pos = candidate;
+         found = true;
+      }
+   };
+   for (const auto &uiPart : m_editables)
+   {
+      IEditable *const editable = uiPart->GetEditable();
+      if (editable == nullptr || editable->GetItemType() == eItemPartGroup || editable->GetItemType() == eItemBall || !editable->IsUIVisible(false))
+         continue;
+      consider(editable->GetCenter());
+      if (DragPointCurve *const curve = uiPart->GetDragPointCurve())
+         for (const auto &point : curve->GetPoints())
+            consider(Vertex2D(point->GetX(), point->GetY()));
+   }
+   return found;
 }
 
 bool EditorUI::IsSnapActive(const SnapKind kind) const
@@ -185,6 +233,7 @@ void EditorUI::Close()
    if (!m_isOpened)
       return;
    m_isOpened = false;
+   EndCapture();
    for (const auto &[id, view] : m_areaViews)
       if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()))
       {
@@ -320,6 +369,20 @@ void EditorUI::SaveTable()
    op->filename = saveTable->m_filename;
    op->displayPath = PathToUTF8(saveTable->m_filename);
    StartFileOp(std::move(op));
+}
+
+bool EditorUI::SaveTableBlocking()
+{
+   const PinTable *const saveTable = IsInspectMode() ? m_table->m_liveBaseTable : m_table;
+   if (m_table->IsLocked() || m_fileOp != nullptr || saveTable == nullptr || saveTable->m_filename.empty())
+      return false;
+   SaveTable();
+   if (m_fileOp == nullptr)
+      return false;
+   m_fileOp->worker.join();
+   const bool saved = SUCCEEDED(m_fileOp->result);
+   FinishFileOp();
+   return saved;
 }
 
 void EditorUI::SaveTableAs()
@@ -715,12 +778,15 @@ void EditorUI::Render3D()
 
    // The view being recorded may belong to a viewport pane: the pane renders the scene parts with
    // its own camera mode and shading setup (the primary view renders the game, no editor parts)
-   for (const auto &[id, view] : m_areaViews)
-      if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()); vp != nullptr && vp->GetView() == m_renderer->GetActiveView())
-      {
-         vp->Render3D();
-         break;
-      }
+   if (m_capturePane != nullptr && m_capturePane->GetView() == m_renderer->GetActiveView())
+      m_capturePane->Render3D();
+   else
+      for (const auto &[id, view] : m_areaViews)
+         if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()); vp != nullptr && vp->GetView() == m_renderer->GetActiveView())
+         {
+            vp->Render3D();
+            break;
+         }
 
    // The pack placement ghosts are editor aids like the other overlays: keep them out of the
    // render inspected by the renderer inspection dialog
@@ -807,8 +873,8 @@ void EditorUI::RenderUI()
 
 #if !((defined(__APPLE__) && ((defined(TARGET_OS_IOS) && TARGET_OS_IOS) || (defined(TARGET_OS_TV) && TARGET_OS_TV))) || defined(__ANDROID__))
 
-   bool showFullUI = !m_inspectionModal.IsVisible() && !IsFlyMode();
-   m_renderer->GetPrimaryView()->SetRenderScene(!showFullUI); // While areas are drawn, the scene lives in the viewport panes
+   bool showFullUI = !m_inspectionModal.IsVisible() && !IsFlyMode() && !IsCapturing();
+   m_renderer->GetPrimaryView()->SetRenderScene(!showFullUI && !IsCapturing()); // While areas (or a capture pane) are drawn, the scene lives in the viewport panes
    if (!showFullUI)
    {
       // While the scene covers the window, it is driven by the user camera of the target viewport:
@@ -855,6 +921,11 @@ void EditorUI::RenderUI()
       for (const auto &[id, view] : m_areaViews)
          if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()))
             vp->SetRendering(false);
+      if (m_capturePane != nullptr)
+      {
+         const ImGuiViewport *const viewport = ImGui::GetMainViewport();
+         m_capturePane->RenderCapturePane(AreaRect { viewport->Pos.x, viewport->Pos.y, viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y });
+      }
    }
    m_auditDialog.Render();
    m_inspectionModal.Render();
@@ -955,6 +1026,16 @@ void EditorUI::RenderUI()
       else if (auto *const bp = dynamic_cast<BlueprintPane *>(view.get()))
          bp->RenderUI(overlayDrawList);
    }
+   if (m_capturePane != nullptr)
+      m_capturePane->RenderUI(overlayDrawList);
+   else if (m_captureBlueprint != nullptr)
+      RenderBlueprintCapture(overlayDrawList);
+   // Sketch tool bar, text popup and shortcuts (after the panes told where they are)
+   VPX::Sketch::Tool::Get().RenderBar(m_liveUI.GetDPI());
+   if (!IsCapturing() && !IsInspectMode())
+      VPX::Proposals::RenderPanel(m_liveUI.GetDPI());
+   if (!IsCapturing() && !IsInspectMode())
+      VPX::Layers::RenderPanel(m_liveUI.GetDPI());
 
    // While a viewport pane runs a modal transform op (Blender G/S/R), it owns the keyboard:
    // editor-level shortcuts must not fire (and the op's undo record stays the last one)
@@ -1175,6 +1256,375 @@ void EditorUI::PushUndo(IEditable *part, unsigned int undoId, const string &labe
    if (!label.empty())
       m_undo.SetFieldLabel(label);
    m_undo.EndUndo();
+}
+
+TableAudit EditorUI::RunTableAudit()
+{
+   if (m_player->m_audioPlayer)
+      return TableAudit::Run(*m_table, [this](const VPX::Sound &sound) { return m_player->m_audioPlayer->GetSoundInformations(&sound); });
+   return TableAudit::Run(*m_table);
+}
+
+bool EditorUI::ApplyAuditFix(TableAuditItem &item, string &message)
+{
+   if (item.fix == nullptr || m_table->IsLocked() || IsInspectMode())
+   {
+      message = item.fix == nullptr ? "This finding has no automatic fix"s : "The table is locked or a playtest is running"s;
+      return false;
+   }
+   const string fixLabel = item.fixLabel;
+   m_undo.BeginUndo();
+   IEditable *const created = item.fix(*m_table, m_undo);
+   m_undo.SetLabel("Audit: "s + fixLabel);
+   m_undo.EndUndo();
+   if (item.fixFailure && !item.fixFailure->empty())
+   {
+      m_undo.Discard();
+      message = *item.fixFailure;
+      return false;
+   }
+   if (created != nullptr)
+   {
+      m_player->TimerSetup(created);
+      if (auto *const renderable = created->GetIRenderable(); renderable)
+         renderable->RenderSetup(m_renderer.get());
+      if (created->GetIHitable())
+         m_player->m_physics->Add(created);
+      UpdateEditableList();
+   }
+   m_renderer->MarkStaticsDirty();
+   m_auditDialog.OnTableSwitch();
+   message = fixLabel;
+   return true;
+}
+
+vector<IEditable *> EditorUI::ImportPack(const std::filesystem::path &path, string &error, const PartImportMergeStrategy strategy)
+{
+   if (m_table->IsLocked() || IsInspectMode())
+   {
+      error = "The table is locked or a playtest is running"s;
+      return {};
+   }
+   CComObject<PinTable> *temp;
+   CComObject<PinTable>::CreateInstance(&temp);
+   temp->AddRef();
+   VPXFileFeedback feedback;
+   const std::unique_ptr<JSONSerializer::Deserializer> pack = m_table->CreateImportDeserializer(path, strategy);
+   const HRESULT hr = pack != nullptr ? temp->LoadGameFromJSONPack(*pack, feedback) : E_FAIL;
+   if (FAILED(hr) && (hr != APPX_E_BLOCK_HASH_INVALID) && (hr != APPX_E_CORRUPT_CONTENT))
+   {
+      temp->Release();
+      error = "Failed to read the pack "s + PathToUTF8(path);
+      return {};
+   }
+   m_undo.BeginUndo();
+   PartGroup *const target = GetPartGroupForNewPart();
+   const vector<IEditable *> imported = m_table->ImportParts(temp, target);
+   temp->Release();
+   for (IEditable *const part : imported)
+   {
+      part->AddRef(); // Created parts keep a creation reference, released by the undo record (see PinTable::Uncreate)
+      m_undo.MarkForCreate(part);
+      // The pack's root groups stay root groups: nesting them under the current group would make them inherit its visibility and lock state
+      if (part->GetItemType() == eItemPartGroup && target != nullptr && part->GetPartGroup() == target)
+         part->SetPartGroup(nullptr);
+   }
+   for (IEditable *const part : imported)
+      m_partLibrary.SetupPlayerSide(part, true);
+   m_undo.EndUndo();
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   UpdateEditableList();
+   m_multiSel.clear();
+   for (IEditable *const part : imported)
+      if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+         m_multiSel.push_back(it->second);
+   if (!m_multiSel.empty())
+      m_selection = Selection(m_multiSel.back());
+   return imported;
+}
+
+void EditorUI::BeginPartEdit(IEditable *part)
+{
+   if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+      it->second->RestorePartVisibility();
+}
+
+void EditorUI::EndPartEdit(IEditable *part)
+{
+   if (const auto it = m_editableMap.find(part); it != m_editableMap.end())
+      it->second->SyncVisibilityOverrides();
+}
+
+void EditorUI::RecordPartEdit(IEditable *part, bool withMesh, const string &field)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+   m_undo.MarkForUndo(part, !withMesh);
+   if (!field.empty())
+      m_undo.SetFieldLabel(field);
+   m_undo.EndUndo();
+}
+
+void EditorUI::RecordUndoAction(std::function<void()> undo, std::function<std::function<void()>()> snapshotForRedo, const string &label)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+   m_undo.MarkForAction(std::move(undo), std::move(snapshotForRedo));
+   m_undo.SetLabel(label);
+   m_undo.EndUndo();
+}
+
+void EditorUI::BeginUndoGroup()
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   m_undo.BeginUndo();
+}
+
+void EditorUI::EndUndoGroup(bool keep, const string &label)
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   if (!label.empty())
+      m_undo.SetLabel(label);
+   m_undo.EndUndo();
+   if (!keep)
+      m_undo.Discard();
+}
+
+void EditorUI::CancelUndoGroup()
+{
+   if (m_table->m_liveBaseTable)
+      return;
+   m_undo.EndUndo();
+   m_lastUndoPart = nullptr;
+   m_lastUndoId = 0;
+   RestoreUndoState(m_undo.Undo(false)); // reverts the record without keeping it for redo
+}
+
+vector<IEditable *> EditorUI::DuplicateParts(const Vertex2D &offset)
+{
+   if (!CanDuplicate())
+      return {};
+   const size_t count = m_multiSel.size();
+   const string name = m_multiSel.front()->GetEditable()->GetName();
+   CopySelection();
+   const size_t partsBefore = m_table->GetParts().size();
+   PasteSelection(nullptr);
+   if (m_table->GetParts().size() == partsBefore)
+      return {};
+   vector<IEditable *> copies = GetSelectedParts();
+   if (offset.x != 0.f || offset.y != 0.f)
+      for (IEditable *const copy : copies)
+      { // Within the paste record: undoing it deletes the copies, so the move needs no record of its own
+         copy->Translate(offset);
+         m_renderer->ReinitRenderable(copy->GetIRenderable());
+         m_player->m_physics->Update(copy);
+      }
+   m_undo.SetLabel(CountLabel("Duplicate", count, name));
+   m_lastOp.type = LastOperation::Type::None;
+   return copies;
+}
+
+void EditorUI::SetLightStates(const vector<IEditable *> &parts, const float state)
+{
+   // Same update as the State property: persisted value + emitted intensity + live play state
+   for (IEditable *const part : parts)
+      if (part->GetItemType() == eItemLight && !part->IsUILocked())
+      {
+         Light *const light = static_cast<Light *>(part);
+         light->m_d.m_state = state;
+         light->m_currentIntensity = light->m_d.m_intensity * light->m_d.m_intensity_scale * light->m_d.m_state;
+         light->m_currentFilamentTemperature = bulb_emission_to_filament_temperature(state);
+         light->setInPlayState(state > 1.f ? (float)LightStateBlinking : state);
+      }
+}
+
+ViewportPane *EditorUI::BeginCapture(const ViewMode type)
+{
+   if (m_capturePane == nullptr || m_capturePane->m_viewType != type)
+   {
+      if (m_capturePane != nullptr)
+         m_capturePane->OnUnhosted();
+      m_capturePane = std::make_unique<ViewportPane>(*this, type);
+      m_capturePane->m_captureView = true;
+   }
+   m_capturePane->m_flyMode = false;
+   m_capturePane->m_cameraValid = true;
+   return m_capturePane.get();
+}
+
+void EditorUI::ShowTopView(const bool textured, const Vertex2D &regionLo, const Vertex2D &regionHi)
+{
+   if (m_captureBlueprint != nullptr)
+      m_captureBlueprint.reset();
+   ViewportPane *const pane = BeginCapture(ViewMode::EditorCam);
+   pane->m_perspectiveCam = false;
+   pane->m_predefinedView = ViewportPane::PredefinedView::Top;
+   pane->m_shadeMode = textured ? Renderer::ShadeMode::Default : Renderer::ShadeMode::Wireframe;
+   pane->m_imageRect = AreaRect(); // Fit on the window aspect ratio: the capture pane covers it
+   if (regionHi.x > regionLo.x && regionHi.y > regionLo.y)
+   {
+      // Same framing as SetPlayfieldCamera on the region (the orthographic half height is the orbit distance), with the eye
+      // raised well above the table so that tall parts of a small region are not clipped by the near plane
+      const ImGuiIO &io = ImGui::GetIO();
+      const float aspect = io.DisplaySize.x / io.DisplaySize.y;
+      pane->m_camDistance = 0.5f * max(regionHi.y - regionLo.y, (regionHi.x - regionLo.x) / aspect);
+      const vec3 at(0.5f * (regionLo.x + regionHi.x), 0.5f * (regionLo.y + regionHi.y), 0.f);
+      const vec3 eye(at.x, at.y, -(pane->m_camDistance + 3000.f));
+      pane->m_camView = Matrix3D::MatrixLookAtRH(eye, at, vec3(0.f, -1.f, 0.f));
+   }
+   else
+      pane->SetPlayfieldCamera();
+}
+
+void EditorUI::ShowBlueprintView(const Vertex2D &regionLo, const Vertex2D &regionHi)
+{
+   ShowBlueprintView(0.f, Vertex2D());
+   m_blueprintCapture.regionLo = regionLo;
+   m_blueprintCapture.regionHi = regionHi;
+}
+
+void EditorUI::ShowBlueprintView(const float zoom, const Vertex2D &center)
+{
+   if (m_capturePane != nullptr)
+   {
+      m_capturePane->OnUnhosted();
+      m_capturePane.reset();
+   }
+   if (m_captureBlueprint == nullptr)
+      m_captureBlueprint = std::make_unique<BlueprintPane>(*this);
+   m_blueprintCapture = BlueprintCapture { zoom, center, Vertex2D(), Vertex2D() };
+}
+
+void EditorUI::RenderBlueprintCapture(ImDrawList *const drawList)
+{
+   const ImGuiViewport *const viewport = ImGui::GetMainViewport();
+   const AreaRect rect { viewport->Pos.x, viewport->Pos.y, viewport->Pos.x + viewport->Size.x, viewport->Pos.y + viewport->Size.y };
+   const BlueprintCapture &c = m_blueprintCapture;
+   float zoom = c.zoom;
+   Vertex2D offset = c.center;
+   if (zoom <= 0.f && c.regionHi.x > c.regionLo.x && c.regionHi.y > c.regionLo.y)
+   {
+      offset = Vertex2D(0.5f * (c.regionLo.x + c.regionHi.x), 0.5f * (c.regionLo.y + c.regionHi.y));
+      zoom = 0.95f * min(rect.Width() / (c.regionHi.x - c.regionLo.x), rect.Height() / (c.regionHi.y - c.regionLo.y));
+   }
+   BlueprintPane &pane = *m_captureBlueprint;
+   pane.RenderCapture(rect, zoom, offset, drawList);
+   if (m_externalOverlay)
+   {
+      drawList->PushClipRect(ImVec2(rect.x0, rect.y0), ImVec2(rect.x1, rect.y1), true);
+      m_externalOverlay([&pane](const Vertex3Ds &v) { return pane.Project(Vertex2D(v.x, v.y)); }, drawList);
+      drawList->PopClipRect();
+   }
+}
+
+nlohmann::json EditorUI::GetLayoutInfo() const
+{
+   static const char *const names[] = { "layout", "library", "scripting", "backdrop", "blueprint" };
+   nlohmann::json j;
+   j["layout"] = names[clamp(m_activeLayoutIndex, 0, 4)];
+   j["index"] = m_activeLayoutIndex;
+   nlohmann::json areas = nlohmann::json::array();
+   for (const AreaNode &n : m_layout.Nodes())
+      if (!n.isSplit)
+         areas.push_back({ { "type", AreaTypeJsonName(n.type) }, { "hidden", n.hidden } });
+   j["areas"] = areas;
+   j["maximized"] = m_maximizedLeafId >= 0;
+   j["flyMode"] = IsFlyMode();
+   return j;
+}
+
+void EditorUI::FrameViews(const bool all)
+{
+   for (const auto &[id, view] : m_areaViews)
+   {
+      if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()); vp != nullptr)
+      {
+         if (vp->m_viewType != ViewMode::PreviewCam && vp->m_cameraValid)
+            all ? vp->FrameAll() : vp->FrameSelection();
+      }
+      else if (auto *const bp = dynamic_cast<BlueprintPane *>(view.get()); bp != nullptr)
+         all ? bp->FitTable() : bp->FrameSelection();
+   }
+}
+
+bool EditorUI::GetSelectionPlacement(vec3 &pos, vec3 &rot, vec3 &scale) const
+{
+   Matrix3D transform;
+   if (!GetSelectionTransform(transform))
+   {
+      // Not editable (locked part): its transform can still be read
+      if (m_selection.GetType() != Selection::S_EDITABLE || m_selection.GetPart() == nullptr || m_selection.GetPart()->GetTransform(transform) == EditorUIPart::TM_None)
+         return false;
+   }
+   ExtractTRS(transform, pos, scale, rot);
+   return true;
+}
+
+vector<IEditable *> EditorUI::GetSelectedParts() const
+{
+   vector<IEditable *> parts;
+   for (const auto &part : m_multiSel)
+      parts.push_back(part->GetEditable());
+   return parts;
+}
+
+IEditable *EditorUI::GetActivePart() const
+{
+   return m_selection.GetType() == Selection::S_EDITABLE && m_selection.GetPart() != nullptr ? m_selection.GetPart()->GetEditable() : nullptr;
+}
+
+void EditorUI::SelectParts(const vector<IEditable *> &parts)
+{
+   ExitPointEditMode(false);
+   UpdateEditableList();
+   ClearSelection();
+   for (IEditable *const part : parts)
+      if (const auto it = m_editableMap.find(part); it != m_editableMap.end() && !IsPartSelected(it->second) && (m_multiSel.empty() || IsPartInSelectionDomain(part)))
+         m_multiSel.push_back(it->second); // The selection may not mix desktop backdrop and 3D scene parts: the first part sets the domain
+   if (!m_multiSel.empty())
+   {
+      m_selection = Selection(m_multiSel.back());
+      OutlinerPanel::m_anchor = m_multiSel.back();
+   }
+}
+
+void EditorUI::ShowCameraView(const vec3 &eye, const vec3 &target)
+{
+   ViewportPane *const pane = BeginCapture(ViewMode::EditorCam);
+   pane->m_perspectiveCam = true;
+   pane->m_predefinedView = ViewportPane::PredefinedView::None;
+   pane->m_shadeMode = Renderer::ShadeMode::Default;
+   const vec3 renderEye(eye.x, eye.y, -eye.z), renderTarget(target.x, target.y, -target.z);
+   pane->m_camDistance = (renderEye - renderTarget).Length();
+   pane->m_camView = Matrix3D::MatrixLookAtRH(renderEye, renderTarget, vec3(0.f, 0.f, -1.f));
+}
+
+void EditorUI::ShowPlayView(const ViewSetupID mode)
+{
+   ViewportPane *const pane = BeginCapture(ViewMode::PreviewCam);
+   pane->m_shadeMode = Renderer::ShadeMode::Default;
+   pane->m_viewMode = mode != BG_INVALID ? mode : m_table->GetViewMode();
+}
+
+void EditorUI::EndCapture()
+{
+   m_externalOverlay = nullptr;
+   m_captureBlueprint.reset();
+   if (m_capturePane == nullptr)
+      return;
+   m_capturePane->OnUnhosted();
+   m_capturePane.reset();
 }
 
 bool EditorUI::IsPartSelected(const std::shared_ptr<EditorUIPart> &part) const { return part != nullptr && std::ranges::find(m_multiSel, part) != m_multiSel.end(); }
@@ -2328,11 +2778,11 @@ void EditorUI::RenderAddPartPicker()
    }
 }
 
-void EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
+IEditable *EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
 {
    IEditable *const pie = EditableRegistry::CreateAndInit(type, m_table, pos.x, pos.y);
    if (pie == nullptr)
-      return;
+      return nullptr;
 
    // Same initialization sequence as the WinUI editor
    if (auto *const scriptable = pie->GetIScriptable(); scriptable)
@@ -2373,6 +2823,7 @@ void EditorUI::CreatePart(const ItemTypeEnum type, const Vertex2D &pos)
    }
    if (type == eItemSurface)
       CircleWallOp::OnCreated(*this, pie, pos); // Add Part > Round Wall
+   return pie;
 }
 
 PartGroup *EditorUI::CreatePartGroup(PartGroup *parent)
@@ -3457,15 +3908,31 @@ void EditorUI::LoadAreaLayoutSettings()
       : m_activeLayoutIndex == 3                ? settings.GetLiveEditor_Layout4()
                                                 : settings.GetLiveEditor_Layout5();
    const nlohmann::json parsed = nlohmann::json::parse(json, nullptr, false);
-   if (parsed.is_discarded() || !m_layout.FromJson(parsed))
-      m_layout = AreaLayout::Default(m_activeLayoutIndex); // Missing or invalid layout: back to the slot's preset
+   AreaLayout layout;
+   if (parsed.is_discarded() || !layout.FromJson(parsed))
+      layout = AreaLayout::Default(m_activeLayoutIndex); // Missing or invalid layout: back to the slot's preset
+   ApplyAreaLayout(layout);
+}
+
+void EditorUI::ResetLayout()
+{
+   for (const auto &[id, view] : m_areaViews)
+      if (auto *const vp = dynamic_cast<ViewportPane *>(view.get()))
+         vp->m_flyMode = false;
+   ApplyAreaLayout(AreaLayout::Default(m_activeLayoutIndex));
+}
+
+void EditorUI::ApplyAreaLayout(const AreaLayout &layout)
+{
+   m_layout = layout;
+   m_pendingAreaOps.clear();
    m_maximizedLeafId = -1;
    m_hoverLeaf = -1;
    CancelAreaInteraction(false);
    m_hoverVp = nullptr;
    m_lastHoverVp = nullptr;
    m_captureVp = nullptr;
-   if (settings.GetEditor_AlwaysViewScript() && !m_layout.IsHosted(AreaType::Script))
+   if (g_settingsService.GetAppSettings().GetEditor_AlwaysViewScript() && !m_layout.IsHosted(AreaType::Script))
       ShowAreaEditor(AreaType::Script); // The editor option keeps a script area open
 }
 
@@ -3559,7 +4026,7 @@ void EditorUI::ComputeAreaRects() const
    // m_menuBarHeight it has no one frame lag and is never 0 while the chrome toggles)
    const float top = viewport->WorkPos.y;
    const AreaRect tree { viewport->Pos.x, top, viewport->Pos.x + viewport->Size.x, max(top, viewport->Pos.y + viewport->Size.y - m_chrome.GetStatusBarHeight()) };
-   const bool areasShown = !m_table->IsLocked() && !IsFlyMode() && !m_inspectionModal.IsVisible();
+   const bool areasShown = !m_table->IsLocked() && !IsFlyMode() && !m_inspectionModal.IsVisible() && !IsCapturing();
    m_layout.Compute(tree, dpi, m_leafRects, m_splitterRects, areasShown ? m_maximizedLeafId : -1);
 
    // The viewport area is the window onto the 3D render; when no area is drawn (locked table, fly mode,

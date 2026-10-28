@@ -1,0 +1,71 @@
+{
+  "Trigger": {
+    "center": {
+      "x": 743.0993,
+      "y": 1572.5369
+    },
+    "radius": 25.0,
+    "rotation": 0.0,
+    "wire_thickness": 0.0,
+    "scale_x": 1.0,
+    "scale_y": 1.0,
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "material": "Metal",
+    "surface": "",
+    "is_visible": true,
+    "is_enabled": true,
+    "hit_height": 50.0,
+    "name": "RightInlane",
+    "shape": "wire_d",
+    "anim_speed": 1.0,
+    "is_reflection_enabled": true,
+    "part_group_name": "Visuals",
+    "drag_points": [
+      {
+        "x": 718.43365,
+        "y": 1551.7122,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 718.43365,
+        "y": 1589.7341,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 768.19183,
+        "y": 1589.7341,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 768.19183,
+        "y": 1551.7122,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ]
+  }
+}

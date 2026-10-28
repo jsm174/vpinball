@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<textures>
+    <texture linear="false" age="0">emkicker-t1</texture>
+    <texture linear="true" age="0">ColorGradeLUT256x16_ConSat</texture>
+    <texture linear="false" age="0">bumper-cap-t2(2)</texture>
+    <texture linear="false" age="0">bumper-cap-t5</texture>
+    <texture linear="false" age="0">bumper-cap-t3</texture>
+    <texture linear="false" age="0">spinner</texture>
+    <texture linear="false" age="0">rubber-post-t1-black</texture>
+    <texture linear="false" age="0">Scratches</texture>
+    <texture linear="false" age="0">sidewood</texture>
+    <texture linear="false" age="0">bumper-cap-t2</texture>
+    <texture linear="false" age="0">DropTargetBeveled</texture>
+    <texture linear="false" age="0">purple peg</texture>
+    <texture linear="false" age="0">rubber-emwheel</texture>
+    <texture linear="false" age="0">DropTargetSimple</texture>
+    <texture linear="false" age="0">CustomWhiteTip</texture>
+    <texture linear="false" age="0">aluminum</texture>
+    <texture linear="false" age="0">sidewood._h</texture>
+    <texture linear="false" age="0">Left_rail_brighter</texture>
+    <texture linear="false" age="0">Right_rail_brighter</texture>
+    <texture linear="false" age="0">bumper-cap-t4</texture>
+    <texture linear="false" age="0">metal3</texture>
+    <texture linear="false" age="0">kickerHoleWood</texture>
+    <texture linear="false" age="0">flippers_shadow</texture>
+    <texture linear="false" age="0">kickerWilliams</texture>
+    <texture linear="false" age="0">kickerGottlieb</texture>
+    <texture linear="false" age="0">ball_HDR</texture>
+    <texture linear="false" age="0">PlungerCover</texture>
+    <texture linear="false" age="0">kickerT1</texture>
+    <texture linear="false" age="0">LockdownBarreal-JR</texture>
+    <texture linear="false" age="0">ballshadow</texture>
+    <texture linear="false" age="0">HitTarget</texture>
+    <texture linear="false" age="0">angle</texture>
+    <texture linear="false" age="0">ApronGenericWilliams</texture>
+    <texture linear="false" age="0">gottlieb_flipper_red</texture>
+    <texture linear="false" age="0">bally_miniflipper_left</texture>
+    <texture linear="false" age="0">bally_miniflipper_right</texture>
+    <texture linear="false" age="0">flipper_williams_logo_Left</texture>
+    <texture linear="false" age="0">flipper_yellow_red_Right</texture>
+    <texture linear="false" age="0">mm</texture>
+    <texture linear="false" age="0">flipper_gottlieb_left</texture>
+    <texture linear="false" age="0">inches</texture>
+    <texture linear="false" age="0">inchesandmm</texture>
+    <texture linear="false" age="0">p1-beachwood</texture>
+</textures>

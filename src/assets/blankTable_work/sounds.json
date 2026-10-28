@@ -1,0 +1,461 @@
+[
+  {
+    "name": "ballrelease",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\ballrelease.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "drain",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\drain.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "flip_hit_1",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\flip_hit_1.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "flip_hit_2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\flip_hit_2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "flip_hit_3",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\flip_hit_3.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling0",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling0.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling1",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling1.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling3",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling3.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling4",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling4.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling5",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling5.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling6",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling6.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling7",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling7.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling8",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling8.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling9",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling9.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling10",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling10.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling11",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling11.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling12",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling12.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ballrolling13",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ballrolling13.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_bumper1",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_bumper1.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_bumper2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_bumper2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_bumper3",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_bumper3.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_bumper4",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_bumper4.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_collide",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_collide.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_Flipperdown",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_Flipperdown.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_Flipperup",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_Flipperup.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_rubber2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_rubber2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_spinner",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_spinner.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "gate",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\gate.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "gate4",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\gate4.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "kicker_enter_center",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\kicker_enter_center.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "knocker",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\knocker.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "left_slingshot",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\left_slingshot.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "metalhit_medium",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\metalhit_medium.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "metalhit_thin",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\metalhit_thin.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "metalhit2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\metalhit2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "pinhit_low",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\pinhit_low.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "plunger",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\plunger.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "plungerpull",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\plungerpull.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "popper_ball",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\popper_ball.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "right_slingshot",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\right_slingshot.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "rubber_hit_1",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\rubber_hit_1.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "rubber_hit_2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\rubber_hit_2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "rubber_hit_3",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\rubber_hit_3.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "target",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\target.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop0",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop0.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop1",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop1.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop2",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop2.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop3",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop3.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop4",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop4.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  },
+  {
+    "name": "fx_ball_drop5",
+    "path": "C:\\Users\\vcbou\\Desktop\\BlankTable\\ogg\\fx_ball_drop5.ogg",
+    "internal_name": "",
+    "fade": 0,
+    "volume": 0,
+    "balance": 0,
+    "output_target": "table"
+  }
+]

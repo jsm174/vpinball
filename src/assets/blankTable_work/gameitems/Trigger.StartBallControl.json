@@ -1,0 +1,71 @@
+{
+  "Trigger": {
+    "center": {
+      "x": 897.351,
+      "y": 1850.3282
+    },
+    "radius": 25.0,
+    "rotation": 0.0,
+    "wire_thickness": 0.0,
+    "scale_x": 1.0,
+    "scale_y": 1.0,
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "material": "",
+    "surface": "",
+    "is_visible": false,
+    "is_enabled": true,
+    "hit_height": 50.0,
+    "name": "StartBallControl",
+    "shape": "none",
+    "anim_speed": 1.0,
+    "is_reflection_enabled": false,
+    "part_group_name": "Visuals",
+    "drag_points": [
+      {
+        "x": 867.351,
+        "y": 1820.3282,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 867.351,
+        "y": 1880.3282,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 927.351,
+        "y": 1880.3282,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 927.351,
+        "y": 1820.3282,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ]
+  }
+}

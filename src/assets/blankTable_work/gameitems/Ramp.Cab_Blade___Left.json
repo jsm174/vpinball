@@ -1,0 +1,59 @@
+{
+  "Ramp": {
+    "height_bottom": 115.0,
+    "height_top": 235.0,
+    "width_bottom": 42.0,
+    "width_top": 42.0,
+    "material": "Metal0.8",
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "ramp_type": "flat",
+    "name": "Cab Blade - Left",
+    "image": "Left_rail_brighter",
+    "image_alignment": "wrap",
+    "image_walls": false,
+    "left_wall_height": 62.0,
+    "right_wall_height": 62.0,
+    "left_wall_height_visible": 0.0,
+    "right_wall_height_visible": 0.0,
+    "hit_event": false,
+    "threshold": 2.0,
+    "elasticity": 0.3,
+    "friction": 0.0,
+    "scatter": 0.0,
+    "is_collidable": false,
+    "is_visible": true,
+    "depth_bias": 0.0,
+    "wire_diameter": 6.0,
+    "wire_distance_x": 38.0,
+    "wire_distance_y": 88.0,
+    "is_reflection_enabled": true,
+    "physics_material": "",
+    "overwrite_physics": true,
+    "drag_points": [
+      {
+        "x": -16.423006,
+        "y": 2157.847,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": -16.423006,
+        "y": -30.0,
+        "z": 0.0,
+        "smooth": true,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ],
+    "part_group_name": "DTBlades"
+  }
+}

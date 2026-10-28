@@ -72,11 +72,12 @@ public:
    bool CanAdd() const;
    void OpenAddDialog();
    void RenderModal(); // Add dialog (rendered in the overlay window scope)
+   // Adds a reference image of the given size (VPU) at the table center, as one undo step (the dialog, and automation)
+   Flasher *Add(const string &image, float width, float height);
 
 private:
    EditorUI &m_editor;
 
-   void Add(const string &image, float width, float height);
    Texture *ImportFile(const string &file); // Imports an image file into the table under a free name
 
    // Add dialog state

@@ -1,0 +1,16 @@
+{
+  "PartGroup": {
+    "name": "VRCabShadow",
+    "center": {
+      "x": 0.0,
+      "y": 0.0
+    },
+    "is_timer_enabled": true,
+    "timer_interval": 100,
+    "backglass": false,
+    "space_reference": "cabinet_feet",
+    "player_mode_visibility_mask": 65520,
+    "is_locked": false,
+    "editor_layer_visibility": false
+  }
+}

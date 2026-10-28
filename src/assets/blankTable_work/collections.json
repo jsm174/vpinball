@@ -1,0 +1,77 @@
+[
+  {
+    "name": "GI",
+    "items": [
+      "gi1",
+      "gi2",
+      "gi3",
+      "gi4"
+    ],
+    "fire_events": false,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Rubbers",
+    "items": [
+      "LSling",
+      "RSling"
+    ],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Posts",
+    "items": [],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Pins",
+    "items": [],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Targets",
+    "items": [],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Metals_Thin",
+    "items": [],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Metals_Medium",
+    "items": [],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Metals2",
+    "items": [
+      "Wall37"
+    ],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  },
+  {
+    "name": "Gates",
+    "items": [
+      "Gate"
+    ],
+    "fire_events": true,
+    "stop_single_events": false,
+    "group_elements": true
+  }
+]
