@@ -511,7 +511,7 @@ void CommandLineProcessor::ProcessCommandLine(int nArgs, const char* szArglist[]
    std::filesystem::path tableIniFileName;
    bool win32EditorMinimized = false;
    bool win32EditorExtMinimized = false;
-   bool defaultToWin32Editor = true;
+   bool defaultToLiveEditor = true;
    std::vector<std::unique_ptr<AppCommand>> commands;
    for (int i = 1; i < nArgs; ++i) // skip szArglist[0], contains executable name
    {
@@ -611,7 +611,7 @@ void CommandLineProcessor::ProcessCommandLine(int nArgs, const char* szArglist[]
 
       #ifdef VPX_HAS_REGISTERED_TYPELIB
       case OPTION_UNREGSERVER:
-         defaultToWin32Editor = false;
+         defaultToLiveEditor = false;
          VPApp::m_module.UpdateRegistryFromResource(IDR_VPINBALL, FALSE);
          if (VPApp::m_module.UnregisterServer(TRUE) != S_OK)
             ShowError("Unregister VP functions failed");
@@ -619,7 +619,7 @@ void CommandLineProcessor::ProcessCommandLine(int nArgs, const char* szArglist[]
          break;
 
       case OPTION_REGSERVER:
-         defaultToWin32Editor = false;
+         defaultToLiveEditor = false;
          VPApp::m_module.UpdateRegistryFromResource(IDR_VPINBALL, TRUE);
          if (VPApp::m_module.RegisterServer(TRUE) != S_OK)
             ShowError("Register VP functions failed");
@@ -678,7 +678,7 @@ void CommandLineProcessor::ProcessCommandLine(int nArgs, const char* szArglist[]
             const std::filesystem::path tableFileName = GetPathFromArg(szArglist[i + 1]);
             // Take the next argument as the table filename unless it is another option. A missing or
             // invalid file is still passed along so the command can report the load failure.
-            if (FileExists(tableFileName) || ((szArglist[i + 1][0] != '-') && (szArglist[i + 1][0] != '/')))
+            if (std::filesystem::exists(tableFileName) || ((szArglist[i + 1][0] != '-') && (szArglist[i + 1][0] != '/')))
             {
                commands.push_back(std::make_unique<LiveEditCommand>(tableFileName));
                i++;
@@ -830,9 +830,9 @@ void CommandLineProcessor::ProcessCommandLine(int nArgs, const char* szArglist[]
       }
    }
 
-   #ifdef VPX_ENABLE_WIN32_EDITOR
-   if (defaultToWin32Editor && commands.empty())
-      commands.push_back(std::make_unique<Win32EditCommand>());
+   #ifndef __LIBVPINBALL__
+   if (defaultToLiveEditor && commands.empty())
+      commands.push_back(std::make_unique<LiveEditCommand>());
    #endif
 
    if (commands.size() > 1)

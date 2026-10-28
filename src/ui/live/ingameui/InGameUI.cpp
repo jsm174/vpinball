@@ -16,6 +16,7 @@
 #include "LoadingPage.h"
 #include "LoggingSettingsPage.h"
 #include "MiscSettingsPage.h"
+#include "McpSettingsPage.h"
 #include "NudgeSettingsPage.h"
 #include "PluginSettingsPage.h"
 #include "PlungerSettingsPage.h"
@@ -45,6 +46,7 @@ InGameUI::InGameUI(LiveUI &liveUI)
    AddPage("settings/input"s, []() { return std::make_unique<InputSettingsPage>(); });
    AddPage("settings/logging"s, []() { return std::make_unique<LoggingSettingsPage>(); });
    AddPage("settings/misc"s, []() { return std::make_unique<MiscSettingsPage>(); });
+   AddPage("settings/mcp"s, []() { return std::make_unique<McpSettingsPage>(); });
    AddPage("settings/nudge"s, []() { return std::make_unique<NudgeSettingsPage>(); });
    AddPage("settings/plunger"s, []() { return std::make_unique<PlungerSettingsPage>(); });
    AddPage("settings/pov"s, []() { return std::make_unique<PointOfViewSettingsPage>(); });

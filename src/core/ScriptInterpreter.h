@@ -61,6 +61,7 @@ public:
       DebugConsole
    };
    void SetScriptErrorHandler(const std::function<void(ErrorType, int, int, const string &, const vector<string> &)> &errorHandler) { m_errorHandler = errorHandler; }
+   const string &GetLastErrorLineText() const { return m_lastErrorLineText; } // Source text of the line of the last reported error, when the engine provides it
 
    // IActiveScriptSite interface
    STDMETHOD(GetLCID)(LCID *plcid) override;
@@ -127,6 +128,7 @@ private:
    bool m_hasError = false;
    void HandleScriptError(IActiveScriptError *pScriptError, IActiveScriptErrorDebug *pScriptDebugError);
    std::function<void(ErrorType, int, int, const string &, const vector<string> &)> m_errorHandler;
+   string m_lastErrorLineText;
 
    IActiveScript *m_pScript = nullptr;
    IActiveScriptParse *m_pScriptParse = nullptr;

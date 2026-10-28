@@ -846,6 +846,20 @@
     <ClCompile Include="$(SolutionDir)/../../src/core/ieditable.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/core/editablereg.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/core/pinundo.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpServer.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpHelpers.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpScript.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpFields.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpGeometry.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/McpTools.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsSession.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsSim.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsScript.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsPart.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsAssets.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsLibrary.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsTable.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/mcp/tools/ToolsScreenshot.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/core/VPApp.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/core/player.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/core/LayeredINIPropertyStore.cpp" />
@@ -989,6 +1003,7 @@
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/DisplaySettingsPage.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/GraphicSettingsPage.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/HomePage.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/McpSettingsPage.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIItem.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIPage.cpp" />
     <ClCompile Include="$(SolutionDir)/../../src/ui/live/ingameui/InputDevicePage.cpp" />
@@ -1171,6 +1186,10 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../third-party/include/gpuprofiler.cpp" />
+    <ClCompile Include="$(SolutionDir)/../../third-party/include/mongoose/mongoose.c">
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
+    </ClCompile>
     <ClCompile Include="$(SolutionDir)/../../third-party/include/miniz/miniz.c">
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <GenerateXMLDocumentationFiles>false</GenerateXMLDocumentationFiles>
@@ -1734,6 +1753,8 @@
     <ClInclude Include="$(SolutionDir)/../../src/audio/SpatialAudio.h" />
     <ClInclude Include="$(SolutionDir)/../../plugins/plugins/ResURIBuilder.h" />
     <ClInclude Include="$(SolutionDir)/../../plugins/plugins/ResURIResolver.h" />
+    <ClInclude Include="$(SolutionDir)/../../src/mcp/McpServer.h" />
+    <ClInclude Include="$(SolutionDir)/../../src/mcp/McpInternal.h" />
     <ClInclude Include="$(SolutionDir)/../../src/core/VPApp.h" />
     <ClInclude Include="$(SolutionDir)/../../src/core/AppCommands.h" />
     <ClInclude Include="$(SolutionDir)/../../src/core/def.h" />
@@ -1943,6 +1964,7 @@
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/DisplaySettingsPage.h" />
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/GraphicSettingsPage.h" />
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/HomePage.h" />
+    <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/McpSettingsPage.h" />
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIItem.h" />
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/InGameUIPage.h" />
     <ClInclude Include="$(SolutionDir)/../../src/ui/live/ingameui/InputDevicePage.h" />

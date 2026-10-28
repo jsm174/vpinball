@@ -68,6 +68,24 @@ set(VPX_SOURCES
    src/core/VPXPluginAPIImpl.cpp
    src/core/VPXPluginPagedUI.h
    src/core/VPXPluginPagedUI.cpp
+   src/mcp/McpServer.h
+   src/mcp/McpInternal.h
+   src/mcp/McpServer.cpp
+   src/mcp/McpHelpers.cpp
+   src/mcp/McpScript.cpp
+   src/mcp/McpFields.cpp
+   src/mcp/McpGeometry.cpp
+   src/mcp/McpTools.cpp
+   src/mcp/tools/ToolsSession.cpp
+   src/mcp/tools/ToolsSim.cpp
+   src/mcp/tools/ToolsScript.cpp
+   src/mcp/tools/ToolsPart.cpp
+   src/mcp/tools/ToolsAssets.cpp
+   src/mcp/tools/ToolsLibrary.cpp
+   src/mcp/tools/ToolsTable.cpp
+   src/mcp/tools/ToolsScreenshot.cpp
+   third-party/include/mongoose/mongoose.c
+   third-party/include/mongoose/mongoose.h
 
    src/input/ButtonMapping.h
    src/input/InputAction.h
@@ -395,6 +413,8 @@ set(VPX_SOURCES
    src/ui/live/ingameui/LoggingSettingsPage.cpp
    src/ui/live/ingameui/MiscSettingsPage.h
    src/ui/live/ingameui/MiscSettingsPage.cpp
+   src/ui/live/ingameui/McpSettingsPage.h
+   src/ui/live/ingameui/McpSettingsPage.cpp
    src/ui/live/ingameui/NudgeSensorSettingsPage.h
    src/ui/live/ingameui/NudgeSensorSettingsPage.cpp
    src/ui/live/ingameui/NudgeSettingsPage.h
@@ -847,9 +867,6 @@ set(VPX_LIB_SOURCES
    lib/src/VPinballLib_C.cpp
    lib/src/VPXProgress.h
    lib/src/VPXProgress.cpp
-
-   third-party/include/mongoose/mongoose.c
-   third-party/include/mongoose/mongoose.h
 )
 
 set(VPX_GL_SHADERS

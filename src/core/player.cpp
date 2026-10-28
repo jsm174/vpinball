@@ -12,6 +12,7 @@
 #include "audio/AudioPlayer.h"
 #include "core/editablereg.h"
 #include "core/VPApp.h"
+#include "mcp/McpServer.h"
 #include "core/VPXPluginAPIImpl.h"
 #include "parts/ball.h"
 #include "parts/flasher.h"
@@ -1599,6 +1600,7 @@ void Player::OnScriptError(ScriptInterpreter::ErrorType type, int line, int colu
    const string errorType = (type == ScriptInterpreter::ErrorType::Runtime) ? "Runtime" : "Compile";
    const string desc = string_from_utf8_or_cp1252(description.c_str(), description.length());
    PLOGE << errorType << " error on line " << line << ", col " << column << ": " << desc;
+   VPX::MCP::McpServer::Get().OnScriptError(errorType, line, column, desc);
    if (m_liveUI && m_nScriptErrorNotification < 200)
    {
       m_liveUI->PushNotification(errorType + " error: " + desc, 5000);
@@ -2250,6 +2252,8 @@ void Player::UpdateGameLogic()
    }
 
    m_pluginManager.ProcessAsyncCallbacks();
+   if (!m_renderingScene)
+      VPX::MCP::McpServer::Get().ProcessJobs();
 
    #ifdef MSVC_CONCURRENCY_VIEWER
    delete tagSpan;
@@ -2558,7 +2562,10 @@ void Player::PrepareFrame()
    #endif
 
    // Prepare main 3D scene frame, then apply screenspace transforms, including ancillary window rendering (MSAA, AO, AA, stereo, ball motion blur, tonemapping, dithering, bloom,...)
+   // The scene render syncs the game logic midway: automation jobs must not run there since parts they modify are only reinitialized on the next frame
+   m_renderingScene = true;
    m_renderer->Render3DScene();
+   m_renderingScene = false;
 
    m_physics->ResetPerFrameStats();
 

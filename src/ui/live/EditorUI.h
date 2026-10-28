@@ -3,6 +3,8 @@
 #pragma once
 
 #include "input/InputManager.h"
+#include <any>
+#include <functional>
 #include "core/pinundo.h"
 #include "imgui/imgui.h"
 #include "imguizmo/ImGuizmo.h"
@@ -70,6 +72,41 @@ public:
 
    // Start playing a shallow copy of the edited table (edition is suspended, restored when the play session ends)
    void PlayTest();
+
+   void SaveTable();
+   bool SaveTableBlocking();
+   bool IsFileOpRunning() const { return m_fileOp != nullptr; }
+
+   // Add a part of the given type at the given position, or delete parts, with undo support (same path as the editor toolbar)
+   IEditable *CreatePart(ItemTypeEnum type, const Vertex2D &pos);
+   void DeleteParts(const vector<IEditable *> &partsToDelete);
+
+   // Import the parts and referenced assets of a VPZ pack into the edited table (same path as the part library panel), returns the imported parts
+   vector<IEditable *> ImportPack(const std::filesystem::path &path, string &error);
+
+   // Edits made outside of the UI (automation): BeginPartEdit restores the part's authored visibility values (the editor overrides them for
+   // display), EndPartEdit captures the edited values as the authored ones
+   void BeginPartEdit(IEditable *part);
+   void EndPartEdit(IEditable *part);
+
+   // Automation views: a fitted top orthographic view without the editor panels, an extra overlay drawn over the render (projecting table
+   // coordinates to the screen), and the view state to restore afterwards
+   using ExternalOverlay = std::function<void(const std::function<ImVec2(const Vertex3Ds &)> &project, ImDrawList *drawList)>;
+   std::any SaveViewState() const;
+   void RestoreViewState(const std::any &state);
+   void ShowTopView(bool textured, bool colliders);
+   void ShowCameraView(const vec3 &eye, const vec3 &target); // Perspective view from eye toward target, table coordinates with z up
+   void ShowPlayView();
+   void SetExternalOverlay(ExternalOverlay overlay) { m_externalOverlay = std::move(overlay); }
+
+   // Undo support for edits made outside of the UI (automation): record a part before modifying it, undo the last record
+   void RecordPartEdit(IEditable *part, bool withMesh = false);
+   void RecordUndoAction(std::function<void()> undo); // A non-part edit (asset, script, table property) with the callback that reverts it
+   // Several edits made outside of the UI (an import plus the script it needs) as one record; keep:false drops a record that ended up empty or failed
+   void BeginUndoGroup();
+   void EndUndoGroup(bool keep);
+   bool HasUndo() const { return m_undo.HasUndo(); }
+   void Undo();
 
    bool IsPreview() const { return m_camMode == ViewMode::PreviewCam; }
    bool IsBackdropEditMode() const { return m_camMode == ViewMode::DesktopBackdrop; }
@@ -188,7 +225,6 @@ private:
    // Add/Remove parts
    void DeleteSelection();
    ItemTypeEnum m_addPartType = eItemInvalid; // Part type pending placement (eItemInvalid when not in add part mode)
-   void CreatePart(ItemTypeEnum type, const Vertex2D &pos);
    void CreateCollection(bool fromSelection); // Create a collection, optionally populated with the selected parts
    PartGroup *GetPartGroupForNewPart();
    vector<PartGroup *> m_partGroupUseHistory; // Recently used insertion target part groups, most recent first
@@ -202,7 +238,6 @@ private:
    };
 
    // File operations (the 'Save As' and 'Load' file dialogs are asynchronous: their result is applied in RenderUI)
-   void SaveTable();
    void SaveTableAs();
    void SaveTableAsPackFolder(); // Save as a VPZ folder pack
    void LoadTable();
@@ -277,6 +312,7 @@ private:
       All
    };
    PhysicOverlay m_physOverlay = PhysicOverlay::None;
+   ExternalOverlay m_externalOverlay;
    bool m_selectionOverlay = true;
    enum class SelectionFilter : uint32_t
    {
