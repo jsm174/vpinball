@@ -579,6 +579,22 @@ void BlueprintPane::RenderPane(const AreaRect& rect, const int leafId)
    ImGui::PopStyleVar(3);
 }
 
+void BlueprintPane::RenderCapture(const AreaRect& rect, const float zoom, const Vertex2D& offset, ImDrawList* const drawList)
+{
+   m_imageRect = rect;
+   m_hovered = false;
+   m_active = false;
+   if (zoom > 0.f)
+   {
+      m_zoom = zoom;
+      m_offset = offset;
+      m_setupValid = true;
+   }
+   else
+      FitTable();
+   RenderScene(drawList);
+}
+
 void BlueprintPane::RenderUI(ImDrawList* const overlayDrawList)
 {
    if (!m_setupValid)

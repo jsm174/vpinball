@@ -41,6 +41,11 @@ public:
    void RenderPane(const AreaRect& rect, int leafId) override;
    void OnUnhosted() override;
 
+   // Automation capture pane (see EditorUI::ShowTopView): not hosted by a layout leaf, drawn over the
+   // whole window without header, status overlay nor interaction, only the editor's external overlay
+   bool m_captureView = false;
+   void RenderCapturePane(const AreaRect& rect);
+
    // Renders the scene parts for this pane's render pass (called by the editor while this pane's
    // render view is being recorded): filtered by the pane's own camera mode and shading setup
    void Render3D();

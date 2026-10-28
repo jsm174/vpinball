@@ -3,6 +3,8 @@
 #pragma once
 
 #include "input/InputManager.h"
+#include <any>
+#include <functional>
 #include "core/pinundo.h"
 #include "imgui/imgui.h"
 #include "imguizmo/ImGuizmo.h"
@@ -86,6 +88,62 @@ public:
    // Start playing a shallow copy of the edited table (edition is suspended, restored when the play session ends)
    void PlayTest();
 
+   void SaveTable();
+   bool SaveTableBlocking();
+   bool IsFileOpRunning() const { return m_fileOp != nullptr; }
+
+   // Add a part of the given type at the given position, or delete parts, with undo support (same path as the editor toolbar)
+   IEditable *CreatePart(ItemTypeEnum type, const Vertex2D &pos);
+   void DeleteParts(const vector<IEditable *> &partsToDelete);
+
+   // Import the parts and referenced assets of a VPZ pack into the edited table (same path as the part library panel), returns the imported parts
+   vector<IEditable *> ImportPack(const std::filesystem::path &path, string &error);
+
+   // Edits made outside of the UI (automation): BeginPartEdit restores the part's authored visibility values (the editor overrides them for
+   // display), EndPartEdit captures the edited values as the authored ones
+   void BeginPartEdit(IEditable *part);
+   void EndPartEdit(IEditable *part);
+
+   // Automation captures: a capture pane covering the whole window replaces the areas and chrome until EndCapture, with
+   // an extra overlay drawn over its render (projecting table coordinates to the screen)
+   using ExternalOverlay = std::function<void(const std::function<ImVec2(const Vertex3Ds &)> &project, ImDrawList *drawList)>;
+   void ShowTopView(bool textured, const Vertex2D &regionLo = Vertex2D(), const Vertex2D &regionHi = Vertex2D()); // Orthographic top view fitted on the playfield, or on a table region when given
+   void ShowCameraView(const vec3 &eye, const vec3 &target); // Perspective view from eye toward target, table coordinates with z up
+   void ShowPlayView(ViewSetupID mode = BG_INVALID); // The player's view, optionally of another play mode (desktop, FSS, cabinet)
+   // The blueprint (win32 style 2D schematic) fitted on the playfield or on a table region, or at a zoom (display px per table unit) around a center
+   void ShowBlueprintView(const Vertex2D &regionLo = Vertex2D(), const Vertex2D &regionHi = Vertex2D());
+   void ShowBlueprintView(float zoom, const Vertex2D &center);
+   void SetExternalOverlay(ExternalOverlay overlay) { m_externalOverlay = std::move(overlay); }
+   bool IsCapturing() const { return m_capturePane != nullptr || m_captureBlueprint != nullptr; }
+   void EndCapture();
+
+   // Layout and areas (automation): the preset slots are 0 Layout, 1 Library, 2 Scripting, 3 Backdrop, 4 Blueprint; area changes apply on the next frame
+   void SetLayout(int index) { SetAreaLayoutIndex(index); }
+   void ShowArea(AreaType type) { ShowAreaEditor(type); }
+   nlohmann::json GetLayoutInfo() const;
+   void FrameSelectionInViews(); // Center every 3D view and blueprint pane on the selected parts
+
+   // Part selection (automation)
+   vector<IEditable *> GetSelectedParts() const;
+   IEditable *GetActivePart() const;
+   void SelectParts(const vector<IEditable *> &parts);
+   Vertex2D GetMultiSelCenter() const; // Center of the current selection (bounding box center of the part centers, or of the selected points in drag point edit mode)
+   // Selection wide transforms (the win32 context menu Flip/Rotate/Scale/Translate commands): they apply
+   // to the multi selection of parts, or to the selected points in drag point edit mode
+   void FlipSelection(bool flipX); // Mirror the selection around the multi selection center
+   void RotateMultiSel(float ang, const Vertex2D &center, bool useElementCenter);
+   void ScaleMultiSel(float scalex, float scaley, const Vertex2D &center, bool useElementCenter);
+   void TranslateMultiSel(const Vertex2D &offset);
+
+   // Undo support for edits made outside of the UI (automation): record a part before modifying it, undo the last record
+   void RecordPartEdit(IEditable *part, bool withMesh = false);
+   void RecordUndoAction(std::function<void()> undo); // A non-part edit (asset, script, table property) with the callback that reverts it
+   // Several edits made outside of the UI (an import plus the script it needs) as one record; keep:false drops a record that ended up empty or failed
+   void BeginUndoGroup();
+   void EndUndoGroup(bool keep);
+   bool HasUndo() const { return m_undo.HasUndo(); }
+   void Undo();
+
    bool IsPreview() const
    {
       const ViewportPane *const vp = GetTargetViewport();
@@ -141,13 +199,6 @@ private:
    void MoveSelectionToPartGroup(PartGroup *group); // Move all selected parts/groups to the given group (nullptr = root, part groups only)
    bool IsEditablePickable(const IEditable *editable) const;
    void SelectAllParts();
-   Vertex2D GetMultiSelCenter() const; // Center of the current selection (bounding box center of the part centers, or of the selected points in drag point edit mode)
-   // Selection wide transforms (the win32 context menu Flip/Rotate/Scale/Translate commands): they apply
-   // to the multi selection of parts, or to the selected points in drag point edit mode
-   void FlipSelection(bool flipX); // Mirror the selection around the multi selection center
-   void RotateMultiSel(float ang, const Vertex2D &center, bool useElementCenter);
-   void ScaleMultiSel(float scalex, float scaley, const Vertex2D &center, bool useElementCenter);
-   void TranslateMultiSel(const Vertex2D &offset);
    void LockElements(); // Toggle the UI lock of the selected parts (unlock all if any is locked, lock all otherwise)
    void MoveSelectionInDrawOrder(bool toFront); // Draw In Front / Draw In Back (PinTable z-order)
    void ToggleCollectionMembership(int collectionIndex); // Toggle the selected parts' membership of a collection
@@ -199,7 +250,6 @@ private:
    void RestorePartsVisibility() const; // Revert the editor visibility overrides of the table parts (reapplied on next render)
 
    // Undo support
-   void Undo();
    void PushUndo(IEditable *part, unsigned int editId);
    PinUndo m_undo;
    IEditable *m_lastUndoPart = nullptr;
@@ -222,7 +272,6 @@ private:
    };
    vector<AddPartButton> m_addPartButtons; // Lazily initialized part type picker buttons (shared by the viewport panes)
    void EnsureAddPartButtons();
-   void CreatePart(ItemTypeEnum type, const Vertex2D &pos);
    void CreateCollection(bool fromSelection); // Create a collection, optionally populated with the selected parts
    PartGroup *GetPartGroupForNewPart();
    vector<PartGroup *> m_partGroupUseHistory; // Recently used insertion target part groups, most recent first
@@ -236,7 +285,6 @@ private:
    };
 
    // File operations (the 'Save As' and 'Load' file dialogs are asynchronous: their result is applied in RenderUI)
-   void SaveTable();
    void SaveTableAs();
    void SaveTableAsPackFolder(); // Save as a VPZ folder pack
    void LoadTable();
@@ -491,6 +539,18 @@ private:
    BlueprintPane *GetTargetBlueprint() const { return m_captureBp != nullptr ? m_captureBp : m_hoverBp; }
 
    Vertex2D TablePosAt(const ImVec2 &pos) const; // Display px -> table XY through the view pane under pos
+
+   // Automation capture pane (see ShowTopView): rendered over the whole window instead of the areas while set
+   std::unique_ptr<ViewportPane> m_capturePane;
+   std::unique_ptr<BlueprintPane> m_captureBlueprint;
+   struct BlueprintCapture
+   {
+      float zoom = 0.f; // Display px per table unit, 0 to fit the region (or the playfield when the region is empty)
+      Vertex2D center, regionLo, regionHi;
+   } m_blueprintCapture;
+   ExternalOverlay m_externalOverlay;
+   ViewportPane *BeginCapture(ViewMode type);
+   void RenderBlueprintCapture(ImDrawList *drawList);
 };
 
 }

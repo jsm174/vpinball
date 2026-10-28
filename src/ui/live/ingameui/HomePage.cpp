@@ -127,6 +127,10 @@ void HomePage::BuildPage()
 
    AddItem(std::make_unique<InGameUIItem>("Logging Settings"s, ""s, "settings/logging"s));
 
+#ifndef __EMSCRIPTEN__
+   AddItem(std::make_unique<InGameUIItem>("MCP Server Settings"s, ""s, "settings/mcp"s));
+#endif
+
    AddItem(std::make_unique<InGameUIItem>("System Info"s, ""s, "misc/systeminfo"s));
 }
 

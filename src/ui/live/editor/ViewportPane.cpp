@@ -924,6 +924,45 @@ void ViewportPane::RenderPane(const AreaRect& rect, const int leafId)
    m_view->m_shadeMode = m_shadeMode;
 }
 
+void ViewportPane::RenderCapturePane(const AreaRect& rect)
+{
+   if (m_view == nullptr)
+   {
+      m_view = m_editor.m_renderer->CreateEditorView();
+      m_view->m_outputWnd = m_editor.m_player->m_playfieldWnd;
+      m_view->m_renderOverlay3D = true;
+      m_view->m_applyPostFX = false;
+   }
+   m_view->m_renderScene = true;
+   ImGui::SetNextWindowPos(ImVec2(rect.x0, rect.y0));
+   ImGui::SetNextWindowSize(ImVec2(rect.Width(), rect.Height()));
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.f, 0.f));
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.f);
+   ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.f);
+   ImGui::Begin("##CapturePane", nullptr,
+      ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus
+         | ImGuiWindowFlags_NoNavFocus | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoSavedSettings);
+   m_window = ImGui::GetCurrentWindow();
+   m_imageRect = rect;
+   const ImVec2 disp = ImGui::GetIO().DisplaySize;
+   if (rect.Width() > 0.f && rect.Height() > 0.f)
+      m_view->SetOutputArea(vec4(rect.x0 / disp.x, rect.y0 / disp.y, rect.x1 / disp.x, rect.y1 / disp.y));
+   else
+      m_view->m_renderScene = false;
+   m_hovered = false;
+   m_active = false;
+   ImGui::End();
+   ImGui::PopStyleVar(3);
+
+   m_view->m_editorView = m_viewType != ViewMode::PreviewCam;
+   m_view->m_editorBackdropEdit = m_viewType == ViewMode::DesktopBackdrop;
+   const ViewSetupID modeOverride = m_viewType == ViewMode::PreviewCam ? m_viewMode : BG_INVALID;
+   if (m_view->m_viewModeOverride != modeOverride)
+      m_view->m_isStaticPrepassDirty = true;
+   m_view->m_viewModeOverride = modeOverride;
+   m_view->m_shadeMode = m_shadeMode;
+}
+
 void ViewportPane::BoxSelectParts(const ImVec2& cornerA, const ImVec2& cornerB, bool add)
 {
    // Select all the pickable parts whose transform position projects inside the given screen box
@@ -1230,6 +1269,8 @@ DragPoint* ViewportPane::HitTestDragPoint(const ImVec2& mousePos) const
 
 void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
 {
+   if (m_view == nullptr)
+      return; // Not hosted by a shown leaf (released by a close or hidden behind a capture pane): nothing to process
    if (!m_cameraValid)
    {
       // First use: clone the camera of the current target pane (split panes share the setup, like
@@ -1306,6 +1347,18 @@ void ViewportPane::RenderUI(ImDrawList* const overlayDrawList)
       }
 
       // The pane's camera is pushed to the render view by Render3D (during the render pass)
+   }
+
+   if (m_captureView)
+   {
+      // Automation capture: the render and the external overlay only (no gizmo, no editor overlays, no interaction)
+      if (m_editor.m_externalOverlay && m_imageRect.Width() > 0.f && m_imageRect.Height() > 0.f)
+      {
+         overlayDrawList->PushClipRect(ImVec2(m_imageRect.x0, m_imageRect.y0), ImVec2(m_imageRect.x1, m_imageRect.y1), true);
+         m_editor.m_externalOverlay([this](const Vertex3Ds& v) { return Project(v); }, overlayDrawList);
+         overlayDrawList->PopClipRect();
+      }
+      return;
    }
 
    // Selection manipulator

@@ -369,6 +369,7 @@ public:
    RenderTarget* GetBackBufferTexture() const { return m_activeView->GetBackBufferTexture(); } // Main render target, with MSAA resolved if any, also may have stereo output (2 viewports)
 
    unsigned int GetPlayerModeVisibilityMask() const { return m_activeView->m_visibilityMask; }
+   unsigned int m_visibilityMaskOverride = 0; // Non zero replaces the player mode visibility mask of all views (preview of another play mode)
 
    // Renders a single part into the current pass, e.g. for editor previews of parts that are not (yet) in the table
    void RenderItem(IEditable* const renderable, bool isNoBackdrop);

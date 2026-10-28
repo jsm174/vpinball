@@ -149,6 +149,7 @@ STDMETHODIMP Collection::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR 
 }
 
 HRESULT Collection::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -6055,6 +6056,7 @@ STDMETHODIMP ScriptGlobalTable::GetDocumentation(MEMBERID index, BSTR *pBstrName
 }
 
 HRESULT PinTable::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -7315,6 +7317,7 @@ STDMETHODIMP Surface::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Surface::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -8438,6 +8441,7 @@ STDMETHODIMP Flipper::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Flipper::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -8666,6 +8670,7 @@ STDMETHODIMP Timer::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBst
 }
 
 HRESULT Timer::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -9787,6 +9792,7 @@ STDMETHODIMP Plunger::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Plunger::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -10395,6 +10401,7 @@ STDMETHODIMP Textbox::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Textbox::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -11324,6 +11331,7 @@ STDMETHODIMP Bumper::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBs
 }
 
 HRESULT Bumper::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -11956,6 +11964,7 @@ STDMETHODIMP Trigger::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Trigger::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -13066,6 +13075,7 @@ STDMETHODIMP Light::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBst
 }
 
 HRESULT Light::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -13880,6 +13890,7 @@ STDMETHODIMP Kicker::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBs
 }
 
 HRESULT Kicker::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -14402,6 +14413,7 @@ STDMETHODIMP Decal::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBst
 }
 
 HRESULT Decal::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -16366,6 +16378,7 @@ STDMETHODIMP Primitive::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *
 }
 
 HRESULT Primitive::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -17450,6 +17463,7 @@ STDMETHODIMP HitTarget::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *
 }
 
 HRESULT HitTarget::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -18301,6 +18315,7 @@ STDMETHODIMP Gate::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBstr
 }
 
 HRESULT Gate::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -18973,6 +18988,7 @@ STDMETHODIMP Spinner::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pB
 }
 
 HRESULT Spinner::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -22552,6 +22568,7 @@ STDMETHODIMP Ball::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *pBstr
 }
 
 HRESULT Ball::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -22587,6 +22604,7 @@ HRESULT Ball::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
 }
 
 HRESULT Ramp::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -22621,6 +22639,7 @@ HRESULT Ramp::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
 }
 
 HRESULT Flasher::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -22656,6 +22675,7 @@ HRESULT Flasher::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams)
 }
 
 HRESULT Rubber::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -23429,6 +23449,7 @@ STDMETHODIMP DispReel::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *p
 }
 
 HRESULT DispReel::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -23653,6 +23674,7 @@ STDMETHODIMP PartGroup::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *
 }
 
 HRESULT PartGroup::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;
@@ -24040,6 +24062,7 @@ STDMETHODIMP LightSeq::GetDocumentation(MEMBERID index, BSTR *pBstrName, BSTR *p
 }
 
 HRESULT LightSeq::FireDispID(const DISPID dispid, DISPPARAMS * const pdispparams) {
+	if (EventProxyBase::s_eventListener) EventProxyBase::s_eventListener(this, dispid);
 	static struct {
 		DISPID dispId;
 		const WCHAR *name;

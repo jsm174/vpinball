@@ -41,6 +41,10 @@ public:
    void FitTable(); // Zoom & offset to fit the playfield bounds
    void FrameSelection();
 
+   // Automation capture (see EditorUI::ShowBlueprintView): the schematic drawn over the given rect at the
+   // given zoom and offset (zoom <= 0 fits the playfield), without header, status overlay nor interaction
+   void RenderCapture(const AreaRect& rect, float zoom, const Vertex2D& offset, ImDrawList* drawList);
+
    // Per-frame interactions (called by the editor when this pane is hovered or capturing):
    // pan/zoom, selection, part & point drags, gizmo, part placement, pane shortcuts
    void RenderUI(ImDrawList* overlayDrawList);
