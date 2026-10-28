@@ -250,6 +250,7 @@ public:
    void GameLoop();
 
    void UpdateGameLogic();
+   bool m_renderingScene = false;
 
    VideoSyncMode GetVideoSyncMode() const { return m_playMode == Player::PlayMode::CaptureAttract ? VideoSyncMode::VSM_NONE : m_videoSyncMode; }
    void SetVideoSyncMode(VideoSyncMode mode) { m_videoSyncMode = mode; }

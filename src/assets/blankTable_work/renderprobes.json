@@ -1,0 +1,41 @@
+[
+  {
+    "type": "plane_reflection",
+    "name": "Playfield Reflections",
+    "roughness": 1,
+    "reflection_plane": {
+      "x": 0.0,
+      "y": 0.0,
+      "z": 1.0,
+      "w": 0.0
+    },
+    "reflection_mode": "dynamic",
+    "disable_light_reflection": true
+  },
+  {
+    "type": "plane_reflection",
+    "name": "Left Side Reflections",
+    "roughness": 8,
+    "reflection_plane": {
+      "x": 1.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 0.0
+    },
+    "reflection_mode": "dynamic",
+    "disable_light_reflection": false
+  },
+  {
+    "type": "plane_reflection",
+    "name": "Right Side Reflections",
+    "roughness": 8,
+    "reflection_plane": {
+      "x": -1.0,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 955.0
+    },
+    "reflection_mode": "dynamic",
+    "disable_light_reflection": false
+  }
+]

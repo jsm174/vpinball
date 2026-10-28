@@ -1,0 +1,82 @@
+{
+  "Wall": {
+    "hit_event": true,
+    "is_droppable": false,
+    "is_flipbook": false,
+    "is_bottom_solid": false,
+    "is_collidable": true,
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "threshold": 2.0,
+    "image": "",
+    "side_image": "",
+    "side_material": "",
+    "top_material": "",
+    "slingshot_material": "",
+    "height_bottom": 0.0,
+    "height_top": 50.0,
+    "name": "RubberWall3",
+    "display_texture": false,
+    "slingshot_force": 20.0,
+    "slingshot_threshold": 2.0,
+    "elasticity": 0.65,
+    "elasticity_falloff": 0.0,
+    "friction": 0.1,
+    "scatter": 5.0,
+    "is_top_bottom_visible": false,
+    "slingshot_animation": false,
+    "is_side_visible": false,
+    "disable_lighting_top": 0.0,
+    "disable_lighting_below": 0.0,
+    "is_reflection_enabled": true,
+    "physics_material": "",
+    "overwrite_physics": true,
+    "drag_points": [
+      {
+        "x": 150.10588,
+        "y": 145.09746,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 177.85588,
+        "y": 175.59746,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 231.35588,
+        "y": 131.34746,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      },
+      {
+        "x": 203.35588,
+        "y": 98.59746,
+        "z": 0.0,
+        "smooth": false,
+        "is_slingshot": false,
+        "has_auto_texture": true,
+        "tex_coord": 0.0,
+        "is_locked": false,
+        "editor_layer_visibility": true
+      }
+    ],
+    "part_group_name": "Visuals"
+  }
+}

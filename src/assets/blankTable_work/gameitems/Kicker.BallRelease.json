@@ -1,0 +1,23 @@
+{
+  "Kicker": {
+    "center": {
+      "x": 840.8785,
+      "y": 1844.458
+    },
+    "radius": 25.0,
+    "is_timer_enabled": false,
+    "timer_interval": 100,
+    "material": "",
+    "surface": "",
+    "is_enabled": true,
+    "name": "BallRelease",
+    "kicker_type": "invisible",
+    "scatter": 0.0,
+    "hit_accuracy": 0.9,
+    "hit_height": 40.0,
+    "orientation": 0.0,
+    "fall_through": false,
+    "legacy_mode": true,
+    "part_group_name": "Visuals"
+  }
+}

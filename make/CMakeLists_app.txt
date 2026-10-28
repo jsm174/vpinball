@@ -22,6 +22,7 @@ if(PLATFORM STREQUAL "windows")
       third-party/include/bc6h/basisu_bc6h.cpp
       third-party/include/bc7f/basisu_bc7f.cpp
       third-party/include/textedit/TextEditor.cpp
+      third-party/include/mongoose/mongoose.c
       PROPERTIES SKIP_PRECOMPILE_HEADERS ON
    )
 
@@ -391,6 +392,7 @@ elseif(PLATFORM STREQUAL "windows-mingw")
       z
       backtrace
       dbghelp
+      ws2_32
    )
 
    target_link_options(vpinball PUBLIC

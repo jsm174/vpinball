@@ -1,0 +1,18 @@
+# VPXTOOL table OBJ file
+# VPXTOOL OBJ file
+# numVerts: 4 numFaces: 2
+o FlipperLSh
+v -45 -145 0.000001
+v 45 -145 0.000001
+v 45 35 0.000001
+v -45 35 0.000001
+vt 0 1
+vt 1 1
+vt 1 0
+vt 0 0
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+vn 0 0 -1
+f 3/3/3 2/2/2 1/1/1
+f 4/4/4 3/3/3 1/1/1
