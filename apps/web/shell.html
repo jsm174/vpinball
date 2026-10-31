@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Visual Pinball X</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+:root {
+   --bg: #F2F2F7;
+   --surface: #FFFFFF;
+   --surface-high: #E5E5EA;
+   --text: #000000;
+   --text-secondary: #6E6E73;
+   --accent: #C8161C;
+   --on-accent: #FFFFFF;
+   --border: #C7C7CC;
+   --glow-red: transparent;
+   --glow-blue: transparent;
+   --glow-yellow: transparent;
+}
+@media (prefers-color-scheme: dark) {
+   :root {
+      --bg: #101010;
+      --surface: #1C1C1E;
+      --surface-high: #2C2C2E;
+      --text: #FFFFFF;
+      --text-secondary: #A1A1A6;
+      --accent: #FEF716;
+      --on-accent: #000000;
+      --border: #3A3A3C;
+      --glow-red: rgba(253, 37, 29, 0.10);
+      --glow-blue: rgba(58, 43, 255, 0.07);
+      --glow-yellow: rgba(254, 247, 22, 0.05);
+   }
+}
+html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+#canvas { display: block; width: 100vw; height: 100vh; outline: none; }
+#picker {
+   position: fixed; inset: 0; display: none; align-items: center; justify-content: center; padding: 16px; box-sizing: border-box;
+   color: var(--text);
+   background:
+      radial-gradient(circle 420px at 5% 12%, var(--glow-red), transparent),
+      radial-gradient(circle 360px at 90% 18%, var(--glow-blue), transparent),
+      radial-gradient(circle 480px at 90% 95%, var(--glow-yellow), transparent),
+      var(--bg);
+}
+#picker.shown { display: flex; }
+#panel { width: min(520px, 100%); text-align: center; }
+#logo { width: min(240px, 60%); height: auto; margin-bottom: 32px; }
+#drop { padding: 40px 36px; border: 2px dashed var(--border); border-radius: 16px; background: var(--surface); }
+#drop.over { border-color: var(--accent); }
+#drop p { margin: 0 0 28px; color: var(--text-secondary); line-height: 1.45; font-size: 15px; }
+#drop button { font: inherit; font-size: 15px; font-weight: 600; padding: 11px 20px; margin: 4px; border: 0; border-radius: 12px; cursor: pointer; }
+#pickFolder { background: var(--accent); color: var(--on-accent); }
+#pickFiles, #tables button { background: var(--surface-high); color: var(--text); }
+#drop button:disabled { opacity: 0.4; cursor: default; }
+#tables { margin-top: 16px; display: flex; flex-direction: column; gap: 6px; }
+#tables:empty { display: none; }
+#tables button { text-align: left; font-weight: 500; }
+#status { margin-top: 20px; color: var(--text-secondary); font-size: 14px; }
+#status:empty { display: none; }
+#version { position: absolute; left: 0; right: 0; bottom: 24px; text-align: center; font-size: 12px; color: var(--text-secondary); }
+</style>
+</head>
+<body>
+<canvas id="canvas" tabindex="-1" oncontextmenu="event.preventDefault()"></canvas>
+<div id="picker">
+   <div id="panel">
+      <img id="logo" src="vpinball-logo.png" alt="Visual Pinball">
+      <div id="drop">
+         <p>Choose or drop a table folder, or individual table files.</p>
+         <button id="pickFolder" disabled>Open table folder</button>
+         <button id="pickFiles" disabled>Open files</button>
+         <input id="folderInput" type="file" webkitdirectory hidden>
+         <input id="filesInput" type="file" multiple hidden>
+         <div id="tables"></div>
+         <div id="status">Loading…</div>
+      </div>
+   </div>
+   <div id="version"></div>
+</div>
+<script>
+var params = new URLSearchParams(location.search);
+var args = params.getAll('arg');
+var picker = document.getElementById('picker');
+var statusEl = document.getElementById('status');
+var Module = {
+   canvas: document.getElementById('canvas'),
+   arguments: args,
+   noInitialRun: true,
+   print: (text) => console.log(text),
+   printErr: (text) => console.error(text),
+   onRuntimeInitialized: async () => {
+      await loadPrefs();
+      if (args.length > 0) {
+         startPlayer(args);
+         return;
+      }
+      document.getElementById('pickFolder').disabled = false;
+      document.getElementById('pickFiles').disabled = false;
+      setStatus('');
+      document.getElementById('version').textContent = Module.UTF8ToString(Module._VPinballGetVersionStringFull());
+   },
+};
+if (args.length === 0)
+   picker.classList.add('shown');
+
+const PREFS_DIR = '/libsdl';
+
+function syncPrefs(populate) {
+   return new Promise((resolve) => Module.FS.syncfs(populate, (err) => {
+      if (err)
+         console.error('Preferences sync failed', err);
+      resolve();
+   }));
+}
+
+async function loadPrefs() {
+   Module.FS.mkdir(PREFS_DIR);
+   Module.FS.mount(Module.IDBFS, {}, PREFS_DIR);
+   await syncPrefs(true);
+}
+
+var tableFolder = null;
+var importTime = 0;
+
+function changedFiles(dir, out) {
+   for (const name of Module.FS.readdir(dir)) {
+      if (name === '.' || name === '..')
+         continue;
+      const path = dir + '/' + name;
+      const stat = Module.FS.stat(path);
+      if (Module.FS.isDir(stat.mode))
+         changedFiles(path, out);
+      else if (stat.mtime.getTime() > importTime)
+         out.push(path);
+   }
+   return out;
+}
+
+async function saveTableFolder() {
+   if (!tableFolder)
+      return;
+   const root = '/tables/' + tableFolder.name;
+   for (const path of changedFiles(root, [])) {
+      const parts = path.substring(root.length + 1).split('/');
+      let dir = tableFolder;
+      try {
+         for (const part of parts.slice(0, -1))
+            dir = await dir.getDirectoryHandle(part, { create: true });
+         const writable = await (await dir.getFileHandle(parts[parts.length - 1], { create: true })).createWritable();
+         await writable.write(Module.FS.readFile(path));
+         await writable.close();
+      } catch (e) {
+         console.error('Failed to save ' + path, e);
+      }
+   }
+}
+
+async function startPlayer(mainArgs) {
+   const timer = setInterval(() => syncPrefs(false), 10000);
+   await Module.callMain(mainArgs);
+   clearInterval(timer);
+   await syncPrefs(false);
+   await saveTableFolder();
+   location.href = location.pathname;
+}
+
+function setStatus(text) {
+   statusEl.textContent = text;
+}
+
+function mkdirs(path) {
+   let cur = '';
+   for (const part of path.split('/').filter(Boolean)) {
+      cur += '/' + part;
+      if (!Module.FS.analyzePath(cur).exists)
+         Module.FS.mkdir(cur);
+   }
+}
+
+async function importFiles(entries) {
+   // entries: [{ path: 'Folder/sub/file.ext', file: File }]
+   let done = 0;
+   const total = entries.length;
+   for (const { path, file } of entries) {
+      const dest = '/tables/' + path;
+      mkdirs(dest.substring(0, dest.lastIndexOf('/')));
+      Module.FS.writeFile(dest, new Uint8Array(await file.arrayBuffer()));
+      done++;
+      setStatus(`Copying files ${done}/${total}`);
+   }
+   importTime = Date.now();
+   const tables = entries.map(e => '/tables/' + e.path).filter(p => p.toLowerCase().endsWith('.vpx'));
+   if (tables.length === 0) {
+      setStatus('No .vpx table found');
+      return;
+   }
+   if (tables.length === 1) {
+      play(tables[0]);
+      return;
+   }
+   setStatus('Select the table to play');
+   const list = document.getElementById('tables');
+   list.replaceChildren(...tables.map(t => {
+      const b = document.createElement('button');
+      b.textContent = t.substring(t.lastIndexOf('/') + 1);
+      b.onclick = () => play(t);
+      return b;
+   }));
+}
+
+var started = false;
+function play(table) {
+   if (started)
+      return;
+   started = true;
+   picker.classList.remove('shown');
+   document.getElementById('canvas').focus();
+   startPlayer(['-play', table]);
+}
+
+function filesFromInput(input, keepFolders) {
+   return Array.from(input.files).map(f => ({ path: keepFolders && f.webkitRelativePath ? f.webkitRelativePath : 'files/' + f.name, file: f }));
+}
+
+async function readHandle(handle, prefix, out) {
+   if (handle.kind === 'file') {
+      out.push({ path: prefix + handle.name, file: await handle.getFile() });
+   } else {
+      for await (const child of handle.values())
+         await readHandle(child, prefix + handle.name + '/', out);
+   }
+}
+
+async function importFolder(handle) {
+   if (await handle.requestPermission({ mode: 'readwrite' }) === 'granted')
+      tableFolder = handle;
+   const out = [];
+   await readHandle(handle, '', out);
+   importFiles(out);
+}
+
+async function readEntry(entry, prefix, out) {
+   if (entry.isFile) {
+      out.push({ path: prefix + entry.name, file: await new Promise((res, rej) => entry.file(res, rej)) });
+   } else if (entry.isDirectory) {
+      const reader = entry.createReader();
+      let batch;
+      do {
+         batch = await new Promise((res, rej) => reader.readEntries(res, rej));
+         for (const child of batch)
+            await readEntry(child, prefix + entry.name + '/', out);
+      } while (batch.length > 0);
+   }
+}
+
+document.getElementById('pickFolder').onclick = async () => {
+   if (!window.showDirectoryPicker) {
+      document.getElementById('folderInput').click();
+      return;
+   }
+   try {
+      importFolder(await showDirectoryPicker({ id: 'tables', mode: 'readwrite' }));
+   } catch (e) {
+      if (e.name !== 'AbortError')
+         console.error(e);
+   }
+};
+document.getElementById('pickFiles').onclick = () => document.getElementById('filesInput').click();
+document.getElementById('folderInput').onchange = (e) => importFiles(filesFromInput(e.target, true));
+document.getElementById('filesInput').onchange = (e) => importFiles(filesFromInput(e.target, false));
+
+const drop = document.getElementById('drop');
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = async (e) => {
+   e.preventDefault();
+   drop.classList.remove('over');
+   const items = Array.from(e.dataTransfer.items);
+   const handlePromise = items.length === 1 && items[0].getAsFileSystemHandle ? items[0].getAsFileSystemHandle() : null;
+   const roots = items.map(i => i.webkitGetAsEntry()).filter(Boolean);
+   const handle = handlePromise ? await handlePromise : null;
+   if (handle && handle.kind === 'directory') {
+      importFolder(handle);
+      return;
+   }
+   const out = [];
+   for (const root of roots)
+      await readEntry(root, root.isFile ? 'files/' : '', out);
+   importFiles(out);
+};
+</script>
+{{{ SCRIPT }}}
+</body>
+</html>
