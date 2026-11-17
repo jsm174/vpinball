@@ -151,6 +151,8 @@ public:
    void SetAsBackGround(int mode);
    void SetFadeStep(int step);
    void FadeOut(int endMode, int interval);
+   void SetEffect(int effect, float intensity, float duration);
+   void ClearEffect() { m_fxType = 0; }
    void HardStop();
    void SetSafeMode(bool safeMode);
    bool IsJukebox() const;
@@ -199,6 +201,10 @@ private:
    int m_fadeVolume = -1;
    int m_fadeTarget = 0;
    int m_volumeFadeStep = 0;
+   int m_fxType = 0;
+   float m_fxIntensity = 0.f;
+   float m_fxDuration = 0.f;
+   uint64_t m_fxStart = 0;
    bool m_videoTimer = false;
    uint64_t m_videoTimerNext = 0;
    int m_videoTimerInterval = 100;

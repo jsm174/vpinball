@@ -87,6 +87,7 @@ extern VPXTexture CreateTexture(SDL_Surface* surf);
 extern VPXTextureInfo* GetTextureInfo(VPXTexture texture);
 extern void UpdateTexture(VPXTexture* texture, int width, int height, VPXTextureFormat format, const void *image);
 extern void DeleteTexture(VPXTexture texture);
+extern bool DrawImageFx(VPXRenderContext2D* ctx, const char* effect, const float* params, VPXTexture texture, float alpha, float texW, float texH, const SDL_Rect& dest);
 
 extern void UpdateAudioStream(AudioUpdateMsg *msg);
 extern void StopAudioStream(uint32_t streamId);

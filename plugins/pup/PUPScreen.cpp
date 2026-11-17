@@ -262,6 +262,14 @@ void PUPScreen::FadeOut(int endMode, int interval)
    m_videoTimerNext = SDL_GetTicks() + m_videoTimerInterval;
 }
 
+void PUPScreen::SetEffect(int effect, float intensity, float duration)
+{
+   m_fxType = effect;
+   m_fxIntensity = intensity;
+   m_fxDuration = duration;
+   m_fxStart = SDL_GetTicks();
+}
+
 void PUPScreen::HardStop()
 {
    assert(std::this_thread::get_id() == m_apiThread);
@@ -925,6 +933,24 @@ void PUPScreen::Render(VPXRenderContext2D* const ctx, int pass) {
    case 0: m_background.Render(ctx, m_rect, m_screenAlpha); break;
 
    case 1:
+      if (m_fxType >= 1 && m_fxType <= 11)
+      {
+         static constexpr const char* effects[] = { "Smoke", "Explosion", "HeatHaze", "FilmGrain", "Fire", "Fireworks", "Shake", "Lightning", "RetroFireworks", "DotMatrix", "AmberDotMatrix" };
+         const char* const effect = effects[m_fxType - 1];
+         float elapsed = static_cast<float>(SDL_GetTicks() - m_fxStart) / 1000.f;
+         float time = elapsed;
+         if (m_fxDuration > 0.f)
+         {
+            time = elapsed / m_fxDuration;
+            if (time >= 1.f)
+               m_fxType = 0;
+         }
+         else if (m_fxType == 3 || m_fxType == 4)
+            time += 1.f;
+         m_pMediaPlayerManager->SetEffect(m_fxType > 0 ? effect : nullptr, time, m_fxIntensity);
+      }
+      else
+         m_pMediaPlayerManager->SetEffect(nullptr, 0.f, 0.f);
       m_pMediaPlayerManager->Render(ctx, m_screenAlpha);
       if (!m_pMediaPlayerManager->IsMainPlaying() && !m_pMediaPlayerManager->IsBackgroundPlaying())
          m_staticImage.Render(ctx, m_rect, m_screenAlpha);

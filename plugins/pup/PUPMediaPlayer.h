@@ -34,12 +34,16 @@ public:
    void SetOnEndCallback(const std::function<void()>& onEndCallback) { std::lock_guard lock(m_mutex); m_onEndCallback = onEndCallback; }
    void SetBounds(const SDL_Rect& rect);
    void SetMask(std::shared_ptr<SDL_Surface> mask);
+   void SetEffect(const char* effect, float time, float intensity);
 
 private:
    void StopBlocking();
    void ReleaseHoldTexture();
    void RenderHold(VPXRenderContext2D* const ctx, const SDL_Rect& destRect, float alpha);
    void RenderLastFrame(VPXRenderContext2D* const ctx, const SDL_Rect& destRect, float alpha);
+   void DrawFrame(VPXRenderContext2D* const ctx, VPXTexture texture, const SDL_Rect& destRect, float alpha);
+   const char* m_fxName = nullptr;
+   float m_fxParams[2] = {};
    void Run();
    AVCodecContext* OpenStream(AVFormatContext* pInputFormatContext, int stream);
    void HandleAudioFrame(AVFrame* pFrame, bool sync);

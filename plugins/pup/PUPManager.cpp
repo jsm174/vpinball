@@ -37,6 +37,8 @@ static PUPManager::Engine ReadEngine(const std::filesystem::path& packPath)
    return PUPManager::Engine::PinUP15;
 }
 
+MSGPI_BOOL_VAL_SETTING(pupShaderEffects, "ShaderEffects", "PinUP 2.0 Shader Effects", "Draw the video effects of the PinUP 2.0 engine (FN 60)", true, true);
+
 MSGPI_FLOAT_VAL_SETTING(pupMainVolume, "MainVol", "Main Volume", "Overall volume", true, 0.f, 1.f, 0.01f, 1.f);
 
 MSGPI_INT_VAL_SETTING(pupBGPadLeft, "BGPadLeft", "Backglass Left Pad", "Left Padding of backglass", true, 0, 4096, 0);
@@ -68,6 +70,7 @@ PUPManager::PUPManager(const MsgPluginAPI* msgApi, uint32_t endpointId, const Pa
    , m_audioSrcDef({ .id = { endpointId, 0 }, .overrideId = { 0, 0 }, .name = "PinUp Player", .desc = "PinUp Player audio stream", .target = CTLPI_AUDIO_TARGET_BACKGLASS })
 {
    msgApi->RegisterSetting(endpointId, &pupMainVolume);
+   msgApi->RegisterSetting(endpointId, &pupShaderEffects);
    m_mainVolume = pupMainVolume_Get();
    msgApi->RegisterSetting(endpointId, &pupBGPadLeft);
    msgApi->RegisterSetting(endpointId, &pupBGPadRight);
@@ -1371,6 +1374,16 @@ void PUPManager::CustomFunction(int sn, const string& szMsg)
             // { "mt":301, "SN": XX, "FN":56, "FH":x, "FS":<0..255> } same as FN 55, FH is read but unused (2.0 engine)
             if (m_engine == Engine::PinUP20 && json["FS"s].exists() && json["FS"s].as<int>() >= 0)
                pScreen->SetFadeStep(json["FS"s].as<int>());
+            break;
+         case 60:
+            // { "mt":301, "SN": XX, "FN":60, "EF":1, "IN":0.5, "ED":3 } shader effect EF on the screen's video, IN intensity, ED seconds (0 = until FN 61) (2.0 engine)
+            if (m_engine == Engine::PinUP20 && pupShaderEffects_Get() && !pScreen->GetHost() && json["EF"s].as<int>(-1) >= 0 && json["IN"s].as<double>(0.0) > 0.0)
+               pScreen->SetEffect(json["EF"s].as<int>(0), static_cast<float>(json["IN"s].as<double>(0.0)), static_cast<float>(json["ED"s].as<double>(0.0)));
+            break;
+         case 61:
+            // { "mt":301, "SN": XX, "FN":61, "EF":0 } clear the shader effect (2.0 engine)
+            if (m_engine == Engine::PinUP20 && json["EF"s].as<int>(-1) == 0)
+               pScreen->ClearEffect();
             break;
          case 62:
             // { "mt":301, "SN": XX, "FN":62, "SF":100 } sound effect volume percent (2.0 engine)

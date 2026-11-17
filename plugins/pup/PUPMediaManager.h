@@ -37,6 +37,7 @@ public:
    bool IsBackgroundPlaying();
 
    void SetFadeStep(int step);
+   void SetEffect(const char* effect, float time, float intensity) { m_player.SetEffect(effect, time, intensity); }
 
    bool IsJukebox() const { return m_jukebox; }
    void SetJukebox(bool jukebox) { m_jukebox = jukebox; }

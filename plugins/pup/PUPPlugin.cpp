@@ -47,6 +47,7 @@ namespace PUP {
 
 static const MsgPluginAPI* msgApi = nullptr;
 static VPXPluginAPI* vpxApi = nullptr;
+static VPXEffectAPI* effectApi = nullptr;
 static ScriptablePluginAPI* scriptApi = nullptr;
 static PagedUIPluginAPI* pagedUIApi = nullptr;
 static uint32_t endpointId;
@@ -153,6 +154,13 @@ void DeleteTexture(VPXTexture texture)
 {
    if (vpxApi)
       vpxApi->DeleteTexture(texture);
+}
+
+bool DrawImageFx(VPXRenderContext2D* ctx, const char* effect, const float* params, VPXTexture texture, float alpha, float texW, float texH, const SDL_Rect& dest)
+{
+   return effectApi
+      && effectApi->DrawImageEffect(ctx, effect, params, 2, texture, 1.f, 1.f, 1.f, alpha, 0.f, 0.f, texW, texH, static_cast<float>(dest.x), static_cast<float>(dest.y),
+            static_cast<float>(dest.w), static_cast<float>(dest.h)) != 0;
 }
 
 
@@ -272,6 +280,10 @@ MSGPI_EXPORT void MSGPIAPI PUPPluginLoad(const uint32_t sessionId, const MsgPlug
    msgApi->BroadcastMsg(endpointId, getVpxApiId, &vpxApi);
    msgApi->ReleaseMsgID(getVpxApiId);
 
+   const unsigned int getEffectApiId = msgApi->GetMsgID(VPXPI_NAMESPACE, VPXPI_MSG_GET_EFFECT_API);
+   msgApi->BroadcastMsg(endpointId, getEffectApiId, &effectApi);
+   msgApi->ReleaseMsgID(getEffectApiId);
+
    msgApi->SubscribeMsg(endpointId, onGameEndId = msgApi->GetMsgID(VPXPI_NAMESPACE, VPXPI_EVT_ON_GAME_END), OnGameEnd, nullptr);
 
    onAudioUpdateId = msgApi->GetMsgID(CTLPI_NAMESPACE, CTLPI_AUDIO_ON_UPDATE_MSG);
@@ -326,6 +338,7 @@ MSGPI_EXPORT void MSGPIAPI PUPPluginUnload()
    msgApi->ReleaseMsgID(onControllersChangedId);
    msgApi->ReleaseMsgID(getControllersId);
 
+   effectApi = nullptr;
    scriptApi = nullptr;
    vpxApi = nullptr;
    pagedUIApi = nullptr;

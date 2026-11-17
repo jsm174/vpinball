@@ -407,13 +407,29 @@ void PUPMediaPlayer::SetVolume(float volume)
    });
 }
 
+void PUPMediaPlayer::SetEffect(const char* effect, float time, float intensity)
+{
+   m_fxName = effect;
+   m_fxParams[0] = time;
+   m_fxParams[1] = intensity;
+}
+
+void PUPMediaPlayer::DrawFrame(VPXRenderContext2D* const ctx, VPXTexture texture, const SDL_Rect& destRect, float alpha)
+{
+   const VPXTextureInfo* texInfo = GetTextureInfo(texture);
+   const float w = static_cast<float>(texInfo->width);
+   const float h = static_cast<float>(texInfo->height);
+   if (m_fxName && DrawImageFx(ctx, m_fxName, m_fxParams, texture, alpha, w, h, destRect))
+      return;
+   ctx->DrawImage(ctx, texture, 1.f, 1.f, 1.f, alpha, 0.f, 0.f, w, h, 0.f, 0.f, 0.f,
+      static_cast<float>(destRect.x), static_cast<float>(destRect.y), static_cast<float>(destRect.w), static_cast<float>(destRect.h));
+}
+
 void PUPMediaPlayer::RenderHold(VPXRenderContext2D* const ctx, const SDL_Rect& destRect, float alpha)
 {
    if (m_holdTexture == nullptr)
       return;
-   const VPXTextureInfo* texInfo = GetTextureInfo(m_holdTexture);
-   ctx->DrawImage(ctx, m_holdTexture, 1.f, 1.f, 1.f, alpha, 0.f, 0.f, static_cast<float>(texInfo->width), static_cast<float>(texInfo->height), 0.f, 0.f, 0.f,
-      static_cast<float>(destRect.x), static_cast<float>(destRect.y), static_cast<float>(destRect.w), static_cast<float>(destRect.h));
+   DrawFrame(ctx, m_holdTexture, destRect, alpha);
 }
 
 void PUPMediaPlayer::RenderLastFrame(VPXRenderContext2D* const ctx, const SDL_Rect& destRect, float alpha)
@@ -432,9 +448,7 @@ void PUPMediaPlayer::RenderLastFrame(VPXRenderContext2D* const ctx, const SDL_Re
    }
    if (frame.texture == nullptr)
       return;
-   const VPXTextureInfo* texInfo = GetTextureInfo(frame.texture);
-   ctx->DrawImage(ctx, frame.texture, 1.f, 1.f, 1.f, alpha, 0.f, 0.f, static_cast<float>(texInfo->width), static_cast<float>(texInfo->height), 0.f, 0.f, 0.f,
-      static_cast<float>(destRect.x), static_cast<float>(destRect.y), static_cast<float>(destRect.w), static_cast<float>(destRect.h));
+   DrawFrame(ctx, frame.texture, destRect, alpha);
 }
 
 void PUPMediaPlayer::Render(VPXRenderContext2D* const ctx, const SDL_Rect& destRect, float alpha)
@@ -513,9 +527,7 @@ void PUPMediaPlayer::Render(VPXRenderContext2D* const ctx, const SDL_Rect& destR
       m_holdTexture = nullptr;
    }
 
-   const VPXTextureInfo* texInfo = GetTextureInfo(selectedFrame.texture);
-   ctx->DrawImage(ctx, selectedFrame.texture, 1.f, 1.f, 1.f, alpha, 0.f, 0.f, static_cast<float>(texInfo->width), static_cast<float>(texInfo->height), 0.f, 0.f, 0.f,
-      static_cast<float>(destRect.x), static_cast<float>(destRect.y), static_cast<float>(destRect.w), static_cast<float>(destRect.h));
+   DrawFrame(ctx, selectedFrame.texture, destRect, alpha);
 
    selectedFrame.age = 0;
    m_position = selectedFrame.pts + m_videoPtsBase;
