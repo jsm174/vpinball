@@ -724,6 +724,13 @@ VPXPluginAPIImpl::VPXPluginAPIImpl(MsgPI::MsgPluginManager& pluginManager, Setti
    m_vpxPlugin->Load(&m_msgApi);
    m_msgApi.SubscribeMsg(m_vpxPlugin->m_endpointId, m_getVPXAPIMsgId, &OnGetVPXPluginAPI, this);
 
+   #if defined(ENABLE_BGFX)
+   m_effectApi.version = 1;
+   m_effectApi.DrawImageEffect = Renderer::DrawImageEffect;
+   m_getEffectAPIMsgId = m_msgApi.GetMsgID(VPXPI_NAMESPACE, VPXPI_MSG_GET_EFFECT_API);
+   m_msgApi.SubscribeMsg(m_vpxPlugin->m_endpointId, m_getEffectAPIMsgId, &OnGetEffectPluginAPI, this);
+   #endif
+
    // Plugin settings & UI sheets APIs (MsgPlugin settings + PagedUI)
    m_pluginUI = std::make_unique<VPXPluginPagedUI>(pluginManager, m_msgApi, m_vpxPlugin->m_endpointId, settings);
 
@@ -769,6 +776,11 @@ VPXPluginAPIImpl::~VPXPluginAPIImpl()
 
    m_pluginUI = nullptr; // Retires the sheets before the API subscriptions are released
 
+   if (m_getEffectAPIMsgId)
+   {
+      m_msgApi.UnsubscribeMsg(m_getEffectAPIMsgId, &OnGetEffectPluginAPI, this);
+      m_msgApi.ReleaseMsgID(m_getEffectAPIMsgId);
+   }
    m_msgApi.UnsubscribeMsg(m_getVPXAPIMsgId, &OnGetVPXPluginAPI, this);
    m_msgApi.ReleaseMsgID(m_getVPXAPIMsgId);
    m_msgApi.UnsubscribeMsg(m_getLoggingAPIMsgId, &OnGetLoggingPluginAPI, this);
@@ -795,6 +807,11 @@ void VPXPluginAPIImpl::OnGetVPXPluginAPI(const unsigned int msgId, void* userDat
    VPXPluginAPIImpl& pi = *static_cast<VPXPluginAPIImpl*>(userData);
    VPXPluginAPI** pResult = static_cast<VPXPluginAPI**>(msgData);
    *pResult = &pi.m_api;
+}
+
+void VPXPluginAPIImpl::OnGetEffectPluginAPI(const unsigned int msgId, void* userData, void* msgData)
+{
+   *static_cast<VPXEffectAPI**>(msgData) = &static_cast<VPXPluginAPIImpl*>(userData)->m_effectApi;
 }
 
 void VPXPluginAPIImpl::OnGetScriptablePluginAPI(const unsigned int msgId, void* userData, void* msgData)

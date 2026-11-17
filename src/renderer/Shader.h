@@ -118,6 +118,7 @@ enum class ShaderTechnique : unsigned int
    SHADER_TECHNIQUE(unshaded_with_texture),
    SHADER_TECHNIQUE(unshaded_without_texture_shadow),
    SHADER_TECHNIQUE(unshaded_with_texture_shadow),
+   SHADER_TECHNIQUE(image_fx),
 
    SHADER_TECHNIQUE(basic_reflection_only),
 
@@ -287,6 +288,7 @@ enum class ShaderUniform : unsigned int
    SHADER_UNIFORM(ShaderUniformType::Float4v, balls, 8), // Basic & Flasher (for ball shadows)
    SHADER_UNIFORM(ShaderUniformType::Float4, staticColor_Alpha, 1), // Basic & Flasher
    SHADER_UNIFORM(ShaderUniformType::Float4, w_h_height, 1), // Post process & Basic (for screen space reflection/refraction)
+   SHADER_UNIFORM(ShaderUniformType::Float4v, effectParams, 2), // Image effects
 
    // Shared material for Ball, Basic and Classic light shaders
    SHADER_UNIFORM(ShaderUniformType::Float4, clip_plane, 1), // Table space clip plane (all renderers, only where supported)

@@ -31,6 +31,7 @@
 
 // Core VPX messages
 #define VPXPI_MSG_GET_API               "GetAPI:1"              // Get the main VPX plugin API
+#define VPXPI_MSG_GET_EFFECT_API        "GetEffectAPI:1"        // Get the optional image effect API (hosts without effects do not answer)
 
 // Core VPX events
 #define VPXPI_EVT_ON_GAME_START         "OnGameStart:1"         // Broadcasted during player creation, before script initialization
@@ -309,3 +310,16 @@ typedef struct VPXPluginAPI
    void(MSGPIAPI* RunScript)(const char* script);
 
 } VPXPluginAPI;
+
+// Image effects: DrawImageEffect draws like VPXRenderContext2D::DrawImage through a named effect, and returns 0 without
+// drawing when the host does not implement that effect. Every effect takes params = { time, intensity }, where time is
+// in seconds for a continuous effect, or the 0..1 progress of a one shot effect.
+// Effects: Smoke, Explosion, HeatHaze, FilmGrain, Fire (one shot burst while time <= 1), Fireworks, Shake, Lightning,
+// RetroFireworks, DotMatrix, AmberDotMatrix
+typedef struct VPXEffectAPI
+{
+   unsigned int version;
+   int(MSGPIAPI* DrawImageEffect)(VPXRenderContext2D* ctx, const char* effect, const float* params, unsigned int paramCount, VPXTexture texture,
+      const float tintR, const float tintG, const float tintB, const float alpha, const float texX, const float texY, const float texW, const float texH,
+      const float srcX, const float srcY, const float srcW, const float srcH);
+} VPXEffectAPI;

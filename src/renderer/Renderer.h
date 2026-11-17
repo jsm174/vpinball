@@ -427,6 +427,13 @@ private:
       const float glassAmbientG, const float glassAmbientB, SegElementType type, const float* state, const float dispTintR, const float dispTintG, const float dispTintB,
       const float brightness, const float alpha, const float dispPadL, const float dispPadT, const float dispPadR, const float dispPadB, const float srcX, const float srcY, const float srcW,
       const float srcH);
+   static void DrawImageQuad(VPXRenderContext2D* ctx, ShaderTechnique technique, VPXTexture texture, const float tintR, const float tintG, const float tintB, const float alpha,
+      const float texX, const float texY, const float texW, const float texH, const float pivotX, const float pivotY, const float rotation, const float srcX, const float srcY, const float srcW,
+      const float srcH);
+public:
+   static int DrawImageEffect(VPXRenderContext2D* ctx, const char* effect, const float* params, unsigned int paramCount, VPXTexture texture, const float tintR, const float tintG,
+      const float tintB, const float alpha, const float texX, const float texY, const float texW, const float texH, const float srcX, const float srcY, const float srcW, const float srcH);
+private:
    RenderTarget* SetupAncillaryRenderTarget(
       VPXWindowId window, const VPX::RenderOutput& output, RenderTarget* embedRT, int& outputX, int& outputY, int& outputW, int& outputH, bool& isOutputLinear);
    void ClearEmbeddedAncillaryWindow(VPXWindowId window, const VPX::RenderOutput& output, RenderTarget* embedRT);

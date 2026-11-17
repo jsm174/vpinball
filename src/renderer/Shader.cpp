@@ -110,6 +110,7 @@ Shader::TechniqueDef Shader::shaderTechniqueNames[static_cast<unsigned int>(Shad
    SHADER_TECHNIQUE(unshaded_with_texture),
    SHADER_TECHNIQUE(unshaded_without_texture_shadow),
    SHADER_TECHNIQUE(unshaded_with_texture_shadow),
+   SHADER_TECHNIQUE(image_fx),
 
    SHADER_TECHNIQUE(basic_reflection_only),
 
@@ -291,6 +292,7 @@ ShaderUniformDef ShaderUniformDef::coreUniforms[static_cast<unsigned int>(Shader
    SHADER_UNIFORM(ShaderUniformType::Float4v, balls, 8), // Basic & Flasher (for ball shadows)
    SHADER_UNIFORM(ShaderUniformType::Float4, staticColor_Alpha, 1), // Basic & Flasher
    SHADER_UNIFORM(ShaderUniformType::Float4, w_h_height, 1), // Post process & Basic (for screen space reflection/refraction)
+   SHADER_UNIFORM(ShaderUniformType::Float4v, effectParams, 2), // Image effects
 
    // Shared material for Ball, Basic and Classic light shaders
    SHADER_UNIFORM(ShaderUniformType::Float4, clip_plane, 1), // Table space clip plane (all renderers, only where supported)
@@ -1391,7 +1393,7 @@ void Shader::Load()
    static const bgfx::EmbeddedShader embeddedShaders[] = { // ImGui shaders
       BGFX_EMBEDDED_SHADER_ST(vs_imgui), BGFX_EMBEDDED_SHADER(fs_imgui),
       // Basic material shaders
-      BGFX_EMBEDDED_SHADER_ST_CLIP(vs_basic_tex), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_basic_notex), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_kicker), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_classic_light_tex),
+      BGFX_EMBEDDED_SHADER_ST(fs_image_fx), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_basic_tex), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_basic_notex), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_kicker), BGFX_EMBEDDED_SHADER_ST_CLIP(vs_classic_light_tex),
       BGFX_EMBEDDED_SHADER_ST_CLIP(vs_classic_light_notex), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_basic_tex_noat), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_basic_tex_at),
       BGFX_EMBEDDED_SHADER_ST_CLIP(fs_basic_notex_noat), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_basic_refl), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_decal_tex),
       BGFX_EMBEDDED_SHADER_ST_CLIP(fs_decal_notex), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_classic_light_tex), BGFX_EMBEDDED_SHADER_ST_CLIP(fs_classic_light_notex),
@@ -1465,6 +1467,7 @@ void Shader::Load()
       loadProgram(embeddedShaders, ShaderTechnique::unshaded_with_texture,    STEREO(vs_basic_tex_noclip),           STEREO(fs_unshaded_tex_noclip));
       loadProgram(embeddedShaders, ShaderTechnique::unshaded_without_texture_shadow, STEREO(vs_basic_notex_noclip),  STEREO(fs_unshaded_notex_ballshadow_noclip));
       loadProgram(embeddedShaders, ShaderTechnique::unshaded_with_texture_shadow, STEREO(vs_basic_tex_noclip),       STEREO(fs_unshaded_tex_ballshadow_noclip));
+      loadProgram(embeddedShaders, ShaderTechnique::image_fx,                 STEREO(vs_basic_tex_noclip),           STEREO(fs_image_fx));
       // Variants with a clipping plane
       loadProgram(embeddedShaders, ShaderTechnique::basic_with_texture,       STEREO(vs_basic_tex_clip),           STEREO(fs_basic_tex_noat_clip), true);
       loadProgram(embeddedShaders, ShaderTechnique::basic_with_texture_at,    STEREO(vs_basic_tex_clip),           STEREO(fs_basic_tex_at_clip), true);

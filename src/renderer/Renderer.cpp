@@ -1656,6 +1656,27 @@ void Renderer::AddAncillaryContent(VPXRenderContext2D* ctx, const float srcX, co
 void Renderer::DrawImage(VPXRenderContext2D* ctx, VPXTexture texture, const float tintR, const float tintG, const float tintB, const float alpha, const float texX, const float texY,
    const float texW, const float texH, const float pivotX, const float pivotY, const float rotation, const float srcX, const float srcY, const float srcW, const float srcH)
 {
+   DrawImageQuad(ctx, ShaderTechnique::unshaded_with_texture, texture, tintR, tintG, tintB, alpha, texX, texY, texW, texH, pivotX, pivotY, rotation, srcX, srcY, srcW, srcH);
+}
+
+int Renderer::DrawImageEffect(VPXRenderContext2D* ctx, const char* effect, const float* params, unsigned int paramCount, VPXTexture texture, const float tintR, const float tintG,
+   const float tintB, const float alpha, const float texX, const float texY, const float texW, const float texH, const float srcX, const float srcY, const float srcW, const float srcH)
+{
+   static constexpr std::string_view effects[] = { "Smoke", "Explosion", "HeatHaze", "FilmGrain", "Fire", "Fireworks", "Shake", "Lightning", "RetroFireworks", "DotMatrix", "AmberDotMatrix" };
+   const auto it = effect ? std::ranges::find(effects, std::string_view(effect)) : std::end(effects);
+   if (it == std::end(effects) || paramCount < 2)
+      return 0;
+   std::shared_ptr<BaseTexture> const tex = g_pplayer->m_pluginAPI.GetTexture(texture);
+   const vec4 fx[2] = { vec4(static_cast<float>(it - std::begin(effects) + 1), params[0], params[1], 0.f), vec4(static_cast<float>(tex->width()), static_cast<float>(tex->height()), 0.f, 0.f) };
+   g_pplayer->m_renderer->m_renderDevice->m_basicShader->SetFloat4v(ShaderUniform::effectParams, fx, 2);
+   DrawImageQuad(ctx, ShaderTechnique::image_fx, texture, tintR, tintG, tintB, alpha, texX, texY, texW, texH, 0.f, 0.f, 0.f, srcX, srcY, srcW, srcH);
+   return 1;
+}
+
+void Renderer::DrawImageQuad(VPXRenderContext2D* ctx, ShaderTechnique technique, VPXTexture texture, const float tintR, const float tintG, const float tintB, const float alpha,
+   const float texX, const float texY, const float texW, const float texH, const float pivotX, const float pivotY, const float rotation, const float srcX, const float srcY, const float srcW,
+   const float srcH)
+{
    assert(g_pplayer && g_pplayer->m_renderer && ctx->rendererData == &g_pplayer->m_renderer->m_ancillaryRenderSetup);
    if (alpha <= 0.f) // Alpha blended, so alpha = 0 means not visible
       return;
@@ -1702,7 +1723,7 @@ void Renderer::DrawImage(VPXRenderContext2D* ctx, VPXTexture texture, const floa
       matRot.TransformPositions(vertices, vertices, 4);
    }
    static_cast<AncillaryRenderSetup*>(ctx->rendererData)->displayTransform.TransformVertices(vertices, vertices, 4);
-   rdl->m_basicShader->SetTechnique(ShaderTechnique::unshaded_with_texture);
+   rdl->m_basicShader->SetTechnique(technique);
    rdl->DrawTexturedQuad(rdl->m_basicShader, vertices, true, g_pplayer->m_renderer->m_ancillaryRenderSetup.depthbias);
    if (alpha != 1.f || tintR != 1.f || tintG != 1.f || tintB != 1.f)
       rdl->m_basicShader->SetVector(ShaderUniform::staticColor_Alpha, 1.f, 1.f, 1.f, 1.f);

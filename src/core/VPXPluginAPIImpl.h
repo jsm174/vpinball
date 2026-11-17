@@ -62,6 +62,11 @@ private:
    // editor dialog never coexist).
    static VPXPluginAPIImpl* s_instance;
 
+   // Image effect API
+   static void OnGetEffectPluginAPI(const unsigned int msgId, void* userData, void* msgData);
+   VPXEffectAPI m_effectApi;
+   unsigned int m_getEffectAPIMsgId = 0;
+
    // VPX API
    std::shared_ptr<MsgPI::MsgPlugin> m_vpxPlugin;
    static void OnGetVPXPluginAPI(const unsigned int msgId, void* userData, void* msgData);
